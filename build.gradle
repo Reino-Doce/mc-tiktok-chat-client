@@ -1,0 +1,201 @@
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+}
+
+def getProp = { String name, Object defaultValue = null ->
+    if (project.hasProperty(name)) {
+        return project.property(name)
+    }
+    return defaultValue
+}
+
+ext {
+    minecraftVersion = getProp('minecraft_version', '1.20.1').toString()
+    forgeVersion = getProp('forge_version', '47.4.16').toString()
+    targetMappingChannel = getProp('mapping_channel', 'official').toString()
+    targetMappingVersion = getProp('mapping_version', minecraftVersion).toString()
+    javaVersion = Integer.parseInt(getProp('java_version', '17').toString())
+    allowUnverifiedTarget = Boolean.parseBoolean(getProp('allow_unverified_target', 'false').toString())
+    tiktokLiveVersion = getProp('tiktoklive_version', '1.11.11-Release').toString()
+    gsonVersion = getProp('gson_version', '2.10.1').toString()
+    tiktokLiveJarPath = getProp('tiktoklive_jar_path', "libs/Client-${tiktokLiveVersion}-all.jar").toString()
+}
+
+ext.knownTargets = [
+        '1.20.1': [forge: '47.4.16', java: 17]
+]
+
+if (!minecraftVersion || !forgeVersion || !targetMappingChannel || !targetMappingVersion || !javaVersion) {
+    throw new GradleException("Missing required properties. Required: minecraft_version, forge_version, mapping_channel, mapping_version, java_version")
+}
+
+if (targetMappingChannel == 'official' && targetMappingVersion != minecraftVersion) {
+    throw new GradleException("Invalid mapping configuration: official mappings require mapping_version == minecraft_version (${minecraftVersion}).")
+}
+
+def known = knownTargets[minecraftVersion]
+if (known != null) {
+    if (forgeVersion != known.forge) {
+        throw new GradleException("Invalid Forge version for Minecraft ${minecraftVersion}. Expected forge_version=${known.forge}. Override only with -Pallow_unverified_target=true.")
+    }
+    if (javaVersion != known.java) {
+        throw new GradleException("Invalid Java target for Minecraft ${minecraftVersion}. Expected java_version=${known.java}.")
+    }
+} else if (!allowUnverifiedTarget) {
+    throw new GradleException("Target ${minecraftVersion} is not in validated matrix. Use -Pallow_unverified_target=true to bypass.")
+}
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = artifact_base_name
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(javaVersion)
+
+println "Target => MC ${minecraftVersion}, Forge ${forgeVersion}, mappings ${targetMappingChannel}:${targetMappingVersion}, Java ${javaVersion}"
+println "Host Java => ${System.getProperty 'java.version'} ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'})"
+
+def tikTokLiveJar = file(tiktokLiveJarPath)
+def tikTokLiveReleaseUrl = "https://github.com/jwdeveloper/TikTokLiveJava/releases/download/${tiktokLiveVersion}/Client-${tiktokLiveVersion}-all.jar"
+
+tasks.register('prepareTikTokLiveJar') {
+    outputs.file(tikTokLiveJar)
+    doLast {
+        if (tikTokLiveJar.exists()) {
+            return
+        }
+        tikTokLiveJar.parentFile.mkdirs()
+        logger.lifecycle("Downloading TikTokLiveJava from ${tikTokLiveReleaseUrl}")
+        new URL(tikTokLiveReleaseUrl).withInputStream { input ->
+            tikTokLiveJar.withOutputStream { output ->
+                output << input
+            }
+        }
+        if (!tikTokLiveJar.exists()) {
+            throw new GradleException("Failed to provision TikTokLiveJava jar at ${tikTokLiveJar}")
+        }
+    }
+}
+
+minecraft {
+    mappings channel: targetMappingChannel, version: targetMappingVersion
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        server {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            args '--nogui'
+        }
+
+        gameTestServer {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraftVersion}-${forgeVersion}"
+
+    implementation files(tikTokLiveJar)
+    implementation "com.google.code.gson:gson:${gsonVersion}"
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+}
+
+tasks.named('compileJava').configure {
+    dependsOn 'prepareTikTokLiveJar'
+}
+
+tasks.named('jar').configure {
+    dependsOn 'prepareTikTokLiveJar'
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version      : minecraftVersion,
+            minecraft_version_range: minecraft_version_range,
+            forge_version          : forgeVersion,
+            forge_version_range    : forge_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    from(zipTree(tikTokLiveJar)) {
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.RSA'
+        exclude 'META-INF/*.DSA'
+    }
+    manifest {
+        attributes([
+                'Specification-Title'     : mod_id,
+                'Specification-Vendor'    : mod_authors,
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Vendor'   : mod_authors,
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+    finalizedBy 'reobfJar'
+}
+
+publishing {
+    publications {
+        register('mavenJava', MavenPublication) {
+            artifact jar
+        }
+    }
+    repositories {
+        maven {
+            url "file://${project.projectDir}/mcmodsrepo"
+        }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
