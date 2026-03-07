@@ -76,6 +76,7 @@ public class ReinodoceClientService {
         lines.add("Username atual: " + (snapshot.username().isBlank() ? "-" : "@" + snapshot.username()));
         lines.add("Ultimo erro: " + (snapshot.lastError().isBlank() ? "-" : snapshot.lastError()));
         lines.add("Reconnect: " + config.getReconnectSeconds() + "s");
+        lines.add("Reconnect attempts: " + snapshot.reconnectAttempts());
         lines.add("Rule follower: " + config.isRuleFollowerOnly());
         lines.add("Rule min-member-level: " + config.getRuleMinMemberLevel());
         lines.add("Syntetic gift: " + config.getSynteticGiftMinValue());

@@ -7,9 +7,10 @@ public class LiveSessionState {
     private String username = "";
     private String lastError = "";
     private Instant reconnectAt;
+    private int reconnectAttempts;
 
     public synchronized Snapshot snapshot() {
-        return new Snapshot(state, username, lastError, reconnectAt);
+        return new Snapshot(state, username, lastError, reconnectAt, reconnectAttempts);
     }
 
     public synchronized void setState(ConnectionLifecycleState state) {
@@ -28,11 +29,21 @@ public class LiveSessionState {
         this.reconnectAt = reconnectAt;
     }
 
+    public synchronized void setReconnectAttempts(int reconnectAttempts) {
+        this.reconnectAttempts = Math.max(0, reconnectAttempts);
+    }
+
+    public synchronized int incrementReconnectAttempts() {
+        reconnectAttempts = Math.max(0, reconnectAttempts) + 1;
+        return reconnectAttempts;
+    }
+
     public record Snapshot(
             ConnectionLifecycleState state,
             String username,
             String lastError,
-            Instant reconnectAt
+            Instant reconnectAt,
+            int reconnectAttempts
     ) {
     }
 }

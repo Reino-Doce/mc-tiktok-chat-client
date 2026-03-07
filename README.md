@@ -138,8 +138,10 @@ Propriedade opcional para usar caminho customizado:
 - Integracao TikTok roda fora da game thread.
 - Chat do Minecraft e sempre enviado no contexto seguro do cliente.
 - Reconnect com scheduler dedicado.
+- Telemetria local de reconnect (contador de tentativas no `/reinodoce status`).
 - Token de ciclo de vida evita callback antigo afetar sessao atual.
 - Protecao para connect/disconnect repetidos e troca de username ativa.
+- Avisos de erro/reconnect no chat com throttling para reduzir flood.
 
 ## Limitacoes
 
