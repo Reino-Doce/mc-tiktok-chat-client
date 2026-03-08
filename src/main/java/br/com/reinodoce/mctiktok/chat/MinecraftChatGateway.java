@@ -31,8 +31,8 @@ public class MinecraftChatGateway {
         send(formatter.formatSyntheticGift(prefix, username, giftName, count));
     }
 
-    public void sendSyntheticGift(String prefix, RichLiveMessage message, String giftName, int count) {
-        sendTracked(formatter.formatSyntheticGift(prefix, message, giftName, count));
+    public void sendSyntheticGift(String prefix, RichLiveMessage message) {
+        sendTracked(formatter.formatSyntheticGift(prefix, message));
     }
 
     public void sendSyntheticFollow(String prefix, String username) {

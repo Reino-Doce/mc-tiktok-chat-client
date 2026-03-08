@@ -351,7 +351,10 @@ public class TikTokClientFacade {
 
         rememberRenderedComment(username, message);
         if (config.isChatEmotesEnabled()) {
-            chatGateway.sendLiveComment(config.getChatPrefix(), richTextMessage(0L, username, message));
+            chatGateway.sendLiveComment(
+                    config.getChatPrefix(),
+                    richTextMessage(0L, username, TikTokMediaResolver.resolveUserAvatarUrl(user), message)
+            );
             return;
         }
         chatGateway.sendLiveComment(config.getChatPrefix(), username, message);
@@ -369,7 +372,10 @@ public class TikTokClientFacade {
 
         String username = sanitizeUserName(resolveUserName(event.getUser()));
         if (config.isChatEmotesEnabled()) {
-            chatGateway.sendSyntheticFollow(config.getChatPrefix(), richAuthorOnlyMessage(username));
+            chatGateway.sendSyntheticFollow(
+                    config.getChatPrefix(),
+                    richAuthorOnlyMessage(username, TikTokMediaResolver.resolveUserAvatarUrl(event.getUser()))
+            );
             return;
         }
         chatGateway.sendSyntheticFollow(config.getChatPrefix(), username);
@@ -387,7 +393,10 @@ public class TikTokClientFacade {
 
         String username = sanitizeUserName(resolveUserName(event.getUser()));
         if (config.isChatEmotesEnabled()) {
-            chatGateway.sendSyntheticJoin(config.getChatPrefix(), richAuthorOnlyMessage(username));
+            chatGateway.sendSyntheticJoin(
+                    config.getChatPrefix(),
+                    richAuthorOnlyMessage(username, TikTokMediaResolver.resolveUserAvatarUrl(event.getUser()))
+            );
             return;
         }
         chatGateway.sendSyntheticJoin(config.getChatPrefix(), username);
@@ -462,7 +471,8 @@ public class TikTokClientFacade {
                             barrageMessage.getFansLevelParam().getUser().getNickname(),
                             barrageMessage.getFansLevelParam().getUser().getUsername()
                     ));
-                    MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(userId, username, level);
+                    String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(barrageMessage.getFansLevelParam().getUser());
+                    MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(userId, username, avatarUrl, level);
                     maybeEmitMemberLevelUpgrade(update);
                 }
             }
@@ -477,9 +487,11 @@ public class TikTokClientFacade {
                 chatMessage.getUserIdentity()
         );
         String username = sanitizeUserName(chooseRawUserName(chatMessage.getUser().getNickname(), chatMessage.getUser().getUsername()));
+        String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(chatMessage.getUser());
         MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(
                 chatMessage.getUser().getId(),
                 username,
+                avatarUrl,
                 (int) chatMessage.getUser().getFansClubInfo().getFansLevel()
         );
         maybeEmitMemberLevelUpgrade(update);
@@ -488,6 +500,7 @@ public class TikTokClientFacade {
                 token,
                 user,
                 username,
+                avatarUrl,
                 memberLevelResolver.resolveLevel(user),
                 richMessageParser.parseChatMessage(chatMessage, username)
         );
@@ -499,10 +512,12 @@ public class TikTokClientFacade {
                 emoteChatMessage.getUserIdentity()
         );
         String username = sanitizeUserName(chooseRawUserName(emoteChatMessage.getUser().getNickname(), emoteChatMessage.getUser().getUsername()));
+        String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(emoteChatMessage.getUser());
         emitLiveComment(
                 token,
                 user,
                 username,
+                avatarUrl,
                 memberLevelResolver.resolveLevel(user),
                 richMessageParser.parseEmoteChatMessage(emoteChatMessage, username)
         );
@@ -512,6 +527,7 @@ public class TikTokClientFacade {
             long token,
             io.github.jwdeveloper.tiktok.data.models.users.User user,
             String username,
+            String avatarUrl,
             int memberLevel,
             RichLiveMessage richMessage
     ) {
@@ -534,7 +550,7 @@ public class TikTokClientFacade {
 
         rememberRenderedComment(username, plainText);
         if (config.isChatEmotesEnabled()) {
-            chatGateway.sendLiveComment(config.getChatPrefix(), enrichCommentMessage(username, richMessage));
+            chatGateway.sendLiveComment(config.getChatPrefix(), enrichCommentMessage(username, avatarUrl, richMessage));
             return;
         }
 
@@ -555,7 +571,11 @@ public class TikTokClientFacade {
 
         String username = sanitizeUserName(update.username());
         if (config.isChatEmotesEnabled()) {
-            chatGateway.sendSyntheticMemberLevel(config.getChatPrefix(), richAuthorOnlyMessage(username), update.newLevel());
+            chatGateway.sendSyntheticMemberLevel(
+                    config.getChatPrefix(),
+                    richAuthorOnlyMessage(username, update.avatarUrl()),
+                    update.newLevel()
+            );
             return;
         }
         chatGateway.sendSyntheticMemberLevel(config.getChatPrefix(), username, update.newLevel());
@@ -571,9 +591,13 @@ public class TikTokClientFacade {
             if (config.isChatEmotesEnabled()) {
                 chatGateway.sendSyntheticGift(
                         config.getChatPrefix(),
-                        richAuthorOnlyMessage(username),
-                        giftName,
-                        Math.max(1, emission.count())
+                        richGiftMessage(
+                                username,
+                                emission.avatarUrl(),
+                                giftName,
+                                emission.giftIconUrl(),
+                                Math.max(1, emission.count())
+                        )
                 );
                 continue;
             }
@@ -597,13 +621,17 @@ public class TikTokClientFacade {
         int diamonds = gift == null ? 0 : Math.max(0, gift.getDiamondCost());
         int combo = Math.max(1, event.getCombo());
         String username = sanitizeUserName(resolveUserName(user));
+        String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(user);
         String giftName = MessageSanitizer.sanitize(gift == null ? "presente" : gift.getName());
+        String giftIconUrl = TikTokMediaResolver.resolveGiftIconUrl(gift);
         long messageId = event.getMessageId();
 
         return new GiftComboAggregator.GiftSnapshot(
                 new GiftComboAggregator.GiftKey(userId, giftId),
                 username,
+                avatarUrl,
                 giftName,
+                giftIconUrl,
                 diamonds,
                 combo,
                 messageId
@@ -614,24 +642,47 @@ public class TikTokClientFacade {
         return new Gift(0, emission.giftName(), emission.diamondCost(), "");
     }
 
-    private RichLiveMessage enrichCommentMessage(String username, RichLiveMessage richMessage) {
+    private RichLiveMessage enrichCommentMessage(String username, String avatarUrl, RichLiveMessage richMessage) {
         return new RichLiveMessage(
                 richMessage.messageId(),
-                authorSegments(username),
+                authorSegments(username, avatarUrl),
                 unicodeEmojiParser.expandSegments(richMessage.bodySegments())
         );
     }
 
-    private RichLiveMessage richTextMessage(long messageId, String username, String bodyText) {
-        return new RichLiveMessage(messageId, authorSegments(username), unicodeEmojiParser.parseText(bodyText));
+    private RichLiveMessage richTextMessage(long messageId, String username, String avatarUrl, String bodyText) {
+        return new RichLiveMessage(messageId, authorSegments(username, avatarUrl), unicodeEmojiParser.parseText(bodyText));
     }
 
-    private RichLiveMessage richAuthorOnlyMessage(String username) {
-        return new RichLiveMessage(0L, authorSegments(username), List.of());
+    private RichLiveMessage richAuthorOnlyMessage(String username, String avatarUrl) {
+        return new RichLiveMessage(0L, authorSegments(username, avatarUrl), List.of());
     }
 
-    private List<RichLiveMessage.Segment> authorSegments(String username) {
-        return unicodeEmojiParser.parseText(username);
+    private RichLiveMessage richGiftMessage(String username, String avatarUrl, String giftName, String giftIconUrl, int count) {
+        return new RichLiveMessage(0L, authorSegments(username, avatarUrl), giftSegments(giftName, giftIconUrl, count));
+    }
+
+    private List<RichLiveMessage.Segment> authorSegments(String username, String avatarUrl) {
+        List<RichLiveMessage.Segment> segments = new java.util.ArrayList<>();
+        segments.add(new RichLiveMessage.AvatarSegment(
+                avatarUrl == null || avatarUrl.isBlank() ? TikTokMediaResolver.defaultAvatarUrl() : avatarUrl,
+                ""
+        ));
+        segments.add(new RichLiveMessage.TextSegment(" "));
+        segments.addAll(unicodeEmojiParser.parseText(username));
+        return segments;
+    }
+
+    private List<RichLiveMessage.Segment> giftSegments(String giftName, String giftIconUrl, int count) {
+        List<RichLiveMessage.Segment> segments = new java.util.ArrayList<>();
+        segments.add(new RichLiveMessage.TextSegment("enviou "));
+        if (giftIconUrl != null && !giftIconUrl.isBlank()) {
+            segments.add(new RichLiveMessage.GiftIconSegment(giftName, giftIconUrl, ""));
+            segments.add(new RichLiveMessage.TextSegment(" "));
+        }
+        segments.addAll(unicodeEmojiParser.parseText(giftName));
+        segments.add(new RichLiveMessage.TextSegment(" x" + Math.max(1, count)));
+        return segments;
     }
 
     private String resolveUserName(User user) {

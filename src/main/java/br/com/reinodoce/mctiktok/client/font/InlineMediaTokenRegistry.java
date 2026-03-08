@@ -46,6 +46,10 @@ public final class InlineMediaTokenRegistry {
     }
 
     public float advanceFor(RichLiveMessage.InlineMediaSegment segment) {
+        if (segment.renderStyle() == RichLiveMessage.InlineMediaRenderStyle.SQUARE_CROP) {
+            return CHAT_MEDIA_HEIGHT;
+        }
+
         InlineMediaCache.TextureHandle handle = mediaCache.resolve(segment);
         int width = Math.max(1, handle.sourceWidth());
         int height = Math.max(1, handle.sourceHeight());
@@ -76,7 +80,10 @@ public final class InlineMediaTokenRegistry {
     }
 
     private String keyFor(RichLiveMessage.InlineMediaSegment segment) {
-        return segment.kind().id() + "|" + segment.sourceKey() + "|" + segment.sourceUrl();
+        return segment.kind().id()
+                + "|" + segment.renderStyle().name()
+                + "|" + segment.sourceKey()
+                + "|" + segment.sourceUrl();
     }
 
     public record TokenEntry(int codePoint, String token, RichLiveMessage.InlineMediaSegment segment) {

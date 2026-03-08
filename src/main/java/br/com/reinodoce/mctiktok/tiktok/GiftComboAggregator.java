@@ -37,7 +37,15 @@ public class GiftComboAggregator {
         int count = Math.max(1, snapshot.comboCount());
 
         if (state == null) {
-            return List.of(new GiftEmission(snapshot.username(), snapshot.giftName(), snapshot.diamondCost(), count, snapshot.messageId()));
+            return List.of(new GiftEmission(
+                    snapshot.username(),
+                    snapshot.avatarUrl(),
+                    snapshot.giftName(),
+                    snapshot.giftIconUrl(),
+                    snapshot.diamondCost(),
+                    count,
+                    snapshot.messageId()
+            ));
         }
 
         int knownCount = Math.max(1, state.snapshot.comboCount());
@@ -47,7 +55,9 @@ public class GiftComboAggregator {
         if (mode == GiftComboMode.BULK) {
             return List.of(new GiftEmission(
                     snapshot.username(),
+                    snapshot.avatarUrl(),
                     snapshot.giftName(),
+                    snapshot.giftIconUrl(),
                     snapshot.diamondCost(),
                     effectiveCount,
                     snapshot.messageId()
@@ -81,7 +91,15 @@ public class GiftComboAggregator {
             return List.of();
         }
 
-        return List.of(new GiftEmission(snapshot.username(), snapshot.giftName(), snapshot.diamondCost(), delta, snapshot.messageId()));
+        return List.of(new GiftEmission(
+                snapshot.username(),
+                snapshot.avatarUrl(),
+                snapshot.giftName(),
+                snapshot.giftIconUrl(),
+                snapshot.diamondCost(),
+                delta,
+                snapshot.messageId()
+        ));
     }
 
     private List<GiftEmission> handleSingleCombo(GiftSnapshot snapshot, boolean finished) {
@@ -102,7 +120,9 @@ public class GiftComboAggregator {
 
         return List.of(new GiftEmission(
                 snapshot.username(),
+                snapshot.avatarUrl(),
                 snapshot.giftName(),
+                snapshot.giftIconUrl(),
                 snapshot.diamondCost(),
                 currentCount,
                 snapshot.messageId()
@@ -118,7 +138,9 @@ public class GiftComboAggregator {
         GiftSnapshot normalizedSnapshot = new GiftSnapshot(
                 snapshot.key(),
                 snapshot.username(),
+                snapshot.avatarUrl(),
                 snapshot.giftName(),
+                snapshot.giftIconUrl(),
                 snapshot.diamondCost(),
                 maxCount,
                 snapshot.messageId()
@@ -167,7 +189,9 @@ public class GiftComboAggregator {
     private GiftEmission emissionFrom(GiftSnapshot snapshot) {
         return new GiftEmission(
                 snapshot.username(),
+                snapshot.avatarUrl(),
                 snapshot.giftName(),
+                snapshot.giftIconUrl(),
                 snapshot.diamondCost(),
                 Math.max(1, snapshot.comboCount()),
                 snapshot.messageId()
@@ -198,7 +222,9 @@ public class GiftComboAggregator {
     public record GiftSnapshot(
             GiftKey key,
             String username,
+            String avatarUrl,
             String giftName,
+            String giftIconUrl,
             int diamondCost,
             int comboCount,
             long messageId
@@ -207,7 +233,9 @@ public class GiftComboAggregator {
 
     public record GiftEmission(
             String username,
+            String avatarUrl,
             String giftName,
+            String giftIconUrl,
             int diamondCost,
             int count,
             long messageId

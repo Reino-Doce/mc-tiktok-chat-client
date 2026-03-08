@@ -35,4 +35,13 @@ class InlineMediaTokenRegistryTest {
         assertEquals(emote.sourceUrl(), entry.segment().sourceUrl());
         assertEquals(token, entry.token());
     }
+
+    @Test
+    void squareMediaUsesFixedChatHeightAdvance() {
+        RichLiveMessage.AvatarSegment avatar = new RichLiveMessage.AvatarSegment("resource://reinodoce_mctiktok/textures/gui/no_user_image.png", "");
+        RichLiveMessage.GiftIconSegment giftIcon = new RichLiveMessage.GiftIconSegment("rose", "https://cdn.example/rose.png", "");
+
+        assertEquals(9.0F, registry.advanceFor(avatar));
+        assertEquals(9.0F, registry.advanceFor(giftIcon));
+    }
 }

@@ -26,12 +26,8 @@ public class LiveMessageFormatter {
         return formatRichLine(prefix, message, ChatFormatting.GRAY);
     }
 
-    public FormattedLiveComment formatSyntheticGift(String prefix, RichLiveMessage message, String giftName, int count) {
-        return formatRichLine(
-                prefix,
-                message.withBodySegments(List.of(new RichLiveMessage.TextSegment("enviou " + giftName + " x" + count))),
-                ChatFormatting.LIGHT_PURPLE
-        );
+    public FormattedLiveComment formatSyntheticGift(String prefix, RichLiveMessage message) {
+        return formatRichLine(prefix, message, ChatFormatting.LIGHT_PURPLE);
     }
 
     public FormattedLiveComment formatSyntheticFollow(String prefix, RichLiveMessage message) {

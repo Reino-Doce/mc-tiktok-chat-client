@@ -2,6 +2,7 @@ package br.com.reinodoce.mctiktok.client.overlay;
 
 import br.com.reinodoce.mctiktok.ReinodoceMcTiktokMod;
 import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
+import br.com.reinodoce.mctiktok.util.InlineMediaUrls;
 import br.com.reinodoce.mctiktok.util.ExecutorsFactory;
 import br.com.reinodoce.mctiktok.util.ReinodoceLogger;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -55,6 +56,9 @@ public class InlineMediaCache {
         }
         cleanup(System.currentTimeMillis());
         for (RichLiveMessage.InlineMediaSegment segment : message.inlineMediaSegments()) {
+            if (InlineMediaUrls.isResourceUrl(segment.sourceUrl())) {
+                continue;
+            }
             ensureAvailable(segment, true);
         }
     }
@@ -62,6 +66,9 @@ public class InlineMediaCache {
     public TextureHandle resolve(RichLiveMessage.InlineMediaSegment segment) {
         if (segment == null || segment.sourceUrl().isBlank()) {
             return TextureHandle.error(ERROR_TEXTURE, 16, 16);
+        }
+        if (InlineMediaUrls.isResourceUrl(segment.sourceUrl())) {
+            return TextureHandle.ready(InlineMediaUrls.parseResourceUrl(segment.sourceUrl()), 16, 16);
         }
 
         CacheEntry entry = ensureAvailable(segment, false);

@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.util.InlineMediaUrls;
 import io.github.jwdeveloper.tiktok.data.models.badges.Badge;
 import io.github.jwdeveloper.tiktok.data.models.badges.CombineBadge;
 import io.github.jwdeveloper.tiktok.data.models.badges.StringBadge;
@@ -17,6 +18,7 @@ public class MemberLevelResolver {
 
     private final Map<Long, Integer> levels = new ConcurrentHashMap<>();
     private final Map<Long, String> usernames = new ConcurrentHashMap<>();
+    private final Map<Long, String> avatarUrls = new ConcurrentHashMap<>();
 
     public int resolveLevel(User user) {
         if (user == null || user.getId() == null) {
@@ -34,30 +36,38 @@ public class MemberLevelResolver {
             levels.put(userId, inferred);
         }
         usernames.putIfAbsent(userId, chooseUserName(user));
+        avatarUrls.putIfAbsent(userId, TikTokMediaResolver.resolveUserAvatarUrl(user));
         return inferred;
     }
 
-    public LevelUpdate updateLevel(long userId, String username, int newLevel) {
+    public LevelUpdate updateLevel(long userId, String username, String avatarUrl, int newLevel) {
         if (userId <= 0 || newLevel < 0) {
-            return new LevelUpdate(userId, chooseUserName(userId, username), 0, 0);
+            return new LevelUpdate(userId, chooseUserName(userId, username), chooseAvatarUrl(userId, avatarUrl), 0, 0);
         }
 
         String display = chooseUserName(userId, username);
+        String displayAvatar = chooseAvatarUrl(userId, avatarUrl);
         int previous = levels.getOrDefault(userId, 0);
         int effective = Math.max(previous, newLevel);
 
         levels.put(userId, effective);
         usernames.put(userId, display);
-        return new LevelUpdate(userId, display, previous, effective);
+        avatarUrls.put(userId, displayAvatar);
+        return new LevelUpdate(userId, display, displayAvatar, previous, effective);
     }
 
     public String getKnownUsername(long userId, String fallback) {
         return chooseUserName(userId, fallback);
     }
 
+    public String getKnownAvatarUrl(long userId, String fallback) {
+        return chooseAvatarUrl(userId, fallback);
+    }
+
     public void clear() {
         levels.clear();
         usernames.clear();
+        avatarUrls.clear();
     }
 
     public static int extractLevelFromText(String text) {
@@ -121,7 +131,14 @@ public class MemberLevelResolver {
         return usernames.getOrDefault(userId, "desconhecido");
     }
 
-    public record LevelUpdate(long userId, String username, int previousLevel, int newLevel) {
+    private String chooseAvatarUrl(long userId, String avatarUrl) {
+        if (avatarUrl != null && !avatarUrl.isBlank()) {
+            return avatarUrl;
+        }
+        return avatarUrls.getOrDefault(userId, InlineMediaUrls.defaultAvatarUrl());
+    }
+
+    public record LevelUpdate(long userId, String username, String avatarUrl, int previousLevel, int newLevel) {
         public boolean isUpgrade() {
             return newLevel > previousLevel;
         }

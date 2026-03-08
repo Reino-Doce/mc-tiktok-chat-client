@@ -20,13 +20,14 @@ class MemberLevelResolverTest {
     void updateLevelOnlyMarksRealUpgrade() {
         MemberLevelResolver resolver = new MemberLevelResolver();
 
-        MemberLevelResolver.LevelUpdate first = resolver.updateLevel(1L, "alice", 2);
-        MemberLevelResolver.LevelUpdate downgrade = resolver.updateLevel(1L, "alice", 1);
-        MemberLevelResolver.LevelUpdate upgrade = resolver.updateLevel(1L, "alice", 4);
+        MemberLevelResolver.LevelUpdate first = resolver.updateLevel(1L, "alice", "avatar://alice", 2);
+        MemberLevelResolver.LevelUpdate downgrade = resolver.updateLevel(1L, "alice", "", 1);
+        MemberLevelResolver.LevelUpdate upgrade = resolver.updateLevel(1L, "alice", "", 4);
 
         assertTrue(first.isUpgrade());
         assertFalse(downgrade.isUpgrade());
         assertEquals(2, downgrade.newLevel());
+        assertEquals("avatar://alice", downgrade.avatarUrl());
         assertTrue(upgrade.isUpgrade());
         assertEquals(4, upgrade.newLevel());
     }
@@ -37,7 +38,7 @@ class MemberLevelResolverTest {
         User user = new User(15L, "viewer");
 
         assertEquals(0, resolver.resolveLevel(user));
-        resolver.updateLevel(15L, "viewer", 3);
+        resolver.updateLevel(15L, "viewer", "avatar://viewer", 3);
         assertEquals(3, resolver.resolveLevel(user));
     }
 }

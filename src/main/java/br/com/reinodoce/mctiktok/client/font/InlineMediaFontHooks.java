@@ -111,7 +111,7 @@ public final class InlineMediaFontHooks {
             float renderX = x + (dropShadow ? SHADOW_OFFSET : 0.0F);
             float renderY = y + (dropShadow ? SHADOW_OFFSET : 0.0F);
             int color = dropShadow ? 0x3F000000 | (((int) (alpha * 255.0F)) << 24) : 0xFFFFFFFF;
-            renderInlineQuad(bufferSource, pose, displayMode, packedLight, handle, renderX, renderY, advance, color, alpha);
+            renderInlineQuad(bufferSource, pose, displayMode, packedLight, segment, handle, renderX, renderY, advance, color, alpha);
 
             float[] colors = resolveEffectColor(output, style);
             float effectOffset = dropShadow ? 1.0F : 0.0F;
@@ -135,6 +135,7 @@ public final class InlineMediaFontHooks {
             Matrix4f pose,
             Font.DisplayMode displayMode,
             int packedLight,
+            RichLiveMessage.InlineMediaSegment segment,
             InlineMediaCache.TextureHandle handle,
             float x,
             float y,
@@ -150,11 +151,32 @@ public final class InlineMediaFontHooks {
         int r = (packedColor >> 16) & 0xFF;
         int g = (packedColor >> 8) & 0xFF;
         int b = packedColor & 0xFF;
+        float[] uv = textureUv(segment, handle);
 
-        consumer.vertex(pose, x, y + height, 0.0F).color(r, g, b, a).uv(0.0F, 1.0F).uv2(packedLight).endVertex();
-        consumer.vertex(pose, x + width, y + height, 0.0F).color(r, g, b, a).uv(1.0F, 1.0F).uv2(packedLight).endVertex();
-        consumer.vertex(pose, x + width, y, 0.0F).color(r, g, b, a).uv(1.0F, 0.0F).uv2(packedLight).endVertex();
-        consumer.vertex(pose, x, y, 0.0F).color(r, g, b, a).uv(0.0F, 0.0F).uv2(packedLight).endVertex();
+        consumer.vertex(pose, x, y + height, 0.0F).color(r, g, b, a).uv(uv[0], uv[3]).uv2(packedLight).endVertex();
+        consumer.vertex(pose, x + width, y + height, 0.0F).color(r, g, b, a).uv(uv[2], uv[3]).uv2(packedLight).endVertex();
+        consumer.vertex(pose, x + width, y, 0.0F).color(r, g, b, a).uv(uv[2], uv[1]).uv2(packedLight).endVertex();
+        consumer.vertex(pose, x, y, 0.0F).color(r, g, b, a).uv(uv[0], uv[1]).uv2(packedLight).endVertex();
+    }
+
+    private static float[] textureUv(RichLiveMessage.InlineMediaSegment segment, InlineMediaCache.TextureHandle handle) {
+        if (segment.renderStyle() != RichLiveMessage.InlineMediaRenderStyle.SQUARE_CROP) {
+            return new float[]{0.0F, 0.0F, 1.0F, 1.0F};
+        }
+
+        int width = Math.max(1, handle.sourceWidth());
+        int height = Math.max(1, handle.sourceHeight());
+        if (width == height) {
+            return new float[]{0.0F, 0.0F, 1.0F, 1.0F};
+        }
+
+        if (width > height) {
+            float inset = (width - height) / (2.0F * width);
+            return new float[]{inset, 0.0F, 1.0F - inset, 1.0F};
+        }
+
+        float inset = (height - width) / (2.0F * height);
+        return new float[]{0.0F, inset, 1.0F, 1.0F - inset};
     }
 
     private static RenderType renderTypeFor(ResourceLocation texture, Font.DisplayMode displayMode) {

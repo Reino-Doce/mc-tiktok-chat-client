@@ -95,8 +95,10 @@ public record RichLiveMessage(long messageId, List<Segment> authorSegments, List
         }
     }
 
-    public sealed interface InlineMediaSegment extends Segment permits RemoteEmoteSegment, UnicodeEmojiSegment {
+    public sealed interface InlineMediaSegment extends Segment permits RemoteEmoteSegment, UnicodeEmojiSegment, AvatarSegment, GiftIconSegment {
         InlineMediaKind kind();
+
+        InlineMediaRenderStyle renderStyle();
 
         String sourceKey();
 
@@ -112,7 +114,9 @@ public record RichLiveMessage(long messageId, List<Segment> authorSegments, List
 
     public enum InlineMediaKind {
         REMOTE_EMOTE("remote_emote"),
-        UNICODE_EMOJI("unicode_emoji");
+        UNICODE_EMOJI("unicode_emoji"),
+        AVATAR("avatar"),
+        GIFT_ICON("gift_icon");
 
         private final String id;
 
@@ -125,6 +129,11 @@ public record RichLiveMessage(long messageId, List<Segment> authorSegments, List
         }
     }
 
+    public enum InlineMediaRenderStyle {
+        SOURCE_ASPECT,
+        SQUARE_CROP
+    }
+
     public record RemoteEmoteSegment(String emoteId, String imageUrl, String fallbackText) implements InlineMediaSegment {
         public RemoteEmoteSegment {
             emoteId = emoteId == null ? "" : emoteId;
@@ -135,6 +144,11 @@ public record RichLiveMessage(long messageId, List<Segment> authorSegments, List
         @Override
         public InlineMediaKind kind() {
             return InlineMediaKind.REMOTE_EMOTE;
+        }
+
+        @Override
+        public InlineMediaRenderStyle renderStyle() {
+            return InlineMediaRenderStyle.SOURCE_ASPECT;
         }
 
         @Override
@@ -161,6 +175,11 @@ public record RichLiveMessage(long messageId, List<Segment> authorSegments, List
         }
 
         @Override
+        public InlineMediaRenderStyle renderStyle() {
+            return InlineMediaRenderStyle.SOURCE_ASPECT;
+        }
+
+        @Override
         public String sourceKey() {
             return twemojiIconId;
         }
@@ -168,6 +187,61 @@ public record RichLiveMessage(long messageId, List<Segment> authorSegments, List
         @Override
         public String sourceUrl() {
             return TwemojiUrlResolver.toUrl(twemojiIconId);
+        }
+    }
+
+    public record AvatarSegment(String imageUrl, String fallbackText) implements InlineMediaSegment {
+        public AvatarSegment {
+            imageUrl = imageUrl == null ? "" : imageUrl;
+            fallbackText = fallbackText == null ? "" : fallbackText;
+        }
+
+        @Override
+        public InlineMediaKind kind() {
+            return InlineMediaKind.AVATAR;
+        }
+
+        @Override
+        public InlineMediaRenderStyle renderStyle() {
+            return InlineMediaRenderStyle.SQUARE_CROP;
+        }
+
+        @Override
+        public String sourceKey() {
+            return imageUrl;
+        }
+
+        @Override
+        public String sourceUrl() {
+            return imageUrl;
+        }
+    }
+
+    public record GiftIconSegment(String giftId, String imageUrl, String fallbackText) implements InlineMediaSegment {
+        public GiftIconSegment {
+            giftId = giftId == null ? "" : giftId;
+            imageUrl = imageUrl == null ? "" : imageUrl;
+            fallbackText = fallbackText == null ? "" : fallbackText;
+        }
+
+        @Override
+        public InlineMediaKind kind() {
+            return InlineMediaKind.GIFT_ICON;
+        }
+
+        @Override
+        public InlineMediaRenderStyle renderStyle() {
+            return InlineMediaRenderStyle.SQUARE_CROP;
+        }
+
+        @Override
+        public String sourceKey() {
+            return giftId.isBlank() ? imageUrl : giftId;
+        }
+
+        @Override
+        public String sourceUrl() {
+            return imageUrl;
         }
     }
 }

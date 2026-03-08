@@ -15,12 +15,14 @@ class LiveMessageFormatterTest {
 
     @Test
     void richMessagesInsertInlineTokens() {
+        RichLiveMessage.AvatarSegment avatar = new RichLiveMessage.AvatarSegment("resource://reinodoce_mctiktok/textures/gui/no_user_image.png", "");
         RichLiveMessage.UnicodeEmojiSegment authorEmoji = new RichLiveMessage.UnicodeEmojiSegment("\uD83D\uDE00", "1f600", "\uD83D\uDE00");
         RichLiveMessage.RemoteEmoteSegment bodyEmote = new RichLiveMessage.RemoteEmoteSegment("wave", "https://cdn.example/wave.png", "[emote]");
         RichLiveMessage message = new RichLiveMessage(
                 7L,
                 List.of(
-                        new RichLiveMessage.TextSegment("alice "),
+                        avatar,
+                        new RichLiveMessage.TextSegment(" alice "),
                         authorEmoji
                 ),
                 List.of(
@@ -31,16 +33,40 @@ class LiveMessageFormatterTest {
         );
 
         FormattedLiveComment formatted = formatter.formatLiveComment("[LIVE]", message);
+        String avatarToken = tokenRegistry.tokenFor(avatar);
         String authorToken = tokenRegistry.tokenFor(authorEmoji);
         String bodyToken = tokenRegistry.tokenFor(bodyEmote);
 
         assertEquals(
-                "[LIVE]  <alice " + authorToken + "> oi " + bodyToken + " mundo",
+                "[LIVE]  <" + avatarToken + " alice " + authorToken + "> oi " + bodyToken + " mundo",
                 formatted.component().getString()
         );
         assertEquals(message, formatted.richMessage());
+        assertTrue(avatarToken.codePointAt(0) >= InlineMediaTokenRegistry.MIN_CODE_POINT);
         assertTrue(authorToken.codePointAt(0) >= InlineMediaTokenRegistry.MIN_CODE_POINT);
         assertTrue(bodyToken.codePointAt(0) >= InlineMediaTokenRegistry.MIN_CODE_POINT);
+    }
+
+    @Test
+    void syntheticGiftIncludesGiftIconTokenBeforeGiftName() {
+        RichLiveMessage.AvatarSegment avatar = new RichLiveMessage.AvatarSegment("resource://reinodoce_mctiktok/textures/gui/no_user_image.png", "");
+        RichLiveMessage.GiftIconSegment giftIcon = new RichLiveMessage.GiftIconSegment("rose", "https://cdn.example/rose.png", "");
+        RichLiveMessage message = new RichLiveMessage(
+                9L,
+                List.of(avatar, new RichLiveMessage.TextSegment(" alice")),
+                List.of(
+                        new RichLiveMessage.TextSegment("enviou "),
+                        giftIcon,
+                        new RichLiveMessage.TextSegment(" Rosa x3")
+                )
+        );
+
+        FormattedLiveComment formatted = formatter.formatSyntheticGift("[LIVE]", message);
+
+        assertEquals(
+                "[LIVE]  <" + tokenRegistry.tokenFor(avatar) + " alice> enviou " + tokenRegistry.tokenFor(giftIcon) + " Rosa x3",
+                formatted.component().getString()
+        );
     }
 
     @Test

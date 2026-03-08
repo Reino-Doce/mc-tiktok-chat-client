@@ -147,7 +147,7 @@ public class TikTokRichMessageParser {
     }
 
     private void appendEmote(List<RichLiveMessage.Segment> segments, String emoteId, Image image) {
-        String url = resolveImageUrl(image);
+        String url = TikTokMediaResolver.resolveImageUrl(image);
         if (url.isBlank()) {
             return;
         }
@@ -166,21 +166,6 @@ public class TikTokRichMessageParser {
             return user.getNickname();
         }
         return user.getUsername();
-    }
-
-    private String resolveImageUrl(Image image) {
-        if (image == null || image.getUrlCount() <= 0) {
-            return "";
-        }
-
-        String raw = image.getUrl(image.getUrlCount() - 1);
-        String sanitized = MessageSanitizer.sanitize(raw);
-        if (sanitized.isBlank()) {
-            return "";
-        }
-        return sanitized
-                .replace("-sign-", "-")
-                .replace("-sign.", ".");
     }
 
     private String sanitizeSegmentText(String rawText) {
