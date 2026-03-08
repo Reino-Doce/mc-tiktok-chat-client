@@ -2,6 +2,9 @@ package br.com.reinodoce.mctiktok.client;
 
 import br.com.reinodoce.mctiktok.chat.LiveMessageFormatter;
 import br.com.reinodoce.mctiktok.chat.MinecraftChatGateway;
+import br.com.reinodoce.mctiktok.client.font.InlineMediaFontHooks;
+import br.com.reinodoce.mctiktok.client.font.InlineMediaTokenRegistry;
+import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
@@ -26,15 +29,24 @@ public class ReinodoceClientService {
     private final ReinodoceConfigRepository configRepository;
     private final RuntimeSettingsState settingsState;
     private final TikTokClientFacade tikTokClientFacade;
+    private final InlineMediaCache inlineMediaCache;
+    private final InlineMediaTokenRegistry inlineMediaTokenRegistry;
     private final AtomicBoolean initialized;
 
     public ReinodoceClientService(MinecraftPlatformBridge platformBridge) {
         this.configRepository = new ReinodoceConfigRepository();
         this.settingsState = new RuntimeSettingsState();
+        this.inlineMediaCache = new InlineMediaCache();
+        this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
+        InlineMediaFontHooks.installRegistry(inlineMediaTokenRegistry);
         MessageRuleEngine ruleEngine = new MessageRuleEngine();
         MemberLevelResolver memberLevelResolver = new MemberLevelResolver();
         MessageDeduplicator deduplicator = new MessageDeduplicator(Duration.ofMinutes(3));
-        MinecraftChatGateway chatGateway = new MinecraftChatGateway(platformBridge, new LiveMessageFormatter());
+        MinecraftChatGateway chatGateway = new MinecraftChatGateway(
+                platformBridge,
+                new LiveMessageFormatter(inlineMediaTokenRegistry),
+                inlineMediaCache
+        );
         this.tikTokClientFacade = new TikTokClientFacade(settingsState::getSnapshot, chatGateway, ruleEngine, memberLevelResolver, deduplicator);
         this.initialized = new AtomicBoolean(false);
     }
@@ -84,6 +96,17 @@ public class ReinodoceClientService {
         lines.add("Syntetic follow: " + config.isSynteticFollowEnabled());
         lines.add("Syntetic join: " + config.isSynteticJoinEnabled());
         lines.add("Syntetic member-level: " + config.isSynteticMemberLevelEnabled());
+        lines.add("Inline media: " + config.isChatEmotesEnabled());
+        lines.add("Inline media renderer: font-coremod");
+        lines.add("Coremod loaded: " + InlineMediaFontHooks.coremodLoaded());
+        lines.add("Token registry: " + inlineMediaTokenRegistry.size());
+        InlineMediaCache.Snapshot mediaSnapshot = inlineMediaCache.snapshot();
+        lines.add("Media cache: ready=" + mediaSnapshot.ready() + " loading=" + mediaSnapshot.loading() + " error=" + mediaSnapshot.error());
+        lines.add("Downloads: started=" + mediaSnapshot.downloadsStarted()
+                + " success=" + mediaSnapshot.downloadsSucceeded()
+                + " fail=" + mediaSnapshot.downloadsFailed()
+                + " disk=" + mediaSnapshot.diskHits()
+                + " memory=" + mediaSnapshot.memoryHits());
         if (snapshot.reconnectAt() != null) {
             lines.add("Proximo reconnect: " + formatter.format(snapshot.reconnectAt()));
         }
@@ -154,6 +177,14 @@ public class ReinodoceClientService {
         config.setSynteticMemberLevelEnabled(enabled);
         persist(config);
         return CommandResult.ok("Syntetic member-level = " + enabled + ".");
+    }
+
+    public CommandResult setChatEmotesEnabled(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setChatEmotesEnabled(enabled);
+        persist(config);
+        return CommandResult.ok("Inline media = " + enabled + ".");
     }
 
     public CommandResult reload() {

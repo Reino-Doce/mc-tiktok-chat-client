@@ -14,4 +14,10 @@ public final class SettingsCommandHandler {
         CommandFeedback.send(source, result);
         return result.success() ? 1 : 0;
     }
+
+    public static int chatEmotes(CommandSourceStack source, boolean enabled) {
+        CommandResult result = ReinodoceClientBootstrap.service().setChatEmotesEnabled(enabled);
+        CommandFeedback.send(source, result);
+        return result.success() ? 1 : 0;
+    }
 }

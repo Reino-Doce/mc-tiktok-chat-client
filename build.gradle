@@ -67,6 +67,11 @@ def prismMetadataFile = layout.buildDirectory.file("prism-index/reinodoce-mc-tik
 def prismBundleRoot = layout.buildDirectory.dir("prism-bundle")
 def prismBundleModsDir = layout.buildDirectory.dir("prism-bundle/mods")
 def prismBundleIndexDir = layout.buildDirectory.dir("prism-bundle/mods/.index")
+def mergedImageIoServicesDir = layout.buildDirectory.dir("generated/imageio-services")
+
+configurations {
+    embeddedLibraries
+}
 
 tasks.register('prepareTikTokLiveJar') {
     outputs.file(tikTokLiveJar)
@@ -129,6 +134,19 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraftVersion}-${forgeVersion}"
 
     implementation files(tikTokLiveJar)
+    implementation 'com.twelvemonkeys.common:common-lang:3.13.1'
+    implementation 'com.twelvemonkeys.common:common-io:3.13.1'
+    implementation 'com.twelvemonkeys.common:common-image:3.13.1'
+    implementation 'com.twelvemonkeys.imageio:imageio-core:3.13.1'
+    implementation 'com.twelvemonkeys.imageio:imageio-metadata:3.13.1'
+    implementation 'com.twelvemonkeys.imageio:imageio-webp:3.13.1'
+
+    embeddedLibraries 'com.twelvemonkeys.common:common-lang:3.13.1'
+    embeddedLibraries 'com.twelvemonkeys.common:common-io:3.13.1'
+    embeddedLibraries 'com.twelvemonkeys.common:common-image:3.13.1'
+    embeddedLibraries 'com.twelvemonkeys.imageio:imageio-core:3.13.1'
+    embeddedLibraries 'com.twelvemonkeys.imageio:imageio-metadata:3.13.1'
+    embeddedLibraries 'com.twelvemonkeys.imageio:imageio-webp:3.13.1'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }
@@ -145,8 +163,42 @@ tasks.named('jar').configure {
     dependsOn 'prepareTikTokLiveJar'
 }
 
+tasks.register('generateEmbeddedImageIoServices') {
+    inputs.files({ configurations.embeddedLibraries })
+    outputs.dir(mergedImageIoServicesDir)
+    doLast {
+        def outputDir = mergedImageIoServicesDir.get().asFile
+        delete(outputDir)
+        outputDir.mkdirs()
+
+        def merged = [:].withDefault { new LinkedHashSet<String>() }
+        configurations.embeddedLibraries.resolve().each { dependencyJar ->
+            zipTree(dependencyJar).visit { details ->
+                if (details.isDirectory()) {
+                    return
+                }
+                if (!details.relativePath.pathString.startsWith('META-INF/services/javax.imageio.spi.')) {
+                    return
+                }
+
+                details.file.readLines('UTF-8')
+                        .collect { it.trim() }
+                        .findAll { !it.isEmpty() && !it.startsWith('#') }
+                        .each { line -> merged[details.relativePath.pathString].add(line) }
+            }
+        }
+
+        merged.each { relativePath, lines ->
+            def target = new File(outputDir, relativePath)
+            target.parentFile.mkdirs()
+            target.setText(lines.join(System.lineSeparator()) + System.lineSeparator(), 'UTF-8')
+        }
+    }
+}
+
 tasks.register('prismMetadata') {
     dependsOn 'reobfJar'
+    inputs.file(tasks.named('jar', Jar).flatMap { it.archiveFile })
     outputs.file(prismMetadataFile)
     doLast {
         def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
@@ -186,6 +238,8 @@ version = "local-${mod_version}"
 
 tasks.register('prismBundle') {
     dependsOn 'prismMetadata'
+    inputs.file(tasks.named('jar', Jar).flatMap { it.archiveFile })
+    inputs.file(prismMetadataFile)
     outputs.dir(prismBundleRoot)
     doLast {
         def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
@@ -305,6 +359,34 @@ tasks.register('verifyEmbeddedPackages') {
     }
 }
 
+tasks.register('verifyCoremodResources') {
+    dependsOn 'jar'
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for coremod resource verification: ${jarFile}")
+        }
+
+        def requiredEntries = [
+                'META-INF/coremods.json',
+                'coremods/reinodoce_inline_media_font.js'
+        ]
+
+        def missingEntries = [] as Set
+        new java.util.zip.ZipFile(jarFile).withCloseable { zip ->
+            requiredEntries.each { entryName ->
+                if (zip.getEntry(entryName) == null) {
+                    missingEntries.add(entryName)
+                }
+            }
+        }
+
+        if (!missingEntries.isEmpty()) {
+            throw new GradleException("Jar is missing required coremod resources: ${missingEntries.join(', ')}")
+        }
+    }
+}
+
 tasks.named('processResources', ProcessResources).configure {
     var replaceProperties = [
             minecraft_version      : minecraftVersion,
@@ -327,6 +409,7 @@ tasks.named('processResources', ProcessResources).configure {
 }
 
 tasks.named('jar', Jar).configure {
+    dependsOn 'generateEmbeddedImageIoServices'
     from(zipTree(tikTokLiveJar)) {
         exclude 'META-INF/MANIFEST.MF'
         exclude 'META-INF/*.SF'
@@ -337,6 +420,15 @@ tasks.named('jar', Jar).configure {
         exclude 'META-INF/services/org.slf4j.spi.SLF4JServiceProvider'
         exclude 'META-INF/versions/**/module-info.class'
     }
+    from({ configurations.embeddedLibraries.collect { zipTree(it) } }) {
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.RSA'
+        exclude 'META-INF/*.DSA'
+        exclude 'META-INF/services/javax.imageio.spi.*'
+        exclude 'META-INF/versions/**/module-info.class'
+    }
+    from(mergedImageIoServicesDir)
     manifest {
         attributes([
                 'Specification-Title'     : mod_id,
@@ -353,6 +445,7 @@ tasks.named('jar', Jar).configure {
 
 tasks.named('check').configure {
     dependsOn 'verifyEmbeddedPackages'
+    dependsOn 'verifyCoremodResources'
 }
 
 publishing {

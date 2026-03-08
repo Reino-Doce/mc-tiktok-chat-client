@@ -42,6 +42,12 @@ public final class ReinodoceCommandTree {
                                         .executes(ctx -> SettingsCommandHandler.reconnect(
                                                 ctx.getSource(),
                                                 IntegerArgumentType.getInteger(ctx, "seconds")
+                                        ))))
+                        .then(Commands.literal("chat-emotes")
+                                .then(Commands.argument("enabled", BoolArgumentType.bool())
+                                        .executes(ctx -> SettingsCommandHandler.chatEmotes(
+                                                ctx.getSource(),
+                                                BoolArgumentType.getBool(ctx, "enabled")
                                         )))))
                 .then(Commands.literal("rule")
                         .then(Commands.literal("follower")

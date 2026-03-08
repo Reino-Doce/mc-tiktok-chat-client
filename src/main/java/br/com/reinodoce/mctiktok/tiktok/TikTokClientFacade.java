@@ -2,6 +2,8 @@ package br.com.reinodoce.mctiktok.tiktok;
 
 import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
 import br.com.reinodoce.mctiktok.chat.MinecraftChatGateway;
+import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
+import br.com.reinodoce.mctiktok.emoji.UnicodeEmojiParser;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
@@ -30,11 +32,14 @@ import io.github.jwdeveloper.tiktok.exceptions.TikTokLiveUnknownHostException;
 import io.github.jwdeveloper.tiktok.live.LiveClient;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastBarrageMessage;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastChatMessage;
+import io.github.jwdeveloper.tiktok.messages.webcast.WebcastEmoteChatMessage;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -45,12 +50,15 @@ import java.util.logging.Level;
 public class TikTokClientFacade {
     private static final Duration ERROR_NOTICE_COOLDOWN = Duration.ofSeconds(8);
     private static final Duration RECONNECT_NOTICE_COOLDOWN = Duration.ofSeconds(5);
+    private static final Duration COMMENT_DEDUPLICATION_WINDOW = Duration.ofMinutes(2);
+    private static final long COMMENT_FINGERPRINT_TTL_MILLIS = Duration.ofSeconds(6).toMillis();
 
     private final Supplier<ReinodoceConfig> configSupplier;
     private final MinecraftChatGateway chatGateway;
     private final MessageRuleEngine ruleEngine;
     private final MemberLevelResolver memberLevelResolver;
     private final MessageDeduplicator giftDeduplicator;
+    private final MessageDeduplicator commentDeduplicator;
     private final LiveSessionState sessionState;
     private final ExecutorService ioExecutor;
     private final ScheduledExecutorService scheduler;
@@ -58,6 +66,9 @@ public class TikTokClientFacade {
     private final AtomicLong lifecycleToken;
     private final NoticeThrottler errorNoticeThrottler;
     private final NoticeThrottler reconnectNoticeThrottler;
+    private final TikTokRichMessageParser richMessageParser;
+    private final UnicodeEmojiParser unicodeEmojiParser;
+    private final Map<String, Long> recentRenderedCommentFingerprints;
 
     private volatile LiveClient liveClient;
     private volatile ScheduledFuture<?> reconnectTask;
@@ -74,6 +85,7 @@ public class TikTokClientFacade {
         this.ruleEngine = ruleEngine;
         this.memberLevelResolver = memberLevelResolver;
         this.giftDeduplicator = giftDeduplicator;
+        this.commentDeduplicator = new MessageDeduplicator(COMMENT_DEDUPLICATION_WINDOW);
         this.sessionState = new LiveSessionState();
         this.ioExecutor = ExecutorsFactory.newSingleThreadExecutor("reinodoce-tiktok-io");
         this.scheduler = ExecutorsFactory.newSingleThreadScheduledExecutor("reinodoce-tiktok-scheduler");
@@ -81,6 +93,9 @@ public class TikTokClientFacade {
         this.lifecycleToken = new AtomicLong(0L);
         this.errorNoticeThrottler = new NoticeThrottler(ERROR_NOTICE_COOLDOWN);
         this.reconnectNoticeThrottler = new NoticeThrottler(RECONNECT_NOTICE_COOLDOWN);
+        this.richMessageParser = new TikTokRichMessageParser();
+        this.unicodeEmojiParser = new UnicodeEmojiParser();
+        this.recentRenderedCommentFingerprints = new ConcurrentHashMap<>();
     }
 
     public CommandResult connect(String usernameInput) {
@@ -107,8 +122,10 @@ public class TikTokClientFacade {
             cancelReconnectTask();
             disconnectCurrentClient();
             giftDeduplicator.clear();
+            commentDeduplicator.clear();
             giftComboAggregator.clear();
             memberLevelResolver.clear();
+            recentRenderedCommentFingerprints.clear();
             connectInternal(token, username);
         });
 
@@ -143,7 +160,9 @@ public class TikTokClientFacade {
             disconnectCurrentClient();
             giftComboAggregator.clear();
             giftDeduplicator.clear();
+            commentDeduplicator.clear();
             memberLevelResolver.clear();
+            recentRenderedCommentFingerprints.clear();
         });
         ReinodoceLogger.LOGGER.debug("Disconnected requested with lifecycle token {}", token);
         return CommandResult.ok("Desconectando...");
@@ -326,6 +345,15 @@ public class TikTokClientFacade {
         }
 
         String username = sanitizeUserName(resolveUserName(user));
+        if (wasRecentlyRenderedComment(username, message)) {
+            return;
+        }
+
+        rememberRenderedComment(username, message);
+        if (config.isChatEmotesEnabled()) {
+            chatGateway.sendLiveComment(config.getChatPrefix(), richTextMessage(0L, username, message));
+            return;
+        }
         chatGateway.sendLiveComment(config.getChatPrefix(), username, message);
     }
 
@@ -340,6 +368,10 @@ public class TikTokClientFacade {
         }
 
         String username = sanitizeUserName(resolveUserName(event.getUser()));
+        if (config.isChatEmotesEnabled()) {
+            chatGateway.sendSyntheticFollow(config.getChatPrefix(), richAuthorOnlyMessage(username));
+            return;
+        }
         chatGateway.sendSyntheticFollow(config.getChatPrefix(), username);
     }
 
@@ -354,6 +386,10 @@ public class TikTokClientFacade {
         }
 
         String username = sanitizeUserName(resolveUserName(event.getUser()));
+        if (config.isChatEmotesEnabled()) {
+            chatGateway.sendSyntheticJoin(config.getChatPrefix(), richAuthorOnlyMessage(username));
+            return;
+        }
         chatGateway.sendSyntheticJoin(config.getChatPrefix(), username);
     }
 
@@ -405,11 +441,13 @@ public class TikTokClientFacade {
         try {
             if ("WebcastChatMessage".equals(method)) {
                 WebcastChatMessage chatMessage = WebcastChatMessage.parseFrom(payload);
-                long userId = chatMessage.getUser().getId();
-                int level = (int) chatMessage.getUser().getFansClubInfo().getFansLevel();
-                String username = sanitizeUserName(chooseRawUserName(chatMessage.getUser().getNickname(), chatMessage.getUser().getUsername()));
-                MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(userId, username, level);
-                maybeEmitMemberLevelUpgrade(update);
+                handleRawChatMessage(token, chatMessage);
+                return;
+            }
+
+            if ("WebcastEmoteChatMessage".equals(method)) {
+                WebcastEmoteChatMessage emoteChatMessage = WebcastEmoteChatMessage.parseFrom(payload);
+                handleRawEmoteMessage(token, emoteChatMessage);
                 return;
             }
 
@@ -433,6 +471,78 @@ public class TikTokClientFacade {
         }
     }
 
+    private void handleRawChatMessage(long token, WebcastChatMessage chatMessage) {
+        io.github.jwdeveloper.tiktok.data.models.users.User user = io.github.jwdeveloper.tiktok.data.models.users.User.map(
+                chatMessage.getUser(),
+                chatMessage.getUserIdentity()
+        );
+        String username = sanitizeUserName(chooseRawUserName(chatMessage.getUser().getNickname(), chatMessage.getUser().getUsername()));
+        MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(
+                chatMessage.getUser().getId(),
+                username,
+                (int) chatMessage.getUser().getFansClubInfo().getFansLevel()
+        );
+        maybeEmitMemberLevelUpgrade(update);
+
+        emitLiveComment(
+                token,
+                user,
+                username,
+                memberLevelResolver.resolveLevel(user),
+                richMessageParser.parseChatMessage(chatMessage, username)
+        );
+    }
+
+    private void handleRawEmoteMessage(long token, WebcastEmoteChatMessage emoteChatMessage) {
+        io.github.jwdeveloper.tiktok.data.models.users.User user = io.github.jwdeveloper.tiktok.data.models.users.User.map(
+                emoteChatMessage.getUser(),
+                emoteChatMessage.getUserIdentity()
+        );
+        String username = sanitizeUserName(chooseRawUserName(emoteChatMessage.getUser().getNickname(), emoteChatMessage.getUser().getUsername()));
+        emitLiveComment(
+                token,
+                user,
+                username,
+                memberLevelResolver.resolveLevel(user),
+                richMessageParser.parseEmoteChatMessage(emoteChatMessage, username)
+        );
+    }
+
+    private void emitLiveComment(
+            long token,
+            io.github.jwdeveloper.tiktok.data.models.users.User user,
+            String username,
+            int memberLevel,
+            RichLiveMessage richMessage
+    ) {
+        if (!isTokenCurrent(token) || richMessage == null) {
+            return;
+        }
+
+        ReinodoceConfig config = configSupplier.get();
+        if (!ruleEngine.shouldDisplayComment(config, user, memberLevel)) {
+            return;
+        }
+
+        String plainText = MessageSanitizer.sanitize(richMessage.plainText());
+        if (plainText.isBlank() && !richMessage.hasInlineMedia()) {
+            return;
+        }
+        if (commentDeduplicator.isDuplicate(richMessage.messageId(), 1)) {
+            return;
+        }
+
+        rememberRenderedComment(username, plainText);
+        if (config.isChatEmotesEnabled()) {
+            chatGateway.sendLiveComment(config.getChatPrefix(), enrichCommentMessage(username, richMessage));
+            return;
+        }
+
+        if (!plainText.isBlank()) {
+            chatGateway.sendLiveComment(config.getChatPrefix(), username, plainText);
+        }
+    }
+
     private void maybeEmitMemberLevelUpgrade(MemberLevelResolver.LevelUpdate update) {
         if (!update.isUpgrade() || update.newLevel() <= 0) {
             return;
@@ -443,7 +553,12 @@ public class TikTokClientFacade {
             return;
         }
 
-        chatGateway.sendSyntheticMemberLevel(config.getChatPrefix(), sanitizeUserName(update.username()), update.newLevel());
+        String username = sanitizeUserName(update.username());
+        if (config.isChatEmotesEnabled()) {
+            chatGateway.sendSyntheticMemberLevel(config.getChatPrefix(), richAuthorOnlyMessage(username), update.newLevel());
+            return;
+        }
+        chatGateway.sendSyntheticMemberLevel(config.getChatPrefix(), username, update.newLevel());
     }
 
     private void emitGiftMessages(ReinodoceConfig config, List<GiftComboAggregator.GiftEmission> emissions) {
@@ -451,12 +566,18 @@ public class TikTokClientFacade {
             if (giftDeduplicator.isDuplicate(emission.messageId(), emission.count())) {
                 continue;
             }
-            chatGateway.sendSyntheticGift(
-                    config.getChatPrefix(),
-                    sanitizeUserName(emission.username()),
-                    MessageSanitizer.sanitize(emission.giftName()),
-                    Math.max(1, emission.count())
-            );
+            String username = sanitizeUserName(emission.username());
+            String giftName = MessageSanitizer.sanitize(emission.giftName());
+            if (config.isChatEmotesEnabled()) {
+                chatGateway.sendSyntheticGift(
+                        config.getChatPrefix(),
+                        richAuthorOnlyMessage(username),
+                        giftName,
+                        Math.max(1, emission.count())
+                );
+                continue;
+            }
+            chatGateway.sendSyntheticGift(config.getChatPrefix(), username, giftName, Math.max(1, emission.count()));
         }
     }
 
@@ -491,6 +612,26 @@ public class TikTokClientFacade {
 
     private Gift toGift(GiftComboAggregator.GiftEmission emission) {
         return new Gift(0, emission.giftName(), emission.diamondCost(), "");
+    }
+
+    private RichLiveMessage enrichCommentMessage(String username, RichLiveMessage richMessage) {
+        return new RichLiveMessage(
+                richMessage.messageId(),
+                authorSegments(username),
+                unicodeEmojiParser.expandSegments(richMessage.bodySegments())
+        );
+    }
+
+    private RichLiveMessage richTextMessage(long messageId, String username, String bodyText) {
+        return new RichLiveMessage(messageId, authorSegments(username), unicodeEmojiParser.parseText(bodyText));
+    }
+
+    private RichLiveMessage richAuthorOnlyMessage(String username) {
+        return new RichLiveMessage(0L, authorSegments(username), List.of());
+    }
+
+    private List<RichLiveMessage.Segment> authorSegments(String username) {
+        return unicodeEmojiParser.parseText(username);
     }
 
     private String resolveUserName(User user) {
@@ -563,5 +704,30 @@ public class TikTokClientFacade {
                 ReinodoceLogger.LOGGER.debug("Failed to close previous TikTok client cleanly", exception);
             }
         }
+    }
+
+    private boolean wasRecentlyRenderedComment(String username, String message) {
+        long now = System.currentTimeMillis();
+        cleanupRenderedCommentFingerprints(now);
+        return recentRenderedCommentFingerprints.containsKey(commentFingerprint(username, message));
+    }
+
+    private void rememberRenderedComment(String username, String message) {
+        String sanitizedMessage = MessageSanitizer.sanitize(message);
+        if (sanitizedMessage.isBlank()) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        cleanupRenderedCommentFingerprints(now);
+        recentRenderedCommentFingerprints.put(commentFingerprint(username, sanitizedMessage), now);
+    }
+
+    private void cleanupRenderedCommentFingerprints(long now) {
+        recentRenderedCommentFingerprints.entrySet().removeIf(entry -> now - entry.getValue() > COMMENT_FINGERPRINT_TTL_MILLIS);
+    }
+
+    private String commentFingerprint(String username, String message) {
+        return sanitizeUserName(username) + "|" + MessageSanitizer.sanitize(message);
     }
 }
