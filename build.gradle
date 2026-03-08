@@ -5,6 +5,8 @@ plugins {
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
 }
 
+import java.security.MessageDigest
+
 def getProp = { String name, Object defaultValue = null ->
     if (project.hasProperty(name)) {
         return project.property(name)
@@ -20,7 +22,6 @@ ext {
     javaVersion = Integer.parseInt(getProp('java_version', '17').toString())
     allowUnverifiedTarget = Boolean.parseBoolean(getProp('allow_unverified_target', 'false').toString())
     tiktokLiveVersion = getProp('tiktoklive_version', '1.11.11-Release').toString()
-    gsonVersion = getProp('gson_version', '2.10.1').toString()
     tiktokLiveJarPath = getProp('tiktoklive_jar_path', "libs/Client-${tiktokLiveVersion}-all.jar").toString()
 }
 
@@ -62,6 +63,10 @@ println "Host Java => ${System.getProperty 'java.version'} ${System.getProperty 
 
 def tikTokLiveJar = file(tiktokLiveJarPath)
 def tikTokLiveReleaseUrl = "https://github.com/jwdeveloper/TikTokLiveJava/releases/download/${tiktokLiveVersion}/Client-${tiktokLiveVersion}-all.jar"
+def prismMetadataFile = layout.buildDirectory.file("prism-index/reinodoce-mc-tiktok.pw.toml")
+def prismBundleRoot = layout.buildDirectory.dir("prism-bundle")
+def prismBundleModsDir = layout.buildDirectory.dir("prism-bundle/mods")
+def prismBundleIndexDir = layout.buildDirectory.dir("prism-bundle/mods/.index")
 
 tasks.register('prepareTikTokLiveJar') {
     outputs.file(tikTokLiveJar)
@@ -124,7 +129,6 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraftVersion}-${forgeVersion}"
 
     implementation files(tikTokLiveJar)
-    implementation "com.google.code.gson:gson:${gsonVersion}"
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }
@@ -139,6 +143,166 @@ tasks.named('compileJava').configure {
 
 tasks.named('jar').configure {
     dependsOn 'prepareTikTokLiveJar'
+}
+
+tasks.register('prismMetadata') {
+    dependsOn 'reobfJar'
+    outputs.file(prismMetadataFile)
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for Prism metadata generation: ${jarFile}")
+        }
+
+        byte[] bytes = jarFile.bytes
+        String sha512 = MessageDigest.getInstance("SHA-512").digest(bytes).collect { String.format("%02x", it) }.join()
+        String jarFileName = jarFile.name
+
+        String content = """name = "${mod_name}"
+filename = "${jarFileName}"
+side = "client"
+x-prismlauncher-loaders = ["forge"]
+x-prismlauncher-mc-versions = ["${minecraftVersion}"]
+x-prismlauncher-release-type = "release"
+x-prismlauncher-version-number = "${mod_version}"
+x-prismlauncher-dependencies = []
+
+[download]
+mode = "url"
+url = "https://local.invalid/${jarFileName}"
+hash-format = "sha512"
+hash = "${sha512}"
+
+[update.modrinth]
+mod-id = "local.${mod_id}"
+version = "local-${mod_version}"
+"""
+
+        def output = prismMetadataFile.get().asFile
+        output.parentFile.mkdirs()
+        output.setText(content, 'UTF-8')
+    }
+}
+
+tasks.register('prismBundle') {
+    dependsOn 'prismMetadata'
+    outputs.dir(prismBundleRoot)
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        def metadataFile = prismMetadataFile.get().asFile
+
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for Prism bundle: ${jarFile}")
+        }
+        if (!metadataFile.exists()) {
+            throw new GradleException("Prism metadata file not found: ${metadataFile}")
+        }
+
+        def root = prismBundleRoot.get().asFile
+        def mods = prismBundleModsDir.get().asFile
+        def index = prismBundleIndexDir.get().asFile
+
+        delete(root)
+        mods.mkdirs()
+        index.mkdirs()
+
+        copy {
+            from jarFile
+            into mods
+        }
+        copy {
+            from metadataFile
+            into index
+        }
+    }
+}
+
+tasks.register('verifyPrismMetadata') {
+    dependsOn 'prismMetadata'
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        def metadataFile = prismMetadataFile.get().asFile
+
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for Prism metadata verification: ${jarFile}")
+        }
+        if (!metadataFile.exists()) {
+            throw new GradleException("Prism metadata file not found for verification: ${metadataFile}")
+        }
+
+        String metadata = metadataFile.getText('UTF-8')
+        if (!metadata.contains('side = "client"')) {
+            throw new GradleException("Prism metadata is missing side=client.")
+        }
+
+        def filenameMatch = (metadata =~ /(?m)^filename = "([^"]+)"$/)
+        if (!filenameMatch.find()) {
+            throw new GradleException("Prism metadata is missing filename field.")
+        }
+        String filename = filenameMatch.group(1)
+        if (filename != jarFile.name) {
+            throw new GradleException("Prism metadata filename (${filename}) does not match jar name (${jarFile.name}).")
+        }
+
+        def hashFormatMatch = (metadata =~ /(?m)^hash-format = "([^"]+)"$/)
+        if (!hashFormatMatch.find() || hashFormatMatch.group(1).toLowerCase(Locale.ROOT) != 'sha512') {
+            throw new GradleException("Prism metadata hash-format must be sha512.")
+        }
+
+        def hashMatch = (metadata =~ /(?m)^hash = "([0-9a-fA-F]+)"$/)
+        if (!hashMatch.find()) {
+            throw new GradleException("Prism metadata is missing hash field.")
+        }
+        String metadataHash = hashMatch.group(1).toLowerCase(Locale.ROOT)
+        String jarHash = MessageDigest.getInstance("SHA-512").digest(jarFile.bytes).collect { String.format("%02x", it) }.join()
+        if (metadataHash != jarHash) {
+            throw new GradleException("Prism metadata hash does not match jar SHA-512.")
+        }
+    }
+}
+
+tasks.register('verifyEmbeddedPackages') {
+    dependsOn 'jar'
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for embedded package verification: ${jarFile}")
+        }
+
+        def bannedPrefixes = [
+                'com/google/gson/',
+                'org/slf4j/'
+        ]
+        def bannedEntries = [
+                'META-INF/services/org.slf4j.spi.SLF4JServiceProvider'
+        ]
+
+        def foundPrefixes = [] as Set
+        def foundEntries = [] as Set
+        new java.util.zip.ZipFile(jarFile).withCloseable { zip ->
+            zip.entries().each { entry ->
+                bannedPrefixes.each { prefix ->
+                    if (entry.name.startsWith(prefix)) {
+                        foundPrefixes.add(prefix)
+                    }
+                }
+                if (bannedEntries.contains(entry.name)) {
+                    foundEntries.add(entry.name)
+                }
+            }
+        }
+
+        if (!foundPrefixes.isEmpty() || !foundEntries.isEmpty()) {
+            def issues = []
+            if (!foundPrefixes.isEmpty()) {
+                issues.add("package prefixes: ${foundPrefixes.join(', ')}")
+            }
+            if (!foundEntries.isEmpty()) {
+                issues.add("entries: ${foundEntries.join(', ')}")
+            }
+            throw new GradleException("Embedded jar contains banned content: ${issues.join('; ')}")
+        }
+    }
 }
 
 tasks.named('processResources', ProcessResources).configure {
@@ -168,6 +332,10 @@ tasks.named('jar', Jar).configure {
         exclude 'META-INF/*.SF'
         exclude 'META-INF/*.RSA'
         exclude 'META-INF/*.DSA'
+        exclude 'com/google/gson/**'
+        exclude 'org/slf4j/**'
+        exclude 'META-INF/services/org.slf4j.spi.SLF4JServiceProvider'
+        exclude 'META-INF/versions/**/module-info.class'
     }
     manifest {
         attributes([
@@ -181,6 +349,10 @@ tasks.named('jar', Jar).configure {
         ])
     }
     finalizedBy 'reobfJar'
+}
+
+tasks.named('check').configure {
+    dependsOn 'verifyEmbeddedPackages'
 }
 
 publishing {

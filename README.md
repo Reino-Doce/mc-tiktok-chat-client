@@ -47,6 +47,39 @@ Mod **client-side only** para Minecraft Java (Forge) que espelha eventos do chat
 5. `/reinodoce connect @seuusuario`
 6. `/reinodoce status`
 
+## Prism Launcher (Side client vs both)
+
+Para mods locais `.jar`, o Prism Launcher normalmente mostra `Side = both` quando nao existe metadado Packwiz no `.index`.
+
+Este projeto gera um bundle especifico para Prism com:
+
+- `mods/reinodoce-mc-tiktok-<versao>.jar`
+- `mods/.index/reinodoce-mc-tiktok.pw.toml` com `side = "client"`
+
+Comando para gerar o bundle Prism:
+
+```bash
+./gradlew clean build prismBundle verifyPrismMetadata
+```
+
+No Windows:
+
+```powershell
+.\gradlew.bat clean build prismBundle verifyPrismMetadata
+```
+
+Saida:
+
+- `build/prism-bundle/mods`
+
+Uso no Prism:
+
+1. Feche a instancia no Prism.
+2. Copie todo o conteudo de `build/prism-bundle/mods` para a pasta `mods` da instancia.
+3. Abra a instancia no Prism e confira a coluna Side do mod (`client`).
+
+Observacao: usar apenas o `.jar` sem o `.pw.toml` continua funcionando no Forge, mas o Prism pode exibir `both` na UI.
+
 ## Persistencia de configuracao
 
 Configuracao local do cliente em:
@@ -128,6 +161,7 @@ Para evitar instabilidade de JitPack no build, o projeto provisiona automaticame
 
 - `Client-<version>-all.jar` da release oficial do repositrio TikTokLiveJava no GitHub.
 - O artefato final do mod inclui essa dependencia embutida no `.jar` final.
+- Para compatibilidade com Forge + Connector/Fabric API, libs fornecidas pelo host (`com.google.gson` e `org.slf4j`) sao excluidas do empacotamento final do mod.
 
 Propriedade opcional para usar caminho customizado:
 
@@ -153,6 +187,8 @@ Propriedade opcional para usar caminho customizado:
 
 - Erro de Java no Gradle:
   - use JDK 17 para build 1.20.1 (`JAVA_HOME` apontando para Java 17).
+- Falha ao testar nova versao no launcher:
+  - remova o jar antigo do mod na pasta `mods` antes de copiar o novo artefato.
 - Sem mensagens no jogo:
   - valide se o chat HUD esta habilitado.
   - rode `/reinodoce status` para ver estado e ultimo erro.
