@@ -1,10 +1,7 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
-        maven {
-            name = 'MinecraftForge'
-            url = 'https://maven.minecraftforge.net/'
-        }
+        mavenCentral()
     }
 }
 
@@ -12,4 +9,4 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.7.0'
 }
 
-rootProject.name = 'reinodoce-mc-tiktok'
+rootProject.name = 'reinodoce-mc-tiktok-shared'

@@ -1,14 +1,9 @@
-package br.com.reinodoce.mctiktok.client;
+package br.com.reinodoce.mctiktok.core;
 
-import br.com.reinodoce.mctiktok.chat.LiveMessageFormatter;
-import br.com.reinodoce.mctiktok.chat.MinecraftChatGateway;
-import br.com.reinodoce.mctiktok.client.font.InlineMediaFontHooks;
-import br.com.reinodoce.mctiktok.client.font.InlineMediaTokenRegistry;
-import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
+import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
-import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
 import br.com.reinodoce.mctiktok.state.LiveSessionState;
@@ -23,31 +18,28 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ReinodoceClientService {
+public class ReinodoceCoreService {
     private final ReinodoceConfigRepository configRepository;
     private final RuntimeSettingsState settingsState;
     private final TikTokClientFacade tikTokClientFacade;
-    private final InlineMediaCache inlineMediaCache;
-    private final InlineMediaTokenRegistry inlineMediaTokenRegistry;
     private final AtomicBoolean initialized;
 
-    public ReinodoceClientService(MinecraftPlatformBridge platformBridge) {
-        this.configRepository = new ReinodoceConfigRepository();
+    public ReinodoceCoreService(ChatEventSink chatEventSink, ReinodoceConfigRepository configRepository) {
+        this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
         this.settingsState = new RuntimeSettingsState();
-        this.inlineMediaCache = new InlineMediaCache();
-        this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
-        InlineMediaFontHooks.installRegistry(inlineMediaTokenRegistry);
         MessageRuleEngine ruleEngine = new MessageRuleEngine();
         MemberLevelResolver memberLevelResolver = new MemberLevelResolver();
         MessageDeduplicator deduplicator = new MessageDeduplicator(Duration.ofMinutes(3));
-        MinecraftChatGateway chatGateway = new MinecraftChatGateway(
-                platformBridge,
-                new LiveMessageFormatter(inlineMediaTokenRegistry),
-                inlineMediaCache
+        this.tikTokClientFacade = new TikTokClientFacade(
+                settingsState::getSnapshot,
+                Objects.requireNonNull(chatEventSink, "chatEventSink"),
+                ruleEngine,
+                memberLevelResolver,
+                deduplicator
         );
-        this.tikTokClientFacade = new TikTokClientFacade(settingsState::getSnapshot, chatGateway, ruleEngine, memberLevelResolver, deduplicator);
         this.initialized = new AtomicBoolean(false);
     }
 
@@ -96,22 +88,7 @@ public class ReinodoceClientService {
         lines.add("Syntetic follow: " + config.isSynteticFollowEnabled());
         lines.add("Syntetic join: " + config.isSynteticJoinEnabled());
         lines.add("Syntetic member-level: " + config.isSynteticMemberLevelEnabled());
-        lines.add("Inline media: " + config.isChatEmotesEnabled());
-        lines.add("Inline media renderer: font-coremod");
-        lines.add("Coremod loaded: " + InlineMediaFontHooks.coremodLoaded());
-        lines.add("Token registry: " + inlineMediaTokenRegistry.size());
-        InlineMediaCache.Snapshot mediaSnapshot = inlineMediaCache.snapshot();
-        lines.add("Media cache: resident=" + mediaSnapshot.resident()
-                + " ready=" + mediaSnapshot.ready()
-                + " loading=" + mediaSnapshot.loading()
-                + " error=" + mediaSnapshot.error());
-        lines.add("Downloads: started=" + mediaSnapshot.downloadsStarted()
-                + " success=" + mediaSnapshot.downloadsSucceeded()
-                + " fail=" + mediaSnapshot.downloadsFailed()
-                + " disk=" + mediaSnapshot.diskHits()
-                + " diskReloads=" + mediaSnapshot.diskReloads()
-                + " memory=" + mediaSnapshot.memoryHits());
-        lines.add("Cache evictions: ttl=" + mediaSnapshot.ttlEvictions() + " capacity=" + mediaSnapshot.capacityEvictions());
+        lines.add("Chat emotes: " + config.isChatEmotesEnabled());
         if (snapshot.reconnectAt() != null) {
             lines.add("Proximo reconnect: " + formatter.format(snapshot.reconnectAt()));
         }

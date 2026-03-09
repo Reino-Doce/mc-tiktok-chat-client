@@ -1,10 +1,10 @@
 package br.com.reinodoce.mctiktok.util;
 
-import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ReinodoceLogger {
-    public static final Logger LOGGER = LogUtils.getLogger();
+    public static final Logger LOGGER = LoggerFactory.getLogger(ReinodoceLogger.class);
 
     private ReinodoceLogger() {
     }

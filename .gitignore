@@ -105,6 +105,7 @@ forge*changelog.txt
 # Build artifacts
 *.log
 reobfJar/
+.tools/
 
 # Test results
 test-results/

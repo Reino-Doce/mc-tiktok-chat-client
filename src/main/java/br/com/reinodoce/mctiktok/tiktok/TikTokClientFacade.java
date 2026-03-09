@@ -1,7 +1,7 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
-import br.com.reinodoce.mctiktok.chat.MinecraftChatGateway;
 import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
 import br.com.reinodoce.mctiktok.emoji.UnicodeEmojiParser;
 import br.com.reinodoce.mctiktok.command.CommandResult;
@@ -55,7 +55,7 @@ public class TikTokClientFacade {
     private static final long COMMENT_FINGERPRINT_TTL_MILLIS = Duration.ofSeconds(6).toMillis();
 
     private final Supplier<ReinodoceConfig> configSupplier;
-    private final MinecraftChatGateway chatGateway;
+    private final ChatEventSink chatGateway;
     private final MessageRuleEngine ruleEngine;
     private final MemberLevelResolver memberLevelResolver;
     private final MessageDeduplicator giftDeduplicator;
@@ -76,7 +76,7 @@ public class TikTokClientFacade {
 
     public TikTokClientFacade(
             Supplier<ReinodoceConfig> configSupplier,
-            MinecraftChatGateway chatGateway,
+            ChatEventSink chatGateway,
             MessageRuleEngine ruleEngine,
             MemberLevelResolver memberLevelResolver,
             MessageDeduplicator giftDeduplicator
