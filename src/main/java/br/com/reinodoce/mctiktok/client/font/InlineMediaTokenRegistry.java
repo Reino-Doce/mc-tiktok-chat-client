@@ -50,9 +50,9 @@ public final class InlineMediaTokenRegistry {
             return CHAT_MEDIA_HEIGHT;
         }
 
-        InlineMediaCache.TextureHandle handle = mediaCache.resolve(segment);
-        int width = Math.max(1, handle.sourceWidth());
-        int height = Math.max(1, handle.sourceHeight());
+        InlineMediaCache.Dimensions dimensions = mediaCache.dimensionsFor(segment);
+        int width = Math.max(1, dimensions.width());
+        int height = Math.max(1, dimensions.height());
         return CHAT_MEDIA_HEIGHT * width / (float) height;
     }
 

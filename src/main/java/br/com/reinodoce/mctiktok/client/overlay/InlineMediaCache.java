@@ -21,6 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.time.Duration;
 import java.util.Map;
 import java.util.UUID;
@@ -37,6 +40,7 @@ public class InlineMediaCache {
     private static final int MAX_MEMORY_ENTRIES = 256;
     private static final long ENTRY_TTL_MILLIS = Duration.ofMinutes(30).toMillis();
     private static final long ERROR_RETRY_MILLIS = Duration.ofSeconds(30).toMillis();
+    private static final long RECENT_VISIBILITY_GRACE_MILLIS = Duration.ofSeconds(15).toMillis();
 
     private final Map<String, CacheEntry> entries = new ConcurrentHashMap<>();
     private final ExecutorService loader = ExecutorsFactory.newSingleThreadExecutor("reinodoce-inline-media");
@@ -44,7 +48,10 @@ public class InlineMediaCache {
     private final AtomicLong downloadsSucceeded = new AtomicLong();
     private final AtomicLong downloadsFailed = new AtomicLong();
     private final AtomicLong diskHits = new AtomicLong();
+    private final AtomicLong diskReloads = new AtomicLong();
     private final AtomicLong memoryHits = new AtomicLong();
+    private final AtomicLong ttlEvictions = new AtomicLong();
+    private final AtomicLong capacityEvictions = new AtomicLong();
 
     public InlineMediaCache() {
         ImageIoBootstrap.ensureInitialized();
@@ -59,7 +66,7 @@ public class InlineMediaCache {
             if (InlineMediaUrls.isResourceUrl(segment.sourceUrl())) {
                 continue;
             }
-            ensureAvailable(segment, true);
+            ensureAvailable(segment, true, false);
         }
     }
 
@@ -77,7 +84,7 @@ public class InlineMediaCache {
             return TextureHandle.ready(InlineMediaUrls.parseResourceUrl(segment.sourceUrl()), 16, 16);
         }
 
-        CacheEntry entry = ensureAvailable(segment, false);
+        CacheEntry entry = ensureAvailable(segment, false, true);
         if (entry == null) {
             return TextureHandle.error(ERROR_TEXTURE, 16, 16);
         }
@@ -87,6 +94,21 @@ public class InlineMediaCache {
             case ERROR -> TextureHandle.error(placeholderTextureFor(segment, true), 16, 16);
             case LOADING, NEW -> TextureHandle.loading(placeholderTextureFor(segment, false), 16, 16);
         };
+    }
+
+    public Dimensions dimensionsFor(RichLiveMessage.InlineMediaSegment segment) {
+        if (segment == null || segment.sourceUrl().isBlank()) {
+            return new Dimensions(16, 16);
+        }
+        if (InlineMediaUrls.isResourceUrl(segment.sourceUrl())) {
+            return new Dimensions(16, 16);
+        }
+
+        CacheEntry entry = ensureAvailable(segment, false, true);
+        if (entry == null) {
+            return new Dimensions(16, 16);
+        }
+        return new Dimensions(Math.max(1, entry.width), Math.max(1, entry.height));
     }
 
     static ResourceLocation placeholderTextureFor(RichLiveMessage.InlineMediaSegment segment, boolean error) {
@@ -100,6 +122,7 @@ public class InlineMediaCache {
         int ready = 0;
         int loading = 0;
         int error = 0;
+        int resident = 0;
         for (CacheEntry entry : entries.values()) {
             switch (entry.state) {
                 case READY -> ready++;
@@ -108,8 +131,12 @@ public class InlineMediaCache {
                 case NEW -> {
                 }
             }
+            if (entry.texture != null) {
+                resident++;
+            }
         }
         return new Snapshot(
+                resident,
                 ready,
                 loading,
                 error,
@@ -117,11 +144,14 @@ public class InlineMediaCache {
                 downloadsSucceeded.get(),
                 downloadsFailed.get(),
                 diskHits.get(),
-                memoryHits.get()
+                diskReloads.get(),
+                memoryHits.get(),
+                ttlEvictions.get(),
+                capacityEvictions.get()
         );
     }
 
-    private CacheEntry ensureAvailable(RichLiveMessage.InlineMediaSegment segment, boolean countStats) {
+    private CacheEntry ensureAvailable(RichLiveMessage.InlineMediaSegment segment, boolean countStats, boolean visibleAccess) {
         String sourceUrl = segment.sourceUrl();
         if (sourceUrl == null || sourceUrl.isBlank()) {
             return null;
@@ -129,7 +159,7 @@ public class InlineMediaCache {
 
         long now = System.currentTimeMillis();
         CacheEntry entry = entries.computeIfAbsent(cacheKey(sourceUrl), key -> new CacheEntry(key, segment.kind().id(), segment.sourceKey(), sourceUrl));
-        entry.lastAccessAt = now;
+        entry.touch(now, visibleAccess);
 
         synchronized (entry.monitor) {
             if (entry.state == EntryState.READY) {
@@ -152,11 +182,10 @@ public class InlineMediaCache {
                 if (countStats) {
                     diskHits.incrementAndGet();
                 }
+                diskReloads.incrementAndGet();
                 loader.submit(() -> loadFromDisk(entry));
             } else {
-                if (countStats) {
-                    downloadsStarted.incrementAndGet();
-                }
+                downloadsStarted.incrementAndGet();
                 loader.submit(() -> downloadFromNetwork(entry));
             }
             return entry;
@@ -280,18 +309,69 @@ public class InlineMediaCache {
     }
 
     private void cleanup(long now) {
-        if (entries.size() <= MAX_MEMORY_ENTRIES) {
-            entries.entrySet().removeIf(entry -> shouldEvict(entry.getValue(), now));
+        List<CacheEntry> ttlCandidates = new ArrayList<>();
+        for (CacheEntry entry : entries.values()) {
+            if (shouldEvictByTtl(entry, now)) {
+                ttlCandidates.add(entry);
+            }
+        }
+        for (CacheEntry entry : ttlCandidates) {
+            evictEntry(entry, EvictionReason.TTL);
+        }
+
+        int overflow = entries.size() - MAX_MEMORY_ENTRIES;
+        if (overflow <= 0) {
             return;
         }
-        entries.entrySet().removeIf(entry -> shouldEvict(entry.getValue(), now) || entries.size() > MAX_MEMORY_ENTRIES);
+
+        List<CacheEntry> capacityCandidates = new ArrayList<>();
+        for (CacheEntry entry : entries.values()) {
+            if (isCapacityEvictionCandidate(entry, now)) {
+                capacityCandidates.add(entry);
+            }
+        }
+        capacityCandidates.sort(Comparator.comparingLong(candidate -> candidate.lastAccessAt));
+        for (CacheEntry entry : capacityCandidates) {
+            if (entries.size() <= MAX_MEMORY_ENTRIES) {
+                break;
+            }
+            evictEntry(entry, EvictionReason.CAPACITY);
+        }
     }
 
-    private boolean shouldEvict(CacheEntry entry, long now) {
-        if (entry.state == EntryState.LOADING) {
-            return false;
+    private boolean shouldEvictByTtl(CacheEntry entry, long now) {
+        return entry.state != EntryState.LOADING
+                && !entry.isRecentlyVisible(now)
+                && now - entry.lastAccessAt > ENTRY_TTL_MILLIS;
+    }
+
+    private boolean isCapacityEvictionCandidate(CacheEntry entry, long now) {
+        return entry.state != EntryState.LOADING && !entry.isRecentlyVisible(now);
+    }
+
+    private void evictEntry(CacheEntry entry, EvictionReason reason) {
+        CacheEntry removed = entries.remove(entry.key);
+        if (removed == null) {
+            return;
         }
-        return now - entry.lastAccessAt > ENTRY_TTL_MILLIS;
+
+        if (reason == EvictionReason.TTL) {
+            ttlEvictions.incrementAndGet();
+        } else {
+            capacityEvictions.incrementAndGet();
+        }
+
+        ResourceLocation texture = removed.texture;
+        removed.texture = null;
+        if (texture != null) {
+            try {
+                Minecraft minecraft = Minecraft.getInstance();
+                if (minecraft != null) {
+                    minecraft.execute(() -> minecraft.getTextureManager().release(texture));
+                }
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     private void writePayload(Path payloadPath, byte[] bytes) throws IOException {
@@ -341,6 +421,7 @@ public class InlineMediaCache {
     }
 
     public record Snapshot(
+            int resident,
             int ready,
             int loading,
             int error,
@@ -348,8 +429,52 @@ public class InlineMediaCache {
             long downloadsSucceeded,
             long downloadsFailed,
             long diskHits,
-            long memoryHits
+            long diskReloads,
+            long memoryHits,
+            long ttlEvictions,
+            long capacityEvictions
     ) {
+    }
+
+    public record Dimensions(int width, int height) {
+    }
+
+    void debugPutReady(String url, long lastAccessAt, long protectedUntilAt, int width, int height) {
+        CacheEntry entry = new CacheEntry(cacheKey(url), "debug", url, url);
+        entry.state = EntryState.READY;
+        entry.texture = InlineMediaUrls.DEFAULT_AVATAR_TEXTURE;
+        entry.width = width;
+        entry.height = height;
+        entry.lastAccessAt = lastAccessAt;
+        entry.protectedUntilAt = protectedUntilAt;
+        entries.put(entry.key, entry);
+    }
+
+    void debugPutLoading(String url, long lastAccessAt) {
+        CacheEntry entry = new CacheEntry(cacheKey(url), "debug", url, url);
+        entry.state = EntryState.LOADING;
+        entry.lastAccessAt = lastAccessAt;
+        entries.put(entry.key, entry);
+    }
+
+    void debugTouchVisible(String url, long now) {
+        CacheEntry entry = entries.get(cacheKey(url));
+        if (entry != null) {
+            entry.touch(now, true);
+        }
+    }
+
+    boolean debugContains(String url) {
+        return entries.containsKey(cacheKey(url));
+    }
+
+    boolean debugIsRecentlyVisible(String url, long now) {
+        CacheEntry entry = entries.get(cacheKey(url));
+        return entry != null && entry.isRecentlyVisible(now);
+    }
+
+    void debugCleanup(long now) {
+        cleanup(now);
     }
 
     public record TextureHandle(ResourceLocation texture, int sourceWidth, int sourceHeight, boolean loading, boolean error) {
@@ -387,6 +512,7 @@ public class InlineMediaCache {
         private volatile int width = 16;
         private volatile int height = 16;
         private volatile long lastAccessAt = System.currentTimeMillis();
+        private volatile long protectedUntilAt;
         private volatile long lastFailureAt;
 
         private CacheEntry(String key, String kind, String sourceKey, String sourceUrl) {
@@ -411,6 +537,22 @@ public class InlineMediaCache {
         private Path metadataPath() {
             return directory().resolve("metadata.json");
         }
+
+        private void touch(long now, boolean visibleAccess) {
+            lastAccessAt = now;
+            if (visibleAccess) {
+                protectedUntilAt = Math.max(protectedUntilAt, now + RECENT_VISIBILITY_GRACE_MILLIS);
+            }
+        }
+
+        private boolean isRecentlyVisible(long now) {
+            return protectedUntilAt > now;
+        }
+    }
+
+    private enum EvictionReason {
+        TTL,
+        CAPACITY
     }
 
     private record InlineMediaMetadata(

@@ -101,12 +101,17 @@ public class ReinodoceClientService {
         lines.add("Coremod loaded: " + InlineMediaFontHooks.coremodLoaded());
         lines.add("Token registry: " + inlineMediaTokenRegistry.size());
         InlineMediaCache.Snapshot mediaSnapshot = inlineMediaCache.snapshot();
-        lines.add("Media cache: ready=" + mediaSnapshot.ready() + " loading=" + mediaSnapshot.loading() + " error=" + mediaSnapshot.error());
+        lines.add("Media cache: resident=" + mediaSnapshot.resident()
+                + " ready=" + mediaSnapshot.ready()
+                + " loading=" + mediaSnapshot.loading()
+                + " error=" + mediaSnapshot.error());
         lines.add("Downloads: started=" + mediaSnapshot.downloadsStarted()
                 + " success=" + mediaSnapshot.downloadsSucceeded()
                 + " fail=" + mediaSnapshot.downloadsFailed()
                 + " disk=" + mediaSnapshot.diskHits()
+                + " diskReloads=" + mediaSnapshot.diskReloads()
                 + " memory=" + mediaSnapshot.memoryHits());
+        lines.add("Cache evictions: ttl=" + mediaSnapshot.ttlEvictions() + " capacity=" + mediaSnapshot.capacityEvictions());
         if (snapshot.reconnectAt() != null) {
             lines.add("Proximo reconnect: " + formatter.format(snapshot.reconnectAt()));
         }
