@@ -27,6 +27,14 @@ public class MinecraftChatGateway {
         sendTracked(formatter.formatLiveComment(prefix, message));
     }
 
+    public void sendStarComment(String prefix, String username, String message) {
+        send(formatter.formatStarComment(prefix, username, message));
+    }
+
+    public void sendStarComment(String prefix, RichLiveMessage message) {
+        sendTracked(formatter.formatStarComment(prefix, message));
+    }
+
     public void sendSyntheticGift(String prefix, String username, String giftName, int count) {
         send(formatter.formatSyntheticGift(prefix, username, giftName, count));
     }

@@ -24,7 +24,7 @@ class MemberLevelResolverTest {
         MemberLevelResolver.LevelUpdate downgrade = resolver.updateLevel(1L, "alice", "", 1);
         MemberLevelResolver.LevelUpdate upgrade = resolver.updateLevel(1L, "alice", "", 4);
 
-        assertTrue(first.isUpgrade());
+        assertFalse(first.isUpgrade());
         assertFalse(downgrade.isUpgrade());
         assertEquals(2, downgrade.newLevel());
         assertEquals("avatar://alice", downgrade.avatarUrl());

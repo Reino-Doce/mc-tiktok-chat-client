@@ -5,6 +5,9 @@ import io.github.jwdeveloper.tiktok.messages.data.CommonMessageData;
 import io.github.jwdeveloper.tiktok.messages.data.Emote;
 import io.github.jwdeveloper.tiktok.messages.data.Image;
 import io.github.jwdeveloper.tiktok.messages.data.Text;
+import io.github.jwdeveloper.tiktok.messages.data.User;
+import io.github.jwdeveloper.tiktok.messages.webcast.WebcastBarrageMessage;
+import io.github.jwdeveloper.tiktok.messages.webcast.WebcastMemberMessage;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastChatMessage;
 import org.junit.jupiter.api.Test;
 
@@ -106,5 +109,68 @@ class TikTokRichMessageParserTest {
         assertEquals("hi \uD83D\uDE00", ((RichLiveMessage.TextSegment) richMessage.segments().get(0)).text());
         assertInstanceOf(RichLiveMessage.RemoteEmoteSegment.class, richMessage.segments().get(1));
         assertEquals(" there", ((RichLiveMessage.TextSegment) richMessage.segments().get(2)).text());
+    }
+
+    @Test
+    void parseBarrageTextDetectsAuthorFromUserPiece() {
+        WebcastBarrageMessage message = WebcastBarrageMessage.newBuilder()
+                .setCommon(CommonMessageData.newBuilder().setMsgId(55L).build())
+                .setMsgType(WebcastBarrageMessage.BarrageType.COMMONBARRAGE)
+                .setContent(Text.newBuilder()
+                        .addPiecesList(Text.TextPiece.newBuilder()
+                                .setUserValue(Text.TextPieceUser.newBuilder()
+                                        .setUser(User.newBuilder()
+                                                .setId(91L)
+                                                .setNickname("alice")
+                                                .setAvatarThumb(Image.newBuilder().addUrl("https://cdn.example/avatar.png")))))
+                        .addPiecesList(Text.TextPiece.newBuilder().setStringValue(" comentario estrela"))
+                        .build())
+                .build();
+
+        TikTokRichMessageParser.ParsedText parsed = parser.parseBarrageText(message);
+
+        assertEquals("alice", parsed.detectedUsername());
+        assertEquals("https://cdn.example/avatar.png", parsed.detectedAvatarUrl());
+        assertEquals("comentario estrela", parsed.plainText());
+        assertEquals(1, parsed.segments().size());
+    }
+
+    @Test
+    void parseBarrageTextFallsBackToCommonBarrageContent() {
+        WebcastBarrageMessage message = WebcastBarrageMessage.newBuilder()
+                .setMsgType(WebcastBarrageMessage.BarrageType.COMMONBARRAGE)
+                .setCommonBarrageContent(Text.newBuilder()
+                        .addPiecesList(Text.TextPiece.newBuilder().setStringValue("comentario pago"))
+                        .build())
+                .build();
+
+        TikTokRichMessageParser.ParsedText parsed = parser.parseBarrageText(message);
+
+        assertEquals("comentario pago", parsed.plainText());
+        assertEquals(1, parsed.segments().size());
+    }
+
+    @Test
+    void memberMessageTextPrefersAnchorThenActionDescriptionThenPopStr() {
+        TikTokRichMessageParser parser = new TikTokRichMessageParser();
+
+        WebcastMemberMessage anchor = WebcastMemberMessage.newBuilder()
+                .setAnchorDisplayText(Text.newBuilder()
+                        .addPiecesList(Text.TextPiece.newBuilder().setStringValue("alcancou nivel 12 de membro"))
+                        .build())
+                .setActionDescription("nivel 9")
+                .setPopStr("nivel 8")
+                .build();
+        WebcastMemberMessage actionDescription = WebcastMemberMessage.newBuilder()
+                .setActionDescription("alcancou nivel 7 de membro")
+                .setPopStr("nivel 6")
+                .build();
+        WebcastMemberMessage popStr = WebcastMemberMessage.newBuilder()
+                .setPopStr("alcancou nivel 5 de membro")
+                .build();
+
+        assertEquals("alcancou nivel 12 de membro", TikTokClientFacade.extractMemberMessageText(anchor, parser));
+        assertEquals("alcancou nivel 7 de membro", TikTokClientFacade.extractMemberMessageText(actionDescription, parser));
+        assertEquals("alcancou nivel 5 de membro", TikTokClientFacade.extractMemberMessageText(popStr, parser));
     }
 }

@@ -140,7 +140,7 @@ public class MemberLevelResolver {
 
     public record LevelUpdate(long userId, String username, String avatarUrl, int previousLevel, int newLevel) {
         public boolean isUpgrade() {
-            return newLevel > previousLevel;
+            return previousLevel > 0 && newLevel > previousLevel;
         }
     }
 }

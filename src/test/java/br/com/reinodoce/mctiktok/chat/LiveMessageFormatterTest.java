@@ -82,4 +82,18 @@ class LiveMessageFormatterTest {
         assertEquals("[LIVE]  <alice> texto puro", formatted.component().getString());
         assertEquals(message, formatted.richMessage());
     }
+
+    @Test
+    void starCommentsAddGoldMarkerBeforeAuthor() {
+        RichLiveMessage message = new RichLiveMessage(
+                11L,
+                "alice",
+                List.of(new RichLiveMessage.TextSegment("comentario destacado"))
+        );
+
+        FormattedLiveComment formatted = formatter.formatStarComment("[LIVE]", message);
+
+        assertEquals("[LIVE] \u2b50 STAR <alice> comentario destacado", formatted.component().getString());
+        assertEquals(message, formatted.richMessage());
+    }
 }

@@ -33,6 +33,7 @@ import io.github.jwdeveloper.tiktok.live.LiveClient;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastBarrageMessage;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastChatMessage;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastEmoteChatMessage;
+import io.github.jwdeveloper.tiktok.messages.webcast.WebcastMemberMessage;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -471,20 +472,12 @@ public class TikTokClientFacade {
             }
 
             if ("WebcastBarrageMessage".equals(method)) {
-                WebcastBarrageMessage barrageMessage = WebcastBarrageMessage.parseFrom(payload);
-                WebcastBarrageMessage.BarrageType type = barrageMessage.getMsgType();
-                if (type == WebcastBarrageMessage.BarrageType.FANSLEVELUPGRADE
-                        || type == WebcastBarrageMessage.BarrageType.FANSLEVELENTRANCE) {
-                    long userId = barrageMessage.getFansLevelParam().getUser().getId();
-                    int level = barrageMessage.getFansLevelParam().getCurrentGrade();
-                    String username = sanitizeUserName(chooseRawUserName(
-                            barrageMessage.getFansLevelParam().getUser().getNickname(),
-                            barrageMessage.getFansLevelParam().getUser().getUsername()
-                    ));
-                    String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(barrageMessage.getFansLevelParam().getUser());
-                    MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(userId, username, avatarUrl, level);
-                    maybeEmitMemberLevelUpgrade(update);
-                }
+                handleRawBarrageMessage(token, WebcastBarrageMessage.parseFrom(payload));
+                return;
+            }
+
+            if ("WebcastMemberMessage".equals(method)) {
+                handleRawMemberMessage(token, WebcastMemberMessage.parseFrom(payload));
             }
         } catch (Exception ignored) {
             ReinodoceLogger.LOGGER.debug("Ignoring websocket payload parse failure for method {}", method);
@@ -512,7 +505,8 @@ public class TikTokClientFacade {
                 username,
                 avatarUrl,
                 memberLevelResolver.resolveLevel(user),
-                richMessageParser.parseChatMessage(chatMessage, username)
+                richMessageParser.parseChatMessage(chatMessage, username),
+                false
         );
     }
 
@@ -529,8 +523,105 @@ public class TikTokClientFacade {
                 username,
                 avatarUrl,
                 memberLevelResolver.resolveLevel(user),
-                richMessageParser.parseEmoteChatMessage(emoteChatMessage, username)
+                richMessageParser.parseEmoteChatMessage(emoteChatMessage, username),
+                false
         );
+    }
+
+    private void handleRawBarrageMessage(long token, WebcastBarrageMessage barrageMessage) {
+        if (barrageMessage == null) {
+            return;
+        }
+
+        WebcastBarrageMessage.BarrageType type = barrageMessage.getMsgType();
+        switch (type) {
+            case COMMONBARRAGE -> handleStarBarrageComment(token, barrageMessage);
+            case USERUPGRADE, GRADEUSERENTRANCENOTIFICATION -> handleUserGradeBarrage(barrageMessage);
+            case FANSLEVELUPGRADE, FANSLEVELENTRANCE -> handleFansLevelBarrage(barrageMessage);
+            default -> {
+            }
+        }
+    }
+
+    private void handleStarBarrageComment(long token, WebcastBarrageMessage barrageMessage) {
+        TikTokRichMessageParser.ParsedText parsed = richMessageParser.parseBarrageText(barrageMessage);
+        if (!parsed.hasRenderableContent()) {
+            logRecognizedBarrageNotRendered(barrageMessage, parsed.plainText());
+            return;
+        }
+
+        io.github.jwdeveloper.tiktok.messages.data.User rawUser = resolveBarrageRawUser(parsed, barrageMessage);
+        io.github.jwdeveloper.tiktok.data.models.users.User user = rawUser == null ? null : io.github.jwdeveloper.tiktok.data.models.users.User.map(rawUser);
+        String username = resolveBarrageUsername(parsed, rawUser);
+        String avatarUrl = resolveBarrageAvatarUrl(parsed, rawUser);
+        int memberLevel = resolveBarrageMemberLevel(user, barrageMessage);
+        RichLiveMessage richMessage = new RichLiveMessage(resolveMessageId(barrageMessage.hasCommon() ? barrageMessage.getCommon() : null), username, parsed.segments());
+
+        emitLiveComment(token, user, username, avatarUrl, memberLevel, richMessage, true);
+    }
+
+    private void handleUserGradeBarrage(WebcastBarrageMessage barrageMessage) {
+        if (!barrageMessage.hasUserGradeParam()) {
+            logRecognizedBarrageNotRendered(barrageMessage, "");
+            return;
+        }
+
+        io.github.jwdeveloper.tiktok.messages.data.User rawUser = barrageMessage.getUserGradeParam().getUser();
+        MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(
+                rawUser.getId(),
+                sanitizeUserName(chooseRawUserName(rawUser.getNickname(), rawUser.getUsername())),
+                TikTokMediaResolver.resolveUserAvatarUrl(rawUser),
+                barrageMessage.getUserGradeParam().getCurrentGrade()
+        );
+        if (!maybeEmitMemberLevelUpgrade(update)) {
+            logRecognizedBarrageNotRendered(barrageMessage, "");
+        }
+    }
+
+    private void handleFansLevelBarrage(WebcastBarrageMessage barrageMessage) {
+        if (!barrageMessage.hasFansLevelParam()) {
+            logRecognizedBarrageNotRendered(barrageMessage, "");
+            return;
+        }
+
+        io.github.jwdeveloper.tiktok.messages.data.User rawUser = barrageMessage.getFansLevelParam().getUser();
+        MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(
+                rawUser.getId(),
+                sanitizeUserName(chooseRawUserName(rawUser.getNickname(), rawUser.getUsername())),
+                TikTokMediaResolver.resolveUserAvatarUrl(rawUser),
+                barrageMessage.getFansLevelParam().getCurrentGrade()
+        );
+        if (!maybeEmitMemberLevelUpgrade(update)) {
+            logRecognizedBarrageNotRendered(barrageMessage, "");
+        }
+    }
+
+    private void handleRawMemberMessage(long token, WebcastMemberMessage memberMessage) {
+        if (!isTokenCurrent(token) || memberMessage == null) {
+            return;
+        }
+
+        io.github.jwdeveloper.tiktok.messages.data.User rawUser = memberMessage.hasUser() && isKnownRawUser(memberMessage.getUser())
+                ? memberMessage.getUser()
+                : null;
+        long userId = rawUser != null && rawUser.getId() > 0 ? rawUser.getId() : memberMessage.getUserId();
+        String fallbackUsername = rawUser == null ? "desconhecido" : chooseRawUserName(rawUser.getNickname(), rawUser.getUsername());
+        String username = sanitizeUserName(memberLevelResolver.getKnownUsername(userId, fallbackUsername));
+        String avatarUrl = memberLevelResolver.getKnownAvatarUrl(
+                userId,
+                rawUser == null ? TikTokMediaResolver.defaultAvatarUrl() : TikTokMediaResolver.resolveUserAvatarUrl(rawUser)
+        );
+        String levelText = extractMemberMessageText(memberMessage, richMessageParser);
+        int level = MemberLevelResolver.extractLevelFromText(levelText);
+        if (level <= 0) {
+            logRecognizedMemberNotRendered(memberMessage, levelText);
+            return;
+        }
+
+        MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(userId, username, avatarUrl, level);
+        if (!maybeEmitMemberLevelUpgrade(update)) {
+            logRecognizedMemberNotRendered(memberMessage, levelText);
+        }
     }
 
     private void emitLiveComment(
@@ -539,7 +630,8 @@ public class TikTokClientFacade {
             String username,
             String avatarUrl,
             int memberLevel,
-            RichLiveMessage richMessage
+            RichLiveMessage richMessage,
+            boolean starComment
     ) {
         if (!isTokenCurrent(token) || richMessage == null) {
             return;
@@ -560,23 +652,32 @@ public class TikTokClientFacade {
 
         rememberRenderedComment(username, plainText);
         if (config.isChatEmotesEnabled()) {
-            chatGateway.sendLiveComment(config.getChatPrefix(), enrichCommentMessage(username, avatarUrl, richMessage));
+            RichLiveMessage enriched = enrichCommentMessage(username, avatarUrl, richMessage);
+            if (starComment) {
+                chatGateway.sendStarComment(config.getChatPrefix(), enriched);
+            } else {
+                chatGateway.sendLiveComment(config.getChatPrefix(), enriched);
+            }
             return;
         }
 
         if (!plainText.isBlank()) {
-            chatGateway.sendLiveComment(config.getChatPrefix(), username, plainText);
+            if (starComment) {
+                chatGateway.sendStarComment(config.getChatPrefix(), username, plainText);
+            } else {
+                chatGateway.sendLiveComment(config.getChatPrefix(), username, plainText);
+            }
         }
     }
 
-    private void maybeEmitMemberLevelUpgrade(MemberLevelResolver.LevelUpdate update) {
+    private boolean maybeEmitMemberLevelUpgrade(MemberLevelResolver.LevelUpdate update) {
         if (!update.isUpgrade() || update.newLevel() <= 0) {
-            return;
+            return false;
         }
 
         ReinodoceConfig config = configSupplier.get();
         if (!config.isSynteticMemberLevelEnabled()) {
-            return;
+            return false;
         }
 
         String username = sanitizeUserName(update.username());
@@ -586,9 +687,10 @@ public class TikTokClientFacade {
                     richAuthorOnlyMessage(username, update.avatarUrl()),
                     update.newLevel()
             );
-            return;
+            return true;
         }
         chatGateway.sendSyntheticMemberLevel(config.getChatPrefix(), username, update.newLevel());
+        return true;
     }
 
     private void emitGiftMessages(ReinodoceConfig config, List<GiftComboAggregator.GiftEmission> emissions) {
@@ -718,6 +820,85 @@ public class TikTokClientFacade {
         return "desconhecido";
     }
 
+    private io.github.jwdeveloper.tiktok.messages.data.User resolveBarrageRawUser(
+            TikTokRichMessageParser.ParsedText parsed,
+            WebcastBarrageMessage barrageMessage
+    ) {
+        if (parsed.detectedUser() != null && isKnownRawUser(parsed.detectedUser())) {
+            return parsed.detectedUser();
+        }
+        if (barrageMessage.hasUserGradeParam() && isKnownRawUser(barrageMessage.getUserGradeParam().getUser())) {
+            return barrageMessage.getUserGradeParam().getUser();
+        }
+        if (barrageMessage.hasFansLevelParam() && isKnownRawUser(barrageMessage.getFansLevelParam().getUser())) {
+            return barrageMessage.getFansLevelParam().getUser();
+        }
+        return null;
+    }
+
+    private String resolveBarrageUsername(TikTokRichMessageParser.ParsedText parsed, io.github.jwdeveloper.tiktok.messages.data.User rawUser) {
+        if (!MessageSanitizer.sanitize(parsed.detectedUsername()).isBlank()) {
+            return sanitizeUserName(parsed.detectedUsername());
+        }
+        if (rawUser != null) {
+            return sanitizeUserName(chooseRawUserName(rawUser.getNickname(), rawUser.getUsername()));
+        }
+        return "desconhecido";
+    }
+
+    private String resolveBarrageAvatarUrl(TikTokRichMessageParser.ParsedText parsed, io.github.jwdeveloper.tiktok.messages.data.User rawUser) {
+        if (!MessageSanitizer.sanitize(parsed.detectedAvatarUrl()).isBlank()) {
+            return parsed.detectedAvatarUrl();
+        }
+        if (rawUser != null) {
+            return TikTokMediaResolver.resolveUserAvatarUrl(rawUser);
+        }
+        return TikTokMediaResolver.defaultAvatarUrl();
+    }
+
+    private int resolveBarrageMemberLevel(io.github.jwdeveloper.tiktok.data.models.users.User user, WebcastBarrageMessage barrageMessage) {
+        int memberLevel = user == null ? 0 : memberLevelResolver.resolveLevel(user);
+        if (memberLevel > 0) {
+            return memberLevel;
+        }
+        if (barrageMessage.hasFansLevelParam()) {
+            return Math.max(0, barrageMessage.getFansLevelParam().getCurrentGrade());
+        }
+        if (barrageMessage.hasUserGradeParam()) {
+            return Math.max(0, barrageMessage.getUserGradeParam().getCurrentGrade());
+        }
+        return 0;
+    }
+
+    static String extractMemberMessageText(WebcastMemberMessage memberMessage, TikTokRichMessageParser richMessageParser) {
+        if (memberMessage.hasAnchorDisplayText()) {
+            String anchorText = MessageSanitizer.sanitize(richMessageParser.parseText(memberMessage.getAnchorDisplayText()).plainText());
+            if (!anchorText.isBlank()) {
+                return anchorText;
+            }
+        }
+
+        String actionDescription = MessageSanitizer.sanitize(memberMessage.getActionDescription());
+        if (!actionDescription.isBlank()) {
+            return actionDescription;
+        }
+
+        return MessageSanitizer.sanitize(memberMessage.getPopStr());
+    }
+
+    private boolean isKnownRawUser(io.github.jwdeveloper.tiktok.messages.data.User rawUser) {
+        if (rawUser == null) {
+            return false;
+        }
+        return rawUser.getId() > 0
+                || !MessageSanitizer.sanitize(rawUser.getNickname()).isBlank()
+                || !MessageSanitizer.sanitize(rawUser.getUsername()).isBlank();
+    }
+
+    private long resolveMessageId(io.github.jwdeveloper.tiktok.messages.data.CommonMessageData common) {
+        return common == null ? 0L : common.getMsgId();
+    }
+
     private String sanitizeUserName(String raw) {
         String sanitized = MessageSanitizer.sanitize(raw);
         return sanitized.isBlank() ? "desconhecido" : sanitized;
@@ -794,5 +975,23 @@ public class TikTokClientFacade {
 
     private String commentFingerprint(String username, String message) {
         return sanitizeUserName(username) + "|" + MessageSanitizer.sanitize(message);
+    }
+
+    private void logRecognizedBarrageNotRendered(WebcastBarrageMessage barrageMessage, String text) {
+        String eventName = barrageMessage.hasEvent() ? MessageSanitizer.sanitize(barrageMessage.getEvent().getEventName()) : "";
+        ReinodoceLogger.LOGGER.debug(
+                "Recognized barrage payload not rendered msgType={} eventName={} text={}",
+                barrageMessage.getMsgType(),
+                eventName,
+                MessageSanitizer.sanitize(text)
+        );
+    }
+
+    private void logRecognizedMemberNotRendered(WebcastMemberMessage memberMessage, String text) {
+        ReinodoceLogger.LOGGER.debug(
+                "Recognized member payload not rendered action={} text={}",
+                memberMessage.getAction(),
+                MessageSanitizer.sanitize(text)
+        );
     }
 }

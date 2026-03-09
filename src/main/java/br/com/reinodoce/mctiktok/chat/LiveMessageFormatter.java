@@ -15,15 +15,19 @@ public class LiveMessageFormatter {
     }
 
     public Component formatLiveComment(String prefix, String username, String message) {
-        MutableComponent line = Component.empty();
-        line.append(prefix(prefix));
-        line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
-        line.append(Component.literal(message).withStyle(ChatFormatting.GRAY));
-        return line;
+        return formatPlainComment(prefix, username, message, false);
     }
 
     public FormattedLiveComment formatLiveComment(String prefix, RichLiveMessage message) {
-        return formatRichLine(prefix, message, ChatFormatting.GRAY);
+        return formatRichComment(prefix, message, false);
+    }
+
+    public Component formatStarComment(String prefix, String username, String message) {
+        return formatPlainComment(prefix, username, message, true);
+    }
+
+    public FormattedLiveComment formatStarComment(String prefix, RichLiveMessage message) {
+        return formatRichComment(prefix, message, true);
     }
 
     public FormattedLiveComment formatSyntheticGift(String prefix, RichLiveMessage message) {
@@ -103,6 +107,26 @@ public class LiveMessageFormatter {
         return line;
     }
 
+    private Component formatPlainComment(String prefix, String username, String message, boolean starComment) {
+        MutableComponent line = Component.empty();
+        line.append(prefix(prefix));
+        appendStarMarker(line, starComment);
+        line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
+        line.append(Component.literal(message).withStyle(ChatFormatting.GRAY));
+        return line;
+    }
+
+    private FormattedLiveComment formatRichComment(String prefix, RichLiveMessage message, boolean starComment) {
+        MutableComponent line = Component.empty();
+        line.append(prefix(prefix));
+        appendStarMarker(line, starComment);
+        line.append(Component.literal(" <").withStyle(ChatFormatting.WHITE));
+        appendSegments(line, message.authorSegments(), ChatFormatting.WHITE);
+        line.append(Component.literal("> ").withStyle(ChatFormatting.WHITE));
+        appendSegments(line, message.bodySegments(), ChatFormatting.GRAY);
+        return new FormattedLiveComment(line, message);
+    }
+
     private void appendSegments(MutableComponent line, List<RichLiveMessage.Segment> segments, ChatFormatting color) {
         for (RichLiveMessage.Segment segment : segments) {
             if (segment instanceof RichLiveMessage.TextSegment textSegment) {
@@ -118,5 +142,11 @@ public class LiveMessageFormatter {
     private Component prefix(String prefix) {
         String value = prefix == null || prefix.isBlank() ? "[LIVE]" : prefix;
         return Component.literal(value + " ").withStyle(ChatFormatting.YELLOW);
+    }
+
+    private void appendStarMarker(MutableComponent line, boolean starComment) {
+        if (starComment) {
+            line.append(Component.literal("\u2b50 STAR").withStyle(ChatFormatting.GOLD));
+        }
     }
 }

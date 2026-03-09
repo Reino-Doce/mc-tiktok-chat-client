@@ -7,6 +7,7 @@ import io.github.jwdeveloper.tiktok.messages.data.Emote;
 import io.github.jwdeveloper.tiktok.messages.data.Image;
 import io.github.jwdeveloper.tiktok.messages.data.Text;
 import io.github.jwdeveloper.tiktok.messages.data.User;
+import io.github.jwdeveloper.tiktok.messages.webcast.WebcastBarrageMessage;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastChatMessage;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastEmoteChatMessage;
 
@@ -20,7 +21,7 @@ public class TikTokRichMessageParser {
             return new RichLiveMessage(0L, username, List.of());
         }
 
-        List<RichLiveMessage.Segment> segments = parseDisplayText(message.hasCommon() ? message.getCommon() : null);
+        List<RichLiveMessage.Segment> segments = parseDisplayText(message.hasCommon() ? message.getCommon() : null).segments();
         boolean hasIndexedEmotes = message.getEmotesListCount() > 0;
         if (hasIndexedEmotes && !containsEmoteSegment(segments)) {
             List<RichLiveMessage.Segment> indexedSegments = parseContentAndEmotes(message.getContent(), message.getEmotesListList());
@@ -40,26 +41,27 @@ public class TikTokRichMessageParser {
         return new RichLiveMessage(resolveMessageId(message.hasCommon() ? message.getCommon() : null), username, segments);
     }
 
-    public RichLiveMessage parseEmoteChatMessage(WebcastEmoteChatMessage message, String username) {
-        if (message == null) {
-            return new RichLiveMessage(0L, username, List.of());
+    public ParsedText parseDisplayText(CommonMessageData common) {
+        if (common == null || !common.hasDisplayText()) {
+            return ParsedText.empty();
         }
-
-        List<RichLiveMessage.Segment> segments = new ArrayList<>();
-        for (Emote emote : message.getEmoteListList()) {
-            appendEmote(segments, emote);
-        }
-        return new RichLiveMessage(resolveMessageId(message.hasCommon() ? message.getCommon() : null), username, segments);
+        return parseText(common.getDisplayText());
     }
 
-    private List<RichLiveMessage.Segment> parseDisplayText(CommonMessageData common) {
-        if (common == null || !common.hasDisplayText()) {
-            return List.of();
+    public ParsedText parseText(Text text) {
+        return parseText(text, false);
+    }
+
+    private ParsedText parseText(Text text, boolean suppressLeadingUserPiece) {
+        if (text == null) {
+            return ParsedText.empty();
         }
 
-        Text displayText = common.getDisplayText();
         List<RichLiveMessage.Segment> segments = new ArrayList<>();
-        for (Text.TextPiece piece : displayText.getPiecesListList()) {
+        String detectedUsername = "";
+        String detectedAvatarUrl = "";
+        User detectedUser = null;
+        for (Text.TextPiece piece : text.getPiecesListList()) {
             if (piece.hasImageValue() && piece.getImageValue().hasImageModel()) {
                 appendEmote(segments, piece.getImageValue().getImageModel());
                 continue;
@@ -69,7 +71,21 @@ public class TikTokRichMessageParser {
                 continue;
             }
             if (piece.hasUserValue()) {
-                appendText(segments, resolveDisplayName(piece.getUserValue().getUser()));
+                User user = piece.getUserValue().getUser();
+                if (user != null) {
+                    if (detectedUser == null) {
+                        detectedUser = user;
+                    }
+                    if (detectedUsername.isBlank()) {
+                        detectedUsername = resolveDisplayName(user);
+                    }
+                    if (detectedAvatarUrl.isBlank()) {
+                        detectedAvatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(user);
+                    }
+                }
+                if (!(suppressLeadingUserPiece && segments.isEmpty())) {
+                    appendText(segments, resolveDisplayName(user));
+                }
                 continue;
             }
             if (piece.hasPatternRefValue()) {
@@ -84,7 +100,38 @@ public class TikTokRichMessageParser {
                 appendText(segments, "[gift]");
             }
         }
-        return segments;
+        return new ParsedText(segments, detectedUsername, detectedAvatarUrl, detectedUser);
+    }
+
+    public ParsedText parseBarrageText(WebcastBarrageMessage message) {
+        if (message == null) {
+            return ParsedText.empty();
+        }
+
+        ParsedText content = message.hasContent() ? parseText(message.getContent(), true) : ParsedText.empty();
+        ParsedText common = message.hasCommonBarrageContent() ? parseText(message.getCommonBarrageContent(), true) : ParsedText.empty();
+        if (!content.hasRenderableContent()) {
+            return trimLeadingWhitespace(common);
+        }
+        if (!common.hasRenderableContent()) {
+            return trimLeadingWhitespace(content);
+        }
+        if (content.detectedUsername().isBlank() && !common.detectedUsername().isBlank()) {
+            return trimLeadingWhitespace(content.withDetectedAuthor(common.detectedUsername(), common.detectedAvatarUrl(), common.detectedUser()));
+        }
+        return trimLeadingWhitespace(content);
+    }
+
+    public RichLiveMessage parseEmoteChatMessage(WebcastEmoteChatMessage message, String username) {
+        if (message == null) {
+            return new RichLiveMessage(0L, username, List.of());
+        }
+
+        List<RichLiveMessage.Segment> segments = new ArrayList<>();
+        for (Emote emote : message.getEmoteListList()) {
+            appendEmote(segments, emote);
+        }
+        return new RichLiveMessage(resolveMessageId(message.hasCommon() ? message.getCommon() : null), username, segments);
     }
 
     private List<RichLiveMessage.Segment> parseContentAndEmotes(
@@ -238,5 +285,66 @@ public class TikTokRichMessageParser {
             return "";
         }
         return new String(codePoints, startInclusive, endExclusive - startInclusive);
+    }
+
+    private ParsedText trimLeadingWhitespace(ParsedText parsedText) {
+        if (parsedText.segments().isEmpty()) {
+            return parsedText;
+        }
+        if (!(parsedText.segments().get(0) instanceof RichLiveMessage.TextSegment firstSegment)) {
+            return parsedText;
+        }
+
+        String trimmed = firstSegment.text().replaceFirst("^\\s+", "");
+        if (trimmed.equals(firstSegment.text())) {
+            return parsedText;
+        }
+
+        List<RichLiveMessage.Segment> segments = new ArrayList<>(parsedText.segments());
+        if (trimmed.isBlank()) {
+            segments.remove(0);
+        } else {
+            segments.set(0, new RichLiveMessage.TextSegment(trimmed));
+        }
+        return new ParsedText(segments, parsedText.detectedUsername(), parsedText.detectedAvatarUrl(), parsedText.detectedUser());
+    }
+
+    public record ParsedText(List<RichLiveMessage.Segment> segments, String detectedUsername, String detectedAvatarUrl, User detectedUser) {
+        public ParsedText {
+            segments = segments == null ? List.of() : List.copyOf(segments);
+            detectedUsername = detectedUsername == null ? "" : detectedUsername;
+            detectedAvatarUrl = detectedAvatarUrl == null ? "" : detectedAvatarUrl;
+        }
+
+        public static ParsedText empty() {
+            return new ParsedText(List.of(), "", "", null);
+        }
+
+        public boolean hasRenderableContent() {
+            if (segments.isEmpty()) {
+                return false;
+            }
+            for (RichLiveMessage.Segment segment : segments) {
+                if (segment instanceof RichLiveMessage.InlineMediaSegment) {
+                    return true;
+                }
+                if (segment instanceof RichLiveMessage.TextSegment textSegment && !textSegment.text().isBlank()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public String plainText() {
+            StringBuilder builder = new StringBuilder();
+            for (RichLiveMessage.Segment segment : segments) {
+                builder.append(segment.plainText());
+            }
+            return builder.toString();
+        }
+
+        public ParsedText withDetectedAuthor(String username, String avatarUrl, User user) {
+            return new ParsedText(segments, username, avatarUrl, user);
+        }
     }
 }
