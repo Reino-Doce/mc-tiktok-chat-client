@@ -1,50 +1,44 @@
 plugins {
-    id 'java-library'
+    id 'eclipse'
+    id 'idea'
     id 'maven-publish'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
 }
 
-def getProp = { String name, Object defaultValue = null ->
-    if (project.hasProperty(name)) {
-        return project.property(name)
-    }
-    return defaultValue
-}
+import java.security.MessageDigest
 
 ext {
-    targetJavaVersion = Integer.parseInt(getProp('java_version', '17').toString())
-    tikTokLiveVersion = getProp('tiktoklive_version', '1.11.11-Release').toString()
-    tikTokLiveJarPath = getProp('tiktoklive_jar_path', "libs/Client-${tikTokLiveVersion}-all.jar").toString()
+    minecraftVersion = '1.20.1'
+    forgeVersion = '47.4.16'
+    targetMappingChannel = 'official'
+    targetMappingVersion = '1.20.1'
+    targetJavaVersion = 17
+    tiktokLiveVersion = (project.findProperty('tiktoklive_version') ?: '1.11.11-Release').toString()
+    tiktokLiveJarPath = (project.findProperty('tiktoklive_jar_path') ?: "libs/Client-${tiktokLiveVersion}-all.jar").toString()
 }
 
-group = getProp('shared_group_id', 'br.com.reinodoce.mctiktok').toString()
-version = getProp('shared_version', '0.1.0').toString()
+version = mod_version
+group = mod_group_id
 
 base {
-    archivesName = getProp('artifact_base_name', 'reinodoce-mc-tiktok-shared').toString()
+    archivesName = artifact_base_name
 }
 
-java {
-    toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    withSourcesJar()
-    withJavadocJar()
-}
+java.toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
 
-println "Target => Shared Java ${targetJavaVersion}"
+println "Target => MC ${minecraftVersion}, Forge ${forgeVersion}, mappings ${targetMappingChannel}:${targetMappingVersion}, Java ${targetJavaVersion}"
 println "Host Java => ${System.getProperty 'java.version'} ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'})"
 
-def tikTokLiveJar = file(tikTokLiveJarPath)
-def tikTokLiveReleaseUrl = "https://github.com/jwdeveloper/TikTokLiveJava/releases/download/${tikTokLiveVersion}/Client-${tikTokLiveVersion}-all.jar"
+def tikTokLiveJar = file(tiktokLiveJarPath)
+def tikTokLiveReleaseUrl = "https://github.com/jwdeveloper/TikTokLiveJava/releases/download/${tiktokLiveVersion}/Client-${tiktokLiveVersion}-all.jar"
+def prismMetadataFile = layout.buildDirectory.file("prism-index/reinodoce-mc-tiktok.pw.toml")
+def prismBundleRoot = layout.buildDirectory.dir("prism-bundle")
+def prismBundleModsDir = layout.buildDirectory.dir("prism-bundle/mods")
+def prismBundleIndexDir = layout.buildDirectory.dir("prism-bundle/mods/.index")
+def mergedImageIoServicesDir = layout.buildDirectory.dir("generated/imageio-services")
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation files(tikTokLiveJar)
-    implementation 'com.google.code.gson:gson:2.11.0'
-    implementation 'org.slf4j:slf4j-api:2.0.13'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+configurations {
+    embeddedLibraries
 }
 
 tasks.register('prepareTikTokLiveJar') {
@@ -66,55 +60,378 @@ tasks.register('prepareTikTokLiveJar') {
     }
 }
 
-tasks.named('compileJava').configure {
-    dependsOn 'prepareTikTokLiveJar'
+minecraft {
+    mappings channel: targetMappingChannel, version: targetMappingVersion
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        server {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            args '--nogui'
+        }
+
+        gameTestServer {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+    }
 }
 
-tasks.named('javadoc').configure {
-    dependsOn 'prepareTikTokLiveJar'
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraftVersion}-${forgeVersion}"
+
+    implementation files(tikTokLiveJar)
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'org.slf4j:slf4j-api:2.0.13'
+    implementation 'com.twelvemonkeys.common:common-lang:3.13.1'
+    implementation 'com.twelvemonkeys.common:common-io:3.13.1'
+    implementation 'com.twelvemonkeys.common:common-image:3.13.1'
+    implementation 'com.twelvemonkeys.imageio:imageio-core:3.13.1'
+    implementation 'com.twelvemonkeys.imageio:imageio-metadata:3.13.1'
+    implementation 'com.twelvemonkeys.imageio:imageio-webp:3.13.1'
+
+    embeddedLibraries 'com.twelvemonkeys.common:common-lang:3.13.1'
+    embeddedLibraries 'com.twelvemonkeys.common:common-io:3.13.1'
+    embeddedLibraries 'com.twelvemonkeys.common:common-image:3.13.1'
+    embeddedLibraries 'com.twelvemonkeys.imageio:imageio-core:3.13.1'
+    embeddedLibraries 'com.twelvemonkeys.imageio:imageio-metadata:3.13.1'
+    embeddedLibraries 'com.twelvemonkeys.imageio:imageio-webp:3.13.1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }
 
 tasks.named('test', Test).configure {
     useJUnitPlatform()
 }
 
-tasks.register('verifySharedCore') {
-    inputs.files(fileTree('src').matching { include '**/*.java' })
-    doLast {
-        def disallowedImports = [
-                'import net.minecraft',
-                'import net.minecraftforge'
-        ]
+tasks.named('compileJava').configure {
+    dependsOn 'prepareTikTokLiveJar'
+}
 
-        fileTree('src').matching { include '**/*.java' }.files.each { sourceFile ->
-            String text = sourceFile.getText('UTF-8')
-            disallowedImports.each { token ->
-                if (text.contains(token)) {
-                    throw new GradleException("Shared branch contains forbidden import '${token}' in ${sourceFile}")
+tasks.named('jar').configure {
+    dependsOn 'prepareTikTokLiveJar'
+}
+
+tasks.register('generateEmbeddedImageIoServices') {
+    inputs.files({ configurations.embeddedLibraries })
+    outputs.dir(mergedImageIoServicesDir)
+    doLast {
+        def outputDir = mergedImageIoServicesDir.get().asFile
+        delete(outputDir)
+        outputDir.mkdirs()
+
+        def merged = [:].withDefault { new LinkedHashSet<String>() }
+        configurations.embeddedLibraries.resolve().each { dependencyJar ->
+            zipTree(dependencyJar).visit { details ->
+                if (details.isDirectory()) {
+                    return
                 }
+                if (!details.relativePath.pathString.startsWith('META-INF/services/javax.imageio.spi.')) {
+                    return
+                }
+
+                details.file.readLines('UTF-8')
+                        .collect { it.trim() }
+                        .findAll { !it.isEmpty() && !it.startsWith('#') }
+                        .each { line -> merged[details.relativePath.pathString].add(line) }
             }
+        }
+
+        merged.each { relativePath, lines ->
+            def target = new File(outputDir, relativePath)
+            target.parentFile.mkdirs()
+            target.setText(lines.join(System.lineSeparator()) + System.lineSeparator(), 'UTF-8')
         }
     }
 }
 
+tasks.register('prismMetadata') {
+    dependsOn 'reobfJar'
+    inputs.file(tasks.named('jar', Jar).flatMap { it.archiveFile })
+    outputs.file(prismMetadataFile)
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for Prism metadata generation: ${jarFile}")
+        }
+
+        byte[] bytes = jarFile.bytes
+        String sha512 = MessageDigest.getInstance("SHA-512").digest(bytes).collect { String.format("%02x", it) }.join()
+        String jarFileName = jarFile.name
+
+        String content = """name = "${mod_name}"
+filename = "${jarFileName}"
+side = "client"
+x-prismlauncher-loaders = ["forge"]
+x-prismlauncher-mc-versions = ["${minecraftVersion}"]
+x-prismlauncher-release-type = "release"
+x-prismlauncher-version-number = "${mod_version}"
+x-prismlauncher-dependencies = []
+
+[download]
+mode = "url"
+url = "https://local.invalid/${jarFileName}"
+hash-format = "sha512"
+hash = "${sha512}"
+
+[update.modrinth]
+mod-id = "local.${mod_id}"
+version = "local-${mod_version}"
+"""
+
+        def output = prismMetadataFile.get().asFile
+        output.parentFile.mkdirs()
+        output.setText(content, 'UTF-8')
+    }
+}
+
+tasks.register('prismBundle') {
+    dependsOn 'prismMetadata'
+    inputs.file(tasks.named('jar', Jar).flatMap { it.archiveFile })
+    inputs.file(prismMetadataFile)
+    outputs.dir(prismBundleRoot)
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        def metadataFile = prismMetadataFile.get().asFile
+
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for Prism bundle: ${jarFile}")
+        }
+        if (!metadataFile.exists()) {
+            throw new GradleException("Prism metadata file not found: ${metadataFile}")
+        }
+
+        def root = prismBundleRoot.get().asFile
+        def mods = prismBundleModsDir.get().asFile
+        def index = prismBundleIndexDir.get().asFile
+
+        delete(root)
+        mods.mkdirs()
+        index.mkdirs()
+
+        copy {
+            from jarFile
+            into mods
+        }
+        copy {
+            from metadataFile
+            into index
+        }
+    }
+}
+
+tasks.register('verifyPrismMetadata') {
+    dependsOn 'prismMetadata'
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        def metadataFile = prismMetadataFile.get().asFile
+
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for Prism metadata verification: ${jarFile}")
+        }
+        if (!metadataFile.exists()) {
+            throw new GradleException("Prism metadata file not found for verification: ${metadataFile}")
+        }
+
+        String metadata = metadataFile.getText('UTF-8')
+        if (!metadata.contains('side = "client"')) {
+            throw new GradleException("Prism metadata is missing side=client.")
+        }
+
+        def filenameMatch = (metadata =~ /(?m)^filename = "([^"]+)"$/)
+        if (!filenameMatch.find()) {
+            throw new GradleException("Prism metadata is missing filename field.")
+        }
+        String filename = filenameMatch.group(1)
+        if (filename != jarFile.name) {
+            throw new GradleException("Prism metadata filename (${filename}) does not match jar name (${jarFile.name}).")
+        }
+
+        def hashFormatMatch = (metadata =~ /(?m)^hash-format = "([^"]+)"$/)
+        if (!hashFormatMatch.find() || hashFormatMatch.group(1).toLowerCase(Locale.ROOT) != 'sha512') {
+            throw new GradleException("Prism metadata hash-format must be sha512.")
+        }
+
+        def hashMatch = (metadata =~ /(?m)^hash = "([0-9a-fA-F]+)"$/)
+        if (!hashMatch.find()) {
+            throw new GradleException("Prism metadata is missing hash field.")
+        }
+        String metadataHash = hashMatch.group(1).toLowerCase(Locale.ROOT)
+        String jarHash = MessageDigest.getInstance("SHA-512").digest(jarFile.bytes).collect { String.format("%02x", it) }.join()
+        if (metadataHash != jarHash) {
+            throw new GradleException("Prism metadata hash does not match jar SHA-512.")
+        }
+    }
+}
+
+tasks.register('verifyEmbeddedPackages') {
+    dependsOn 'jar'
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for embedded package verification: ${jarFile}")
+        }
+
+        def bannedPrefixes = [
+                'com/google/gson/',
+                'org/slf4j/'
+        ]
+        def bannedEntries = [
+                'META-INF/services/org.slf4j.spi.SLF4JServiceProvider'
+        ]
+
+        def foundPrefixes = [] as Set
+        def foundEntries = [] as Set
+        new java.util.zip.ZipFile(jarFile).withCloseable { zip ->
+            zip.entries().each { entry ->
+                bannedPrefixes.each { prefix ->
+                    if (entry.name.startsWith(prefix)) {
+                        foundPrefixes.add(prefix)
+                    }
+                }
+                if (bannedEntries.contains(entry.name)) {
+                    foundEntries.add(entry.name)
+                }
+            }
+        }
+
+        if (!foundPrefixes.isEmpty() || !foundEntries.isEmpty()) {
+            def issues = []
+            if (!foundPrefixes.isEmpty()) {
+                issues.add("package prefixes: ${foundPrefixes.join(', ')}")
+            }
+            if (!foundEntries.isEmpty()) {
+                issues.add("entries: ${foundEntries.join(', ')}")
+            }
+            throw new GradleException("Embedded jar contains banned content: ${issues.join('; ')}")
+        }
+    }
+}
+
+tasks.register('verifyCoremodResources') {
+    dependsOn 'jar'
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for coremod resource verification: ${jarFile}")
+        }
+
+        def requiredEntries = [
+                'META-INF/coremods.json',
+                'coremods/reinodoce_inline_media_font.js',
+                "assets/${mod_id}/textures/gui/no_user_image.png"
+        ]
+
+        def missingEntries = [] as Set
+        new java.util.zip.ZipFile(jarFile).withCloseable { zip ->
+            requiredEntries.each { entryName ->
+                if (zip.getEntry(entryName) == null) {
+                    missingEntries.add(entryName)
+                }
+            }
+        }
+
+        if (!missingEntries.isEmpty()) {
+            throw new GradleException("Jar is missing required coremod resources: ${missingEntries.join(', ')}")
+        }
+    }
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version      : minecraftVersion,
+            minecraft_version_range: minecraft_version_range,
+            forge_version          : forgeVersion,
+            forge_version_range    : forge_version_range,
+            loader_version_range   : loader_version_range,
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : mod_version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    dependsOn 'generateEmbeddedImageIoServices'
+    from(zipTree(tikTokLiveJar)) {
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.RSA'
+        exclude 'META-INF/*.DSA'
+        exclude 'com/google/gson/**'
+        exclude 'org/slf4j/**'
+        exclude 'META-INF/services/org.slf4j.spi.SLF4JServiceProvider'
+        exclude 'META-INF/versions/**/module-info.class'
+    }
+    from({ configurations.embeddedLibraries.collect { zipTree(it) } }) {
+        exclude 'META-INF/MANIFEST.MF'
+        exclude 'META-INF/*.SF'
+        exclude 'META-INF/*.RSA'
+        exclude 'META-INF/*.DSA'
+        exclude 'META-INF/services/javax.imageio.spi.*'
+        exclude 'META-INF/versions/**/module-info.class'
+    }
+    from(mergedImageIoServicesDir)
+    manifest {
+        attributes([
+                'Specification-Title'     : mod_id,
+                'Specification-Vendor'    : mod_authors,
+                'Specification-Version'   : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Vendor'   : mod_authors,
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+    finalizedBy 'reobfJar'
+}
+
 tasks.named('check').configure {
-    dependsOn 'verifySharedCore'
+    dependsOn 'verifyEmbeddedPackages'
+    dependsOn 'verifyCoremodResources'
 }
 
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
-            from components.java
+            artifact jar
         }
     }
     repositories {
         maven {
-            url = layout.buildDirectory.dir('repo')
+            url "file://${project.projectDir}/mcmodsrepo"
         }
     }
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release.set(project.ext.targetJavaVersion as int)
 }
