@@ -225,6 +225,7 @@ public class TikTokClientFacade {
             client.disconnect();
             return;
         }
+        cancelReconnectTask();
         liveClient = client;
         sessionState.setState(ConnectionLifecycleState.CONNECTED);
         sessionState.setUsername(username);
@@ -241,8 +242,14 @@ public class TikTokClientFacade {
             return;
         }
         liveClient = null;
-        sessionState.setState(ConnectionLifecycleState.DISCONNECTED);
         String reason = normalizeErrorReason(event == null ? null : event.getReason(), "desconexao sem motivo informado");
+        if (reconnectTask != null && !reconnectTask.isDone()) {
+            sessionState.setLastError(reason);
+            ReinodoceLogger.LOGGER.warn("Disconnected from TikTok LIVE @{} while reconnect is already scheduled (reason={})", username, reason);
+            return;
+        }
+
+        sessionState.setState(ConnectionLifecycleState.DISCONNECTED);
         sessionState.setLastError(reason);
         sendErrorSystemNotice("disconnect:" + reason, "Desconectado: " + reason);
         ReinodoceLogger.LOGGER.warn("Disconnected from TikTok LIVE @{} (reason={})", username, reason);
@@ -260,9 +267,13 @@ public class TikTokClientFacade {
         }
         String error = normalizeErrorReason(exception.getMessage(), exception.getClass().getSimpleName());
         String message = "Erro na LIVE: " + error;
+        String username = sessionState.snapshot().username();
         sessionState.setLastError(message);
+        sessionState.setState(ConnectionLifecycleState.ERROR);
         sendErrorSystemNotice("runtime:" + exception.getClass().getName() + ":" + error, message);
-        ReinodoceLogger.LOGGER.error("TikTok runtime error: {}", error, exception);
+        ReinodoceLogger.LOGGER.warn("TikTok runtime connection error for @{} (retryable=true): {}", username, error, exception);
+        disconnectCurrentClient();
+        scheduleReconnect(token, username, "erro de conexao");
     }
 
     private void handleConnectException(long token, String username, Exception exception) {
@@ -272,10 +283,9 @@ public class TikTokClientFacade {
         liveClient = null;
 
         String message;
-        boolean allowReconnect = true;
-        if (exception instanceof TikTokLiveUnknownHostException) {
+        boolean allowReconnect = shouldRetryConnectFailure(exception);
+        if (!allowReconnect) {
             message = "Username TikTok nao encontrado: @" + username + ". Verifique e tente novamente.";
-            allowReconnect = false;
         } else if (exception instanceof TikTokLiveOfflineHostException) {
             message = "@" + username + " esta offline no momento.";
         } else {
@@ -725,6 +735,10 @@ public class TikTokClientFacade {
             return fallback;
         }
         return reason;
+    }
+
+    static boolean shouldRetryConnectFailure(Throwable throwable) {
+        return !(throwable instanceof TikTokLiveUnknownHostException);
     }
 
     private boolean isTokenCurrent(long token) {

@@ -64,7 +64,13 @@ public class InlineMediaCache {
     }
 
     public TextureHandle resolve(RichLiveMessage.InlineMediaSegment segment) {
-        if (segment == null || segment.sourceUrl().isBlank()) {
+        if (segment == null) {
+            return TextureHandle.error(ERROR_TEXTURE, 16, 16);
+        }
+        if (segment.sourceUrl().isBlank()) {
+            if (segment.kind() == RichLiveMessage.InlineMediaKind.AVATAR) {
+                return TextureHandle.ready(InlineMediaUrls.DEFAULT_AVATAR_TEXTURE, 16, 16);
+            }
             return TextureHandle.error(ERROR_TEXTURE, 16, 16);
         }
         if (InlineMediaUrls.isResourceUrl(segment.sourceUrl())) {
@@ -78,9 +84,16 @@ public class InlineMediaCache {
 
         return switch (entry.state) {
             case READY -> TextureHandle.ready(entry.texture, entry.width, entry.height);
-            case ERROR -> TextureHandle.error(ERROR_TEXTURE, 16, 16);
-            case LOADING, NEW -> TextureHandle.loading(LOADING_TEXTURE, 16, 16);
+            case ERROR -> TextureHandle.error(placeholderTextureFor(segment, true), 16, 16);
+            case LOADING, NEW -> TextureHandle.loading(placeholderTextureFor(segment, false), 16, 16);
         };
+    }
+
+    static ResourceLocation placeholderTextureFor(RichLiveMessage.InlineMediaSegment segment, boolean error) {
+        if (segment != null && segment.kind() == RichLiveMessage.InlineMediaKind.AVATAR) {
+            return InlineMediaUrls.DEFAULT_AVATAR_TEXTURE;
+        }
+        return error ? ERROR_TEXTURE : LOADING_TEXTURE;
     }
 
     public Snapshot snapshot() {
