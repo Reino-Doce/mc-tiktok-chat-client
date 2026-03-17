@@ -174,3 +174,22 @@ Propriedade opcional para usar caminho customizado:
 ## Nota importante
 
 Este mod nao tenta se passar por jogador real do servidor. Todas as mensagens de LIVE aparecem com prefixo visual (`[LIVE]`) para manter identidade de origem externa.
+
+## Verificacao
+
+```powershell
+.\gradlew.bat test
+.\gradlew.bat build
+```
+
+Se `JAVA_HOME` nao estiver definido, `gradlew.bat` tenta usar uma instalacao
+local compativel de Java antes de cair no `java.exe` padrao do sistema. Isso
+evita falhas comuns quando o Java global da maquina e mais novo que o suportado
+pelo wrapper Gradle atual.
+
+## Agentes de IA
+
+Leia `AGENTS.md` antes de editar este repositorio. Preserve os comandos
+`/reinodoce ...`, o arquivo `config/reinodoce-mc-tiktok-client.json` e a linha
+Forge/Minecraft documentada neste README quando atualizar codigo ou
+documentacao.
