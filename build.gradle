@@ -21,7 +21,7 @@ version = mod_version
 group = mod_group_id
 
 base {
-    archivesName = artifact_base_name
+    archivesName = "${artifact_base_name}-${minecraftVersion}"
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
