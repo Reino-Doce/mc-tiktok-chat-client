@@ -26,9 +26,6 @@ public class MessageRuleEngine {
         if (minValue <= 0) {
             return false;
         }
-        if (minValue == 1) {
-            return true;
-        }
-        return gift != null && gift.getDiamondCost() >= minValue;
+        return minValue == 1 || (gift != null && gift.getDiamondCost() >= minValue);
     }
 }

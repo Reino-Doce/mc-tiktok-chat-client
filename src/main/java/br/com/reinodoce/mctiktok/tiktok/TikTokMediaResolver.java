@@ -24,21 +24,21 @@ public final class TikTokMediaResolver {
         if (user == null) {
             return defaultAvatarUrl();
         }
-
-        String resolved = "";
-        if (user.hasAvatarLarge()) {
-            resolved = resolveImageUrl(user.getAvatarLarge());
-        }
-        if (resolved.isBlank() && user.hasAvatarMedium()) {
-            resolved = resolveImageUrl(user.getAvatarMedium());
-        }
-        if (resolved.isBlank() && user.hasAvatarThumb()) {
-            resolved = resolveImageUrl(user.getAvatarThumb());
-        }
-        if (resolved.isBlank() && user.hasAvatarJpg()) {
-            resolved = resolveImageUrl(user.getAvatarJpg());
-        }
+        String resolved = firstNonBlank(
+                user.hasAvatarLarge() ? resolveImageUrl(user.getAvatarLarge()) : "",
+                user.hasAvatarMedium() ? resolveImageUrl(user.getAvatarMedium()) : "",
+                user.hasAvatarThumb() ? resolveImageUrl(user.getAvatarThumb()) : "",
+                user.hasAvatarJpg() ? resolveImageUrl(user.getAvatarJpg()) : "");
         return resolved.isBlank() ? defaultAvatarUrl() : resolved;
+    }
+
+    private static String firstNonBlank(String... candidates) {
+        for (String candidate : candidates) {
+            if (!candidate.isBlank()) {
+                return candidate;
+            }
+        }
+        return "";
     }
 
     public static String resolveGiftIconUrl(Gift gift) {

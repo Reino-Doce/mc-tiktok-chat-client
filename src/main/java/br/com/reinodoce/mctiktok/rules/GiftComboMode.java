@@ -5,14 +5,14 @@ public enum GiftComboMode {
     SINGLE("single"),
     BULK("bulk");
 
-    private final String id;
+    private final String identifier;
 
-    GiftComboMode(String id) {
-        this.id = id;
+    GiftComboMode(String identifier) {
+        this.identifier = identifier;
     }
 
     public String id() {
-        return id;
+        return identifier;
     }
 
     public static GiftComboMode fromString(String value) {
@@ -20,7 +20,7 @@ public enum GiftComboMode {
             return BULK;
         }
         for (GiftComboMode mode : values()) {
-            if (mode.id.equalsIgnoreCase(value)) {
+            if (mode.identifier.equalsIgnoreCase(value)) {
                 return mode;
             }
         }

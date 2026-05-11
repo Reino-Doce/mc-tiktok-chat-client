@@ -23,6 +23,8 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ReinodoceCoreService {
+    private static final int DEDUPLICATION_WINDOW_MINUTES = 3;
+
     private final ReinodoceConfigRepository configRepository;
     private final RuntimeSettingsState settingsState;
     private final TikTokClientFacade tikTokClientFacade;
@@ -33,7 +35,7 @@ public class ReinodoceCoreService {
         this.settingsState = new RuntimeSettingsState();
         MessageRuleEngine ruleEngine = new MessageRuleEngine();
         MemberLevelResolver memberLevelResolver = new MemberLevelResolver();
-        MessageDeduplicator deduplicator = new MessageDeduplicator(Duration.ofMinutes(3));
+        MessageDeduplicator deduplicator = new MessageDeduplicator(Duration.ofMinutes(DEDUPLICATION_WINDOW_MINUTES));
         this.tikTokClientFacade = new TikTokClientFacade(
                 settingsState::getSnapshot,
                 Objects.requireNonNull(chatEventSink, "chatEventSink"),

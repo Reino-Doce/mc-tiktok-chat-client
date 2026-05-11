@@ -9,6 +9,9 @@ import net.minecraft.network.chat.MutableComponent;
 import java.util.List;
 
 public class LiveMessageFormatter {
+    private static final String AUTHOR_OPEN = " <";
+    private static final String AUTHOR_CLOSE = "> ";
+
     private final InlineMediaTokenRegistry tokenRegistry;
 
     public LiveMessageFormatter(InlineMediaTokenRegistry tokenRegistry) {
@@ -62,9 +65,9 @@ public class LiveMessageFormatter {
     public FormattedLiveComment formatRichLine(String prefix, RichLiveMessage message, ChatFormatting bodyColor) {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
-        line.append(Component.literal(" <").withStyle(ChatFormatting.WHITE));
+        line.append(Component.literal(AUTHOR_OPEN).withStyle(ChatFormatting.WHITE));
         appendSegments(line, message.authorSegments(), ChatFormatting.WHITE);
-        line.append(Component.literal("> ").withStyle(ChatFormatting.WHITE));
+        line.append(Component.literal(AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
         appendSegments(line, message.bodySegments(), bodyColor);
         return new FormattedLiveComment(line, message);
     }
@@ -72,7 +75,7 @@ public class LiveMessageFormatter {
     public Component formatSyntheticGift(String prefix, String username, String giftName, int count) {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
-        line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
+        line.append(Component.literal(AUTHOR_OPEN + username + AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
         line.append(Component.literal(
                 translate("reinodoce.chat.gift_sent_prefix")
                         + giftName
@@ -84,7 +87,7 @@ public class LiveMessageFormatter {
     public Component formatSyntheticFollow(String prefix, String username) {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
-        line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
+        line.append(Component.literal(AUTHOR_OPEN + username + AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
         line.append(Component.literal(translate("reinodoce.chat.follow")).withStyle(ChatFormatting.GREEN));
         return line;
     }
@@ -92,7 +95,7 @@ public class LiveMessageFormatter {
     public Component formatSyntheticJoin(String prefix, String username) {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
-        line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
+        line.append(Component.literal(AUTHOR_OPEN + username + AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
         line.append(Component.literal(translate("reinodoce.chat.join")).withStyle(ChatFormatting.AQUA));
         return line;
     }
@@ -100,7 +103,7 @@ public class LiveMessageFormatter {
     public Component formatSyntheticMemberLevel(String prefix, String username, int memberLevel) {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
-        line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
+        line.append(Component.literal(AUTHOR_OPEN + username + AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
         line.append(Component.literal(translate("reinodoce.chat.member_level", memberLevel)).withStyle(ChatFormatting.GOLD));
         return line;
     }
@@ -116,7 +119,7 @@ public class LiveMessageFormatter {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
         appendStarMarker(line, starComment);
-        line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
+        line.append(Component.literal(AUTHOR_OPEN + username + AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
         line.append(Component.literal(message).withStyle(ChatFormatting.GRAY));
         return line;
     }
@@ -125,9 +128,9 @@ public class LiveMessageFormatter {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
         appendStarMarker(line, starComment);
-        line.append(Component.literal(" <").withStyle(ChatFormatting.WHITE));
+        line.append(Component.literal(AUTHOR_OPEN).withStyle(ChatFormatting.WHITE));
         appendSegments(line, message.authorSegments(), ChatFormatting.WHITE);
-        line.append(Component.literal("> ").withStyle(ChatFormatting.WHITE));
+        line.append(Component.literal(AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
         appendSegments(line, message.bodySegments(), ChatFormatting.GRAY);
         return new FormattedLiveComment(line, message);
     }

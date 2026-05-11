@@ -31,32 +31,54 @@ public final class InlineMediaFontHooks {
     private static final String OUTPUT_X_FIELD = "f_92948_";
     private static final String OUTPUT_Y_FIELD = "f_92949_";
     private static final String OUTPUT_ADD_EFFECT_METHOD = "m_92964_";
-    private static final String OUTPUT_FONT_FIELD = "f_92938_";
 
     private static final float STRIKETHROUGH_Y = 4.5F;
     private static final float UNDERLINE_Y = 9.0F;
     private static final float EFFECT_DEPTH = 0.01F;
     private static final float INLINE_HEIGHT = 9.0F;
     private static final float SHADOW_OFFSET = 1.0F;
+    private static final float EFFECT_LEAD_INSET = 1.0F;
+    private static final float EFFECT_THICKNESS = 1.0F;
+    private static final float SENTINEL_ADVANCE = -1.0F;
+    private static final int RED_SHIFT = 16;
+    private static final int GREEN_SHIFT = 8;
+    private static final int ALPHA_SHIFT = 24;
+    private static final int COLOR_BYTE_MASK = 0xFF;
+    private static final int MAX_COLOR_BYTE = 255;
+    private static final float MAX_COLOR_F = 255.0F;
+    private static final int SHADOW_PACKED_RGB = 0x3F000000;
+    private static final int OPAQUE_WHITE_ARGB = 0xFFFFFFFF;
 
     private static final Class<?> STRING_RENDER_OUTPUT_CLASS = loadStringRenderOutputClass();
-    private static final Field OUTPUT_BUFFER_SOURCE = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_BUFFER_SOURCE_FIELD);
-    private static final Field OUTPUT_DROP_SHADOW = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_DROP_SHADOW_FIELD);
-    private static final Field OUTPUT_DIM_FACTOR = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_DIM_FACTOR_FIELD);
-    private static final Field OUTPUT_R = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_R_FIELD);
-    private static final Field OUTPUT_G = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_G_FIELD);
-    private static final Field OUTPUT_B = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_B_FIELD);
-    private static final Field OUTPUT_A = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_A_FIELD);
-    private static final Field OUTPUT_POSE = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_POSE_FIELD);
-    private static final Field OUTPUT_DISPLAY_MODE = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_DISPLAY_MODE_FIELD);
-    private static final Field OUTPUT_PACKED_LIGHT = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_PACKED_LIGHT_FIELD);
-    private static final Field OUTPUT_X = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_X_FIELD);
-    private static final Field OUTPUT_Y = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_Y_FIELD);
-    private static final Field OUTPUT_FONT = ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_FONT_FIELD);
-    private static final Method OUTPUT_ADD_EFFECT = ObfuscationReflectionHelper.findMethod(STRING_RENDER_OUTPUT_CLASS, OUTPUT_ADD_EFFECT_METHOD, BakedGlyph.Effect.class);
+    private static final Field OUTPUT_BUFFER_SOURCE =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_BUFFER_SOURCE_FIELD);
+    private static final Field OUTPUT_DROP_SHADOW =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_DROP_SHADOW_FIELD);
+    private static final Field OUTPUT_DIM_FACTOR =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_DIM_FACTOR_FIELD);
+    private static final Field OUTPUT_R =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_R_FIELD);
+    private static final Field OUTPUT_G =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_G_FIELD);
+    private static final Field OUTPUT_B =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_B_FIELD);
+    private static final Field OUTPUT_A =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_A_FIELD);
+    private static final Field OUTPUT_POSE =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_POSE_FIELD);
+    private static final Field OUTPUT_DISPLAY_MODE =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_DISPLAY_MODE_FIELD);
+    private static final Field OUTPUT_PACKED_LIGHT =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_PACKED_LIGHT_FIELD);
+    private static final Field OUTPUT_X =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_X_FIELD);
+    private static final Field OUTPUT_Y =
+            ObfuscationReflectionHelper.findField(STRING_RENDER_OUTPUT_CLASS, OUTPUT_Y_FIELD);
+    private static final Method OUTPUT_ADD_EFFECT = ObfuscationReflectionHelper.findMethod(
+            STRING_RENDER_OUTPUT_CLASS, OUTPUT_ADD_EFFECT_METHOD, BakedGlyph.Effect.class);
 
     private static volatile InlineMediaTokenRegistry tokenRegistry;
-    private static volatile boolean coremodLoaded;
+    private static volatile boolean coremodPatched;
 
     private InlineMediaFontHooks() {
     }
@@ -66,117 +88,131 @@ public final class InlineMediaFontHooks {
     }
 
     public static void markCoremodPatched() {
-        coremodLoaded = true;
+        coremodPatched = true;
     }
 
     public static boolean coremodLoaded() {
-        return coremodLoaded;
+        return coremodPatched;
     }
 
     public static float inlineAdvanceOrSentinel(int codePoint) {
-        coremodLoaded = true;
+        coremodPatched = true;
         InlineMediaTokenRegistry registry = tokenRegistry;
         if (registry == null) {
-            return -1.0F;
+            return SENTINEL_ADVANCE;
         }
         return registry.inlineAdvanceOrSentinel(codePoint);
     }
 
     public static boolean tryRenderInline(Object output, int charIndex, Style style, int codePoint) {
-        coremodLoaded = true;
+        coremodPatched = true;
         InlineMediaTokenRegistry registry = tokenRegistry;
         if (registry == null) {
             return false;
         }
-
         InlineMediaTokenRegistry.TokenEntry entry = registry.lookup(codePoint);
         if (entry == null) {
             return false;
         }
-
         try {
-            float x = OUTPUT_X.getFloat(output);
-            float y = OUTPUT_Y.getFloat(output);
-            boolean dropShadow = OUTPUT_DROP_SHADOW.getBoolean(output);
-            float alpha = OUTPUT_A.getFloat(output);
-            Matrix4f pose = (Matrix4f) OUTPUT_POSE.get(output);
-            MultiBufferSource bufferSource = (MultiBufferSource) OUTPUT_BUFFER_SOURCE.get(output);
-            Font.DisplayMode displayMode = (Font.DisplayMode) OUTPUT_DISPLAY_MODE.get(output);
-            int packedLight = OUTPUT_PACKED_LIGHT.getInt(output);
-
-            RichLiveMessage.InlineMediaSegment segment = entry.segment();
-            InlineMediaCache.TextureHandle handle = registry.resolveHandle(codePoint);
-            float advance = registry.advanceFor(segment);
-
-            float renderX = x + (dropShadow ? SHADOW_OFFSET : 0.0F);
-            float renderY = y + (dropShadow ? SHADOW_OFFSET : 0.0F);
-            int color = dropShadow ? 0x3F000000 | (((int) (alpha * 255.0F)) << 24) : 0xFFFFFFFF;
-            renderInlineQuad(bufferSource, pose, displayMode, packedLight, segment, handle, renderX, renderY, advance, color, alpha);
-
-            float[] colors = resolveEffectColor(output, style);
-            float effectOffset = dropShadow ? 1.0F : 0.0F;
-            if (style.isStrikethrough()) {
-                addEffect(output, x + effectOffset - 1.0F, y + effectOffset + STRIKETHROUGH_Y, x + effectOffset + advance, y + effectOffset + STRIKETHROUGH_Y - 1.0F, colors);
-            }
-            if (style.isUnderlined()) {
-                addEffect(output, x + effectOffset - 1.0F, y + effectOffset + UNDERLINE_Y, x + effectOffset + advance, y + effectOffset + UNDERLINE_Y - 1.0F, colors);
-            }
-
-            OUTPUT_X.setFloat(output, x + advance);
+            renderEntry(output, style, registry, entry);
             return true;
         } catch (ReflectiveOperationException exception) {
-            ReinodoceLogger.LOGGER.warn("Failed to render inline media token codePoint={}", codePoint, exception);
+            ReinodoceLogger.LOGGER.warn(
+                    "Failed to render inline media token codePoint={}", codePoint, exception);
             return false;
         }
     }
 
-    private static void renderInlineQuad(
-            MultiBufferSource bufferSource,
-            Matrix4f pose,
-            Font.DisplayMode displayMode,
-            int packedLight,
-            RichLiveMessage.InlineMediaSegment segment,
-            InlineMediaCache.TextureHandle handle,
-            float x,
-            float y,
-            float advance,
-            int packedColor,
-            float alpha
-    ) {
-        float width = Math.max(1.0F, advance);
-        float height = INLINE_HEIGHT;
-        ResourceLocation texture = handle.texture();
-        VertexConsumer consumer = bufferSource.getBuffer(renderTypeFor(texture, displayMode));
-        int a = Math.max(0, Math.min(255, (int) (alpha * 255.0F)));
-        int r = (packedColor >> 16) & 0xFF;
-        int g = (packedColor >> 8) & 0xFF;
-        int b = packedColor & 0xFF;
-        float[] uv = textureUv(segment, handle);
-
-        consumer.vertex(pose, x, y + height, 0.0F).color(r, g, b, a).uv(uv[0], uv[3]).uv2(packedLight).endVertex();
-        consumer.vertex(pose, x + width, y + height, 0.0F).color(r, g, b, a).uv(uv[2], uv[3]).uv2(packedLight).endVertex();
-        consumer.vertex(pose, x + width, y, 0.0F).color(r, g, b, a).uv(uv[2], uv[1]).uv2(packedLight).endVertex();
-        consumer.vertex(pose, x, y, 0.0F).color(r, g, b, a).uv(uv[0], uv[1]).uv2(packedLight).endVertex();
+    private static void renderEntry(
+            Object output,
+            Style style,
+            InlineMediaTokenRegistry registry,
+            InlineMediaTokenRegistry.TokenEntry entry
+    ) throws ReflectiveOperationException {
+        OutputState state = readOutputState(output);
+        RichLiveMessage.InlineMediaSegment segment = entry.segment();
+        InlineMediaCache.TextureHandle handle = registry.resolveHandle(entry.codePoint());
+        float advance = registry.advanceFor(segment);
+        renderQuad(state, segment, handle, advance);
+        renderTextEffects(output, style, state, advance);
+        OUTPUT_X.setFloat(output, state.x() + advance);
     }
 
-    private static float[] textureUv(RichLiveMessage.InlineMediaSegment segment, InlineMediaCache.TextureHandle handle) {
-        if (segment.renderStyle() != RichLiveMessage.InlineMediaRenderStyle.SQUARE_CROP) {
-            return new float[]{0.0F, 0.0F, 1.0F, 1.0F};
-        }
+    private static OutputState readOutputState(Object output) throws IllegalAccessException {
+        float x = OUTPUT_X.getFloat(output);
+        float y = OUTPUT_Y.getFloat(output);
+        boolean dropShadow = OUTPUT_DROP_SHADOW.getBoolean(output);
+        float alpha = OUTPUT_A.getFloat(output);
+        Matrix4f pose = (Matrix4f) OUTPUT_POSE.get(output);
+        MultiBufferSource bufferSource = (MultiBufferSource) OUTPUT_BUFFER_SOURCE.get(output);
+        Font.DisplayMode displayMode = (Font.DisplayMode) OUTPUT_DISPLAY_MODE.get(output);
+        int packedLight = OUTPUT_PACKED_LIGHT.getInt(output);
+        return new OutputState(x, y, dropShadow, alpha, pose, bufferSource, displayMode, packedLight);
+    }
 
+    private static void renderQuad(
+            OutputState state,
+            RichLiveMessage.InlineMediaSegment segment,
+            InlineMediaCache.TextureHandle handle,
+            float advance
+    ) {
+        float renderX = state.x() + (state.dropShadow() ? SHADOW_OFFSET : 0.0F);
+        float renderY = state.y() + (state.dropShadow() ? SHADOW_OFFSET : 0.0F);
+        int packedColor = state.dropShadow()
+                ? SHADOW_PACKED_RGB | (((int) (state.alpha() * MAX_COLOR_F)) << ALPHA_SHIFT)
+                : OPAQUE_WHITE_ARGB;
+        QuadGeometry geometry = new QuadGeometry(renderX, renderY, advance, packedColor);
+        emitQuadVertices(state, segment, handle, geometry);
+    }
+
+    private static void emitQuadVertices(
+            OutputState state,
+            RichLiveMessage.InlineMediaSegment segment,
+            InlineMediaCache.TextureHandle handle,
+            QuadGeometry geometry
+    ) {
+        float width = Math.max(1.0F, geometry.advance());
+        ResourceLocation texture = handle.texture();
+        VertexConsumer consumer = state.bufferSource().getBuffer(renderTypeFor(texture, state.displayMode()));
+        int a = Math.max(0, Math.min(MAX_COLOR_BYTE, (int) (state.alpha() * MAX_COLOR_F)));
+        int packedColor = geometry.packedColor();
+        int r = (packedColor >> RED_SHIFT) & COLOR_BYTE_MASK;
+        int g = (packedColor >> GREEN_SHIFT) & COLOR_BYTE_MASK;
+        int b = packedColor & COLOR_BYTE_MASK;
+        TextureUv uv = textureUv(segment, handle);
+        Matrix4f pose = state.pose();
+        int packedLight = state.packedLight();
+        float x = geometry.x();
+        float y = geometry.y();
+        consumer.vertex(pose, x, y + INLINE_HEIGHT, 0.0F).color(r, g, b, a)
+                .uv(uv.u0(), uv.v1()).uv2(packedLight).endVertex();
+        consumer.vertex(pose, x + width, y + INLINE_HEIGHT, 0.0F).color(r, g, b, a)
+                .uv(uv.u1(), uv.v1()).uv2(packedLight).endVertex();
+        consumer.vertex(pose, x + width, y, 0.0F).color(r, g, b, a)
+                .uv(uv.u1(), uv.v0()).uv2(packedLight).endVertex();
+        consumer.vertex(pose, x, y, 0.0F).color(r, g, b, a)
+                .uv(uv.u0(), uv.v0()).uv2(packedLight).endVertex();
+    }
+
+    private static TextureUv textureUv(
+            RichLiveMessage.InlineMediaSegment segment, InlineMediaCache.TextureHandle handle
+    ) {
+        TextureUv full = new TextureUv(0.0F, 0.0F, 1.0F, 1.0F);
+        if (segment.renderStyle() != RichLiveMessage.InlineMediaRenderStyle.SQUARE_CROP) {
+            return full;
+        }
         int width = Math.max(1, handle.sourceWidth());
         int height = Math.max(1, handle.sourceHeight());
         if (width == height) {
-            return new float[]{0.0F, 0.0F, 1.0F, 1.0F};
+            return full;
         }
-
         if (width > height) {
             float inset = (width - height) / (2.0F * width);
-            return new float[]{inset, 0.0F, 1.0F - inset, 1.0F};
+            return new TextureUv(inset, 0.0F, 1.0F - inset, 1.0F);
         }
-
         float inset = (height - width) / (2.0F * height);
-        return new float[]{0.0F, inset, 1.0F, 1.0F - inset};
+        return new TextureUv(0.0F, inset, 1.0F, 1.0F - inset);
     }
 
     private static RenderType renderTypeFor(ResourceLocation texture, Font.DisplayMode displayMode) {
@@ -187,29 +223,48 @@ public final class InlineMediaFontHooks {
         };
     }
 
-    private static float[] resolveEffectColor(Object output, Style style) throws IllegalAccessException {
-        float alpha = OUTPUT_A.getFloat(output);
+    private static void renderTextEffects(
+            Object output, Style style, OutputState state, float advance
+    ) throws ReflectiveOperationException {
+        EffectColor color = resolveEffectColor(output, state.alpha(), style);
+        float effectOffset = state.dropShadow() ? SHADOW_OFFSET : 0.0F;
+        if (style.isStrikethrough()) {
+            addEffectLine(output, state, advance, effectOffset, STRIKETHROUGH_Y, color);
+        }
+        if (style.isUnderlined()) {
+            addEffectLine(output, state, advance, effectOffset, UNDERLINE_Y, color);
+        }
+    }
+
+    private static void addEffectLine(
+            Object output, OutputState state, float advance,
+            float effectOffset, float yOffset, EffectColor color
+    ) throws ReflectiveOperationException {
+        float x0 = state.x() + effectOffset - EFFECT_LEAD_INSET;
+        float y0 = state.y() + effectOffset + yOffset;
+        float x1 = state.x() + effectOffset + advance;
+        float y1 = state.y() + effectOffset + yOffset - EFFECT_THICKNESS;
+        OUTPUT_ADD_EFFECT.invoke(output, new BakedGlyph.Effect(
+                x0, y0, x1, y1, EFFECT_DEPTH, color.r(), color.g(), color.b(), color.a()));
+    }
+
+    private static EffectColor resolveEffectColor(Object output, float alpha, Style style)
+            throws IllegalAccessException {
         TextColor color = style.getColor();
         if (color != null) {
             float dimFactor = OUTPUT_DIM_FACTOR.getFloat(output);
             int value = color.getValue();
-            return new float[]{
-                    ((value >> 16) & 0xFF) / 255.0F * dimFactor,
-                    ((value >> 8) & 0xFF) / 255.0F * dimFactor,
-                    (value & 0xFF) / 255.0F * dimFactor,
-                    alpha
-            };
+            return new EffectColor(
+                    ((value >> RED_SHIFT) & COLOR_BYTE_MASK) / MAX_COLOR_F * dimFactor,
+                    ((value >> GREEN_SHIFT) & COLOR_BYTE_MASK) / MAX_COLOR_F * dimFactor,
+                    (value & COLOR_BYTE_MASK) / MAX_COLOR_F * dimFactor,
+                    alpha);
         }
-        return new float[]{
+        return new EffectColor(
                 OUTPUT_R.getFloat(output),
                 OUTPUT_G.getFloat(output),
                 OUTPUT_B.getFloat(output),
-                alpha
-        };
-    }
-
-    private static void addEffect(Object output, float x0, float y0, float x1, float y1, float[] colors) throws ReflectiveOperationException {
-        OUTPUT_ADD_EFFECT.invoke(output, new BakedGlyph.Effect(x0, y0, x1, y1, EFFECT_DEPTH, colors[0], colors[1], colors[2], colors[3]));
+                alpha);
     }
 
     private static Class<?> loadStringRenderOutputClass() {
@@ -218,5 +273,20 @@ public final class InlineMediaFontHooks {
         } catch (ClassNotFoundException exception) {
             throw new IllegalStateException("Unable to resolve Font$StringRenderOutput", exception);
         }
+    }
+
+    private record OutputState(
+            float x, float y, boolean dropShadow, float alpha,
+            Matrix4f pose, MultiBufferSource bufferSource,
+            Font.DisplayMode displayMode, int packedLight) {
+    }
+
+    private record QuadGeometry(float x, float y, float advance, int packedColor) {
+    }
+
+    private record TextureUv(float u0, float v0, float u1, float v1) {
+    }
+
+    private record EffectColor(float r, float g, float b, float a) {
     }
 }

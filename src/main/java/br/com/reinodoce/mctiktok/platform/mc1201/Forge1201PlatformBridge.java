@@ -4,6 +4,7 @@ import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
+@SuppressWarnings("PMD.CloseResource")
 public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
     @Override
     public void runOnClientThread(Runnable runnable) {

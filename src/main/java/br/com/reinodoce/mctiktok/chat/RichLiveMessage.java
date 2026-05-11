@@ -95,7 +95,8 @@ public record RichLiveMessage(long messageId, List<Segment> authorSegments, List
         }
     }
 
-    public sealed interface InlineMediaSegment extends Segment permits RemoteEmoteSegment, UnicodeEmojiSegment, AvatarSegment, GiftIconSegment {
+    public sealed interface InlineMediaSegment extends Segment
+            permits RemoteEmoteSegment, UnicodeEmojiSegment, AvatarSegment, GiftIconSegment {
         InlineMediaKind kind();
 
         InlineMediaRenderStyle renderStyle();
@@ -118,14 +119,14 @@ public record RichLiveMessage(long messageId, List<Segment> authorSegments, List
         AVATAR("avatar"),
         GIFT_ICON("gift_icon");
 
-        private final String id;
+        private final String identifier;
 
-        InlineMediaKind(String id) {
-            this.id = id;
+        InlineMediaKind(String identifier) {
+            this.identifier = identifier;
         }
 
         public String id() {
-            return id;
+            return identifier;
         }
     }
 

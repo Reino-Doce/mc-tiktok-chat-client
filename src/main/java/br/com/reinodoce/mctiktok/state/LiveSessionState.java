@@ -2,6 +2,7 @@ package br.com.reinodoce.mctiktok.state;
 
 import java.time.Instant;
 
+@SuppressWarnings("PMD.DataClass")
 public class LiveSessionState {
     private ConnectionLifecycleState state = ConnectionLifecycleState.DISCONNECTED;
     private String username = "";

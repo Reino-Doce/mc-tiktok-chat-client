@@ -9,6 +9,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 class LiveMessageFormatterTest {
     private final InlineMediaTokenRegistry tokenRegistry = new InlineMediaTokenRegistry(new InlineMediaCache());
     private final LiveMessageFormatter formatter = new LiveMessageFormatter(tokenRegistry);

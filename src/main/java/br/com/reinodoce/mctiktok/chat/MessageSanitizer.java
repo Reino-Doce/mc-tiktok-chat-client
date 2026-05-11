@@ -2,6 +2,7 @@ package br.com.reinodoce.mctiktok.chat;
 
 public final class MessageSanitizer {
     private static final int MAX_TEXT_LENGTH = 256;
+    private static final char NULL_CHAR = '\u0000';
 
     private MessageSanitizer() {
     }
@@ -14,7 +15,7 @@ public final class MessageSanitizer {
         StringBuilder sanitized = new StringBuilder(raw.length());
         for (int i = 0; i < raw.length(); i++) {
             char current = raw.charAt(i);
-            if (current == '\u0000') {
+            if (current == NULL_CHAR) {
                 continue;
             }
             if (Character.isISOControl(current) && !Character.isWhitespace(current)) {
