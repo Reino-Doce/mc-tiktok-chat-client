@@ -33,6 +33,35 @@ from a TikTok LIVE inside the Minecraft chat.
 - Java target for 1.20.1: `17`
 - TikTokLiveJava: `1.11.11-Release` (jar provisioned from a GitHub release)
 
+## Initial setup (Gradle wrapper)
+
+The wrapper jar (`gradle/wrapper/gradle-wrapper.jar`) is **not** tracked
+in this repository — `*.jar` is listed in `.gitignore`. After cloning,
+materialize it once using an existing Gradle installation on your
+system:
+
+```bash
+gradle wrapper --gradle-version=8.8
+```
+
+```powershell
+gradle wrapper --gradle-version=8.8
+```
+
+The version must match the one recorded in
+`gradle/wrapper/gradle-wrapper.properties` (currently `8.8`). After
+this step, `./gradlew` (Linux / macOS) and `.\gradlew.bat` (Windows)
+work normally for all the commands described below.
+
+If you do not have `gradle` installed yet, use
+[SDKMAN!](https://sdkman.io/) (`sdk install gradle 8.8`) on Linux /
+macOS or [Scoop](https://scoop.sh/) (`scoop install gradle@8.8`) on
+Windows.
+
+The CI workflow runs `gradle wrapper` automatically before the build,
+so `mc<MC>-v<mod_version>` tags pushed for release produce artifacts
+without requiring this manual step.
+
 ## Internationalization
 
 The mod ships language bundles under `assets/reinodoce_mctiktok/lang/`,

@@ -24,8 +24,31 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Read Gradle wrapper version
+        id: gradle_wrapper
+        shell: bash
+        run: |
+          version=$(sed -nE 's@^distributionUrl=.*/gradle-([0-9.]+)-bin\.zip$@\1@p' gradle/wrapper/gradle-wrapper.properties)
+          if [ -z "$version" ]; then
+            echo "::error::Could not parse Gradle version from gradle/wrapper/gradle-wrapper.properties"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Gradle wrapper version: ${version}"
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        with:
+          gradle-version: ${{ steps.gradle_wrapper.outputs.version }}
+
+      - name: Materialize Gradle wrapper jar
+        shell: bash
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            gradle wrapper --no-daemon
+            git checkout -- gradlew gradlew.bat gradle/wrapper/gradle-wrapper.properties
+          fi
+          test -f gradle/wrapper/gradle-wrapper.jar
 
       - name: Read project metadata
         id: vars
@@ -36,7 +59,7 @@ jobs:
           tiktoklive_version=$(grep -E '^tiktoklive_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           mc_version=$(grep -E "^\s*minecraftVersion\s*=" build.gradle | head -n1 | sed -E "s/.*'([^']+)'.*/\1/")
           prerelease=false
-          if echo "$mod_version" | grep -iqE -- '-(alpha|beta|rc|pre|snapshot)'; then
+          if echo "$mod_version" | grep -iqE -- '-(alpha|beta|rc)(\.[0-9]+)?$|-(pre|snapshot)$'; then
             prerelease=true
           fi
           {
@@ -70,7 +93,21 @@ jobs:
             echo "::error::CHANGELOG.md is missing at repo root."
             exit 1
           fi
-          if ! grep -E "^##[[:space:]]+\[?${version}\]?([[:space:]]|$)" CHANGELOG.md > /dev/null; then
+          if ! awk -v ver="$version" '
+            /^##[[:space:]]+/ {
+              line = $0
+              sub(/^##[[:space:]]+/, "", line)
+              sub(/^\[/, "", line)
+              n = index(line, "]")
+              if (n > 0) {
+                line = substr(line, 1, n - 1)
+              } else if (match(line, /[[:space:]]/) > 0) {
+                line = substr(line, 1, RSTART - 1)
+              }
+              if (line == ver) { found = 1; exit }
+            }
+            END { exit !found }
+          ' CHANGELOG.md; then
             echo "::error::CHANGELOG.md has no '## ${version}' (or '## [${version}]') section. Add a release note before tagging."
             exit 1
           fi
