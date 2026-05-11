@@ -74,42 +74,103 @@ code change is required.
 5. `/reinodoce connect @yourusername`
 6. `/reinodoce status`
 
-## Prism Launcher (Side client vs both)
+## Bundle Packwiz (client-side)
 
-For local `.jar` mods, Prism Launcher usually shows `Side = both` when no
-Packwiz metadata exists in the `.index`.
+This section documents the [Packwiz](https://packwiz.infra.link/) bundle
+produced by this project. Packwiz is a format / CLI for packaging
+Minecraft modpacks, supported natively by Prism Launcher and other tools
+that read the spec; the format itself is not tied to any specific
+launcher.
 
-This project produces a Prism-specific bundle with:
+### Why the bundle exists
 
-- `mods/reinodoce-mc-tiktok-<version>.jar`
-- `mods/.index/reinodoce-mc-tiktok.pw.toml` with `side = "client"`
+When you drop only the `.jar` into an instance's `mods/` folder, some
+launchers (Prism Launcher included) mark the mod as `Side = both` for
+lack of metadata, even though it is client-only. The Packwiz bundle
+ships a companion `.pw.toml` with `side = "client"` so the launcher
+displays the Side column correctly and treats the mod as client-only.
 
-Command to generate the Prism bundle:
+### Bundle structure
 
-```bash
-./gradlew clean build prismBundle verifyPrismMetadata
+```
+mods/
+  reinodoce-mc-tiktok-<mc_version>-<mod_version>.jar
+  .index/
+    reinodoce-mc-tiktok.pw.toml
 ```
 
-On Windows:
+Relevant content in `.pw.toml`:
+
+- `side = "client"` — restricts the mod to the client side.
+- `x-prismlauncher-loaders = ["forge"]` — target mod loader.
+- `x-prismlauncher-mc-versions = ["<mc_version>"]` — Minecraft versions.
+- `hash-format = "sha512"` and `hash = "<sha512>"` — integrity check for
+  the jar referenced by `filename` in the same bundle.
+
+The `x-prismlauncher-*` prefixes are Packwiz extensions recognised by
+Prism Launcher; other Packwiz consumers simply ignore them.
+
+### Gradle tasks
+
+The names carry the `prism` prefix for historical reasons, but what they
+emit is the standard Packwiz format. Renaming to `packwiz*` is planned
+as a follow-up.
+
+| Task                  | What it does                                                  |
+| --------------------- | ------------------------------------------------------------- |
+| `prismMetadata`       | Generates `build/prism-index/reinodoce-mc-tiktok.pw.toml`.    |
+| `prismBundle`         | Stages `build/prism-bundle/` with `mods/` and `mods/.index/`. |
+| `verifyPrismMetadata` | Confirms `side=client`, `hash-format=sha512`, SHA-512 of jar. |
+
+Recommended command to generate the bundle locally:
 
 ```powershell
 .\gradlew.bat clean build prismBundle verifyPrismMetadata
 ```
 
+```bash
+./gradlew clean build prismBundle verifyPrismMetadata
+```
+
 Output:
 
-- `build/prism-bundle/mods`
+- `build/prism-bundle/mods/<jar>`
+- `build/prism-bundle/mods/.index/<mod>.pw.toml`
 
-Usage in Prism:
+### Usage per launcher
+
+**Prism Launcher** (native Packwiz consumption):
 
 1. Close the instance in Prism.
-2. Copy everything from `build/prism-bundle/mods` into the instance's
-   `mods` folder.
-3. Open the instance in Prism and confirm the mod's Side column reads
-   `client`.
+2. Copy everything from `build/prism-bundle/mods/` (including `.index/`)
+   into the instance's `mods/` folder.
+3. Open the instance: the mod's Side column reads `client`.
 
-Note: using only the `.jar` without the `.pw.toml` still works under Forge,
-but Prism may keep showing `both` in the UI.
+**Other launchers / vanilla Forge** (CurseForge, ATLauncher, manual
+installation, test servers):
+
+1. Copy only the `.jar` from `build/libs/` (or
+   `build/prism-bundle/mods/`) into the Forge profile's `mods/` folder.
+2. The `.pw.toml` file is metadata — Forge ignores it; you can drop it
+   in alongside if the launcher understands Packwiz, or discard it if
+   not.
+
+### Published artifact
+
+The release CI attaches a zipped version of the bundle to each release,
+named `reinodoce-mc-tiktok-<mc_version>-<mod_version>-packwiz.zip`. The
+zip already follows the `mods/...` + `mods/.index/...` layout, so it
+can be extracted directly into the instance.
+
+The bare `.jar` is also attached separately on each release for users
+who just want a manual install.
+
+### References
+
+- Packwiz spec / CLI: <https://packwiz.infra.link/>
+- Prism Launcher documentation: <https://prismlauncher.org/wiki/>
+- This branch pins `mc_version = 1.20.1` and `forge`, reflected in the
+  `x-prismlauncher-*` fields of the `.pw.toml`.
 
 ## Configuration persistence
 
@@ -146,6 +207,101 @@ Local build:
 
 The artifact on this branch exists for the Forge 1.20.1 adapter. The
 shared core lives in the `shared/latest` and `shared/java17` branches.
+
+## Release automation (GitHub Actions)
+
+Releases are created automatically when a tag of the form
+`mc<minecraft_version>-v<mod_version>` is pushed to the GitHub
+repository (e.g. `mc1.20.1-v0.1.0`). The workflow lives in
+`.github/workflows/release.yml`.
+
+The `mc<MC>` prefix lets every version branch (1.20.1, 1.21.x, ...)
+publish tags independently without colliding in the same namespace.
+
+### What the workflow does
+
+- Builds with Temurin JDK 17 and Gradle action cache.
+- Caches the `TikTokLiveJava` jar in `libs/` keyed by
+  `tiktoklive_version` in `gradle.properties`, avoiding redownload on
+  every run.
+- Enforces that the tag matches both `minecraftVersion` in
+  `build.gradle` **and** `mod_version` in `gradle.properties`, and that
+  a `## <mod_version>` section exists in the branch's `CHANGELOG.md`.
+- Runs `./gradlew clean build prismBundle verifyPrismMetadata`, chaining
+  the `verifyEmbeddedPackages` and `verifyCoremodResources` gates via
+  `check`.
+- Packages `build/prism-bundle/` into a helper zip.
+- Generates `SHA256SUMS.txt` and `SHA512SUMS.txt` for all artifacts.
+- Attaches the mod `.jar`, the bundle zip, and the checksum files to
+  the release, with notes auto-generated from history.
+
+### Security policy
+
+- Every third-party action is **pinned by 40-char commit SHA** (with
+  the short tag as a trailing comment). Version bumps require updating
+  the SHA explicitly in the workflow.
+- Releases are reproducible: the tag-gate and changelog-gate prevent
+  accidental releases, and the checksums allow post-download integrity
+  verification.
+
+### Cutting a release
+
+On the branch for the target Minecraft version (e.g. `1.20.1`):
+
+```powershell
+# 1. Adjust mod_version in gradle.properties.
+# 2. Add the matching entry in CHANGELOG.md (## <X.Y.Z>).
+git commit -am "release: v0.1.0 (MC 1.20.1)"
+
+# 3. Create the mc<minecraftVersion>-v<mod_version> tag and push it.
+git tag mc1.20.1-v0.1.0
+git push github mc1.20.1-v0.1.0
+```
+
+The published artifact is named
+`reinodoce-mc-tiktok-<mc_version>-<mod_version>.jar`, making the
+Minecraft version explicit in the filename. The client bundle zip
+follows the same pattern with the `-packwiz.zip` suffix (Packwiz
+format, consumed by Prism Launcher and other Packwiz-compatible
+launchers).
+
+### Pre-releases (alpha / beta / rc)
+
+If `mod_version` in `gradle.properties` ends with one of the suffixes
+`-alpha[.N]`, `-beta[.N]`, `-rc[.N]`, `-pre`, or `-snapshot`, the
+workflow flags the release as a **pre-release** on GitHub automatically
+("Pre-release" badge and exclusion from `latest` in the API).
+
+Example alpha tag:
+
+```powershell
+# In gradle.properties: mod_version=0.2.0-alpha.1
+# In CHANGELOG.md: section "## [0.2.0-alpha.1]" present.
+git commit -am "alpha: v0.2.0-alpha.1 (MC 1.20.1)"
+git tag mc1.20.1-v0.2.0-alpha.1
+git push github mc1.20.1-v0.2.0-alpha.1
+```
+
+To promote to a stable release, change `mod_version` to `0.2.0`, move
+the CHANGELOG entry, and push `mc1.20.1-v0.2.0`.
+
+The action can also be triggered manually from the Actions tab
+(`workflow_dispatch`) to produce build artifacts without publishing.
+
+### Checksum verification
+
+After downloading the artifacts from the release page:
+
+```powershell
+# Windows
+Get-FileHash .\reinodoce-mc-tiktok-*.jar -Algorithm SHA256
+```
+
+```bash
+# Linux / macOS
+sha256sum -c SHA256SUMS.txt
+sha512sum -c SHA512SUMS.txt
+```
 
 ## Branch strategy
 
