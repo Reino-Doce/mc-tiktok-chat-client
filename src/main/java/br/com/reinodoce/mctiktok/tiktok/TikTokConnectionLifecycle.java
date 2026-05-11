@@ -12,7 +12,6 @@ import br.com.reinodoce.mctiktok.util.UsernameValidator;
 import io.github.jwdeveloper.tiktok.TikTokLive;
 import io.github.jwdeveloper.tiktok.data.events.TikTokDisconnectedEvent;
 import io.github.jwdeveloper.tiktok.data.events.TikTokErrorEvent;
-import io.github.jwdeveloper.tiktok.exceptions.TikTokLiveException;
 import io.github.jwdeveloper.tiktok.exceptions.TikTokLiveOfflineHostException;
 import io.github.jwdeveloper.tiktok.exceptions.TikTokLiveUnknownHostException;
 import io.github.jwdeveloper.tiktok.live.LiveClient;
@@ -138,6 +137,7 @@ final class TikTokConnectionLifecycle {
         connectInternal(token, username);
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private void connectInternal(long token, String username) {
         if (!isTokenCurrent(token)) {
             return;
@@ -150,7 +150,7 @@ final class TikTokConnectionLifecycle {
             }
             liveClient = client;
             client.connect();
-        } catch (TikTokLiveException | IllegalStateException exception) {
+        } catch (RuntimeException exception) {
             handleConnectException(token, username, exception);
         }
     }
@@ -276,10 +276,11 @@ final class TikTokConnectionLifecycle {
         }
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     private static void tryDisconnect(LiveClient client) {
         try {
             client.disconnect();
-        } catch (TikTokLiveException | IllegalStateException exception) {
+        } catch (RuntimeException exception) {
             ReinodoceLogger.LOGGER.debug("Failed to close previous TikTok client cleanly", exception);
         }
     }

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,6 +35,7 @@ final class InlineMediaDownloader {
         this.stats = stats;
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     void loadFromDisk(InlineMediaCacheEntry entry) {
         try {
             byte[] bytes = Files.readAllBytes(entry.payloadPath());
@@ -42,11 +44,12 @@ final class InlineMediaDownloader {
             LoadedMedia loaded = decode(bytes, metadata.contentType());
             registerTexture(entry, loaded, metadata.withLastUsedAt(System.currentTimeMillis()));
             metadata.withStatus(InlineMediaMetadata.STATUS_READY).writeTo(entry.metadataPath());
-        } catch (IOException exception) {
+        } catch (IOException | RuntimeException exception) {
             markFailure(entry, "disk-load", exception);
         }
     }
 
+    @SuppressWarnings("PMD.AvoidCatchingGenericException")
     void downloadFromNetwork(InlineMediaCacheEntry entry) {
         HttpURLConnection connection = null;
         try {
@@ -60,7 +63,7 @@ final class InlineMediaDownloader {
             registerTexture(entry, loaded, null);
             stats.recordDownloadSucceeded();
             logDownloadSuccess(entry, contentType, bytes.length, loaded);
-        } catch (IOException exception) {
+        } catch (IOException | RuntimeException exception) {
             markFailure(entry, "network-download", exception);
         } finally {
             if (connection != null) {
@@ -70,7 +73,10 @@ final class InlineMediaDownloader {
     }
 
     private static HttpURLConnection openConnection(String sourceUrl) throws IOException {
-        HttpURLConnection connection = (HttpURLConnection) new URL(sourceUrl).openConnection();
+        URLConnection raw = new URL(sourceUrl).openConnection();
+        if (!(raw instanceof HttpURLConnection connection)) {
+            throw new IOException("Unsupported URL scheme for inline media (not HTTP/HTTPS): " + sourceUrl);
+        }
         connection.setRequestMethod(HTTP_GET);
         connection.setConnectTimeout(HTTP_TIMEOUT_MILLIS);
         connection.setReadTimeout(HTTP_TIMEOUT_MILLIS);

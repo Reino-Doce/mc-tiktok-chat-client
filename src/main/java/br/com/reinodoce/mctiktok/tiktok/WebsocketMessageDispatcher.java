@@ -53,6 +53,9 @@ final class WebsocketMessageDispatcher {
     }
 
     private void dispatchByMethod(String method, byte[] payload) throws InvalidProtocolBufferException {
+        if (method == null) {
+            return;
+        }
         switch (method) {
             case CHAT_METHOD -> handleChat(WebcastChatMessage.parseFrom(payload));
             case EMOTE_METHOD -> handleEmote(WebcastEmoteChatMessage.parseFrom(payload));

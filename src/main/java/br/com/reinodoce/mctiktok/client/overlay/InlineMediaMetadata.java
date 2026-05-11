@@ -126,7 +126,11 @@ record InlineMediaMetadata(
         Matcher matcher = NUMBER_PATTERN.matcher(json);
         while (matcher.find()) {
             if (name.equals(matcher.group(1))) {
-                return Long.parseLong(matcher.group(2));
+                try {
+                    return Long.parseLong(matcher.group(2));
+                } catch (NumberFormatException ignored) {
+                    return defaultValue;
+                }
             }
         }
         return defaultValue;
