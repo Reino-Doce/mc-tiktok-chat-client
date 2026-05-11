@@ -6,6 +6,7 @@ import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
 import br.com.reinodoce.mctiktok.emoji.UnicodeEmojiParser;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
+import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
 import br.com.reinodoce.mctiktok.state.ConnectionLifecycleState;
@@ -102,12 +103,12 @@ public class TikTokClientFacade {
     public CommandResult connect(String usernameInput) {
         String username = UsernameValidator.normalize(usernameInput);
         if (!UsernameValidator.isValid(username)) {
-            return CommandResult.error("Username invalido. Use @username com letras, numeros, ponto ou underscore.");
+            return CommandResult.error(Translations.tr("reinodoce.error.username_invalid"));
         }
 
         LiveSessionState.Snapshot snapshot = sessionState.snapshot();
         if (isConnectionActive(snapshot.state()) && username.equalsIgnoreCase(snapshot.username())) {
-            return CommandResult.ok("Ja conectado em @" + username + ".");
+            return CommandResult.ok(Translations.tr("reinodoce.command.connect.already_connected", username));
         }
 
         long token = lifecycleToken.incrementAndGet();
@@ -134,9 +135,9 @@ public class TikTokClientFacade {
                 && !snapshot.username().isBlank()
                 && !username.equalsIgnoreCase(snapshot.username());
         if (switchingUser) {
-            return CommandResult.ok("Trocando conexao para @" + username + "...");
+            return CommandResult.ok(Translations.tr("reinodoce.command.connect.switching", username));
         }
-        return CommandResult.ok("Conectando em @" + username + "...");
+        return CommandResult.ok(Translations.tr("reinodoce.command.connect.connecting", username));
     }
 
     public CommandResult disconnect() {
@@ -145,7 +146,7 @@ public class TikTokClientFacade {
         if (snapshot.state() == ConnectionLifecycleState.DISCONNECTED
                 && liveClient == null
                 && (task == null || task.isDone())) {
-            return CommandResult.ok("Ja esta desconectado.");
+            return CommandResult.ok(Translations.tr("reinodoce.command.disconnect.already"));
         }
 
         long token = lifecycleToken.incrementAndGet();
@@ -166,7 +167,7 @@ public class TikTokClientFacade {
             recentRenderedCommentFingerprints.clear();
         });
         ReinodoceLogger.LOGGER.debug("Disconnected requested with lifecycle token {}", token);
-        return CommandResult.ok("Desconectando...");
+        return CommandResult.ok(Translations.tr("reinodoce.command.disconnect.in_progress"));
     }
 
     public LiveSessionState.Snapshot status() {
@@ -234,7 +235,7 @@ public class TikTokClientFacade {
         sessionState.setReconnectAt(null);
         sessionState.setReconnectAttempts(0);
         reconnectNoticeThrottler.reset();
-        chatGateway.sendSystem("Conectado em @" + username, true);
+        chatGateway.sendSystem(Translations.tr("reinodoce.chat.connected", username), true);
         ReinodoceLogger.LOGGER.info("Connected to TikTok LIVE @{}", username);
     }
 
@@ -243,7 +244,8 @@ public class TikTokClientFacade {
             return;
         }
         liveClient = null;
-        String reason = normalizeErrorReason(event == null ? null : event.getReason(), "desconexao sem motivo informado");
+        String reason = normalizeErrorReason(event == null ? null : event.getReason(),
+                Translations.tr("reinodoce.error.reason.disconnect_unknown"));
         if (reconnectTask != null && !reconnectTask.isDone()) {
             sessionState.setLastError(reason);
             ReinodoceLogger.LOGGER.warn("Disconnected from TikTok LIVE @{} while reconnect is already scheduled (reason={})", username, reason);
@@ -252,9 +254,9 @@ public class TikTokClientFacade {
 
         sessionState.setState(ConnectionLifecycleState.DISCONNECTED);
         sessionState.setLastError(reason);
-        sendErrorSystemNotice("disconnect:" + reason, "Desconectado: " + reason);
+        sendErrorSystemNotice("disconnect:" + reason, Translations.tr("reinodoce.chat.disconnected_reason", reason));
         ReinodoceLogger.LOGGER.warn("Disconnected from TikTok LIVE @{} (reason={})", username, reason);
-        scheduleReconnect(token, username, "desconexao");
+        scheduleReconnect(token, username, Translations.tr("reinodoce.reason.disconnect"));
     }
 
     private void handleError(long token, TikTokErrorEvent event) {
@@ -267,14 +269,14 @@ public class TikTokClientFacade {
             return;
         }
         String error = normalizeErrorReason(exception.getMessage(), exception.getClass().getSimpleName());
-        String message = "Erro na LIVE: " + error;
+        String message = Translations.tr("reinodoce.chat.error_live", error);
         String username = sessionState.snapshot().username();
         sessionState.setLastError(message);
         sessionState.setState(ConnectionLifecycleState.ERROR);
         sendErrorSystemNotice("runtime:" + exception.getClass().getName() + ":" + error, message);
         ReinodoceLogger.LOGGER.warn("TikTok runtime connection error for @{} (retryable=true): {}", username, error, exception);
         disconnectCurrentClient();
-        scheduleReconnect(token, username, "erro de conexao");
+        scheduleReconnect(token, username, Translations.tr("reinodoce.reason.connection_error"));
     }
 
     private void handleConnectException(long token, String username, Exception exception) {
@@ -286,11 +288,13 @@ public class TikTokClientFacade {
         String message;
         boolean allowReconnect = shouldRetryConnectFailure(exception);
         if (!allowReconnect) {
-            message = "Username TikTok nao encontrado: @" + username + ". Verifique e tente novamente.";
+            message = Translations.tr("reinodoce.error.username_not_found", username);
         } else if (exception instanceof TikTokLiveOfflineHostException) {
-            message = "@" + username + " esta offline no momento.";
+            message = Translations.tr("reinodoce.error.user_offline", username);
         } else {
-            message = "Falha ao conectar: " + normalizeErrorReason(exception.getMessage(), "erro de rede ou servico indisponivel");
+            String reason = normalizeErrorReason(exception.getMessage(),
+                    Translations.tr("reinodoce.error.reason.network_unavailable"));
+            message = Translations.tr("reinodoce.error.connect_failed", reason);
         }
 
         sessionState.setLastError(message);
@@ -299,7 +303,7 @@ public class TikTokClientFacade {
         ReinodoceLogger.LOGGER.warn("Connect failure for @{} (reconnect={}) -> {}", username, allowReconnect, message, exception);
 
         if (allowReconnect) {
-            scheduleReconnect(token, username, "falha de conexao");
+            scheduleReconnect(token, username, Translations.tr("reinodoce.reason.connection_failure"));
         } else {
             sessionState.setReconnectAttempts(0);
         }
@@ -321,7 +325,7 @@ public class TikTokClientFacade {
         sessionState.setState(ConnectionLifecycleState.RECONNECT_SCHEDULED);
         sessionState.setReconnectAt(reconnectAt);
 
-        String reconnectNotice = "Reconnect tentativa " + attempt + " em " + reconnectSeconds + "s (" + reason + ").";
+        String reconnectNotice = Translations.tr("reinodoce.chat.reconnect_notice", attempt, reconnectSeconds, reason);
         if (reconnectNoticeThrottler.shouldEmit(username + ":" + reason)) {
             chatGateway.sendSystem(reconnectNotice, false);
         }
@@ -605,7 +609,7 @@ public class TikTokClientFacade {
                 ? memberMessage.getUser()
                 : null;
         long userId = rawUser != null && rawUser.getId() > 0 ? rawUser.getId() : memberMessage.getUserId();
-        String fallbackUsername = rawUser == null ? "desconhecido" : chooseRawUserName(rawUser.getNickname(), rawUser.getUsername());
+        String fallbackUsername = rawUser == null ? Translations.tr("reinodoce.chat.user_unknown") : chooseRawUserName(rawUser.getNickname(), rawUser.getUsername());
         String username = sanitizeUserName(memberLevelResolver.getKnownUsername(userId, fallbackUsername));
         String avatarUrl = memberLevelResolver.getKnownAvatarUrl(
                 userId,
@@ -734,7 +738,7 @@ public class TikTokClientFacade {
         int combo = Math.max(1, event.getCombo());
         String username = sanitizeUserName(resolveUserName(user));
         String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(user);
-        String giftName = MessageSanitizer.sanitize(gift == null ? "presente" : gift.getName());
+        String giftName = MessageSanitizer.sanitize(gift == null ? Translations.tr("reinodoce.chat.gift_unknown") : gift.getName());
         String giftIconUrl = TikTokMediaResolver.resolveGiftIconUrl(gift);
         long messageId = event.getMessageId();
 
@@ -787,19 +791,19 @@ public class TikTokClientFacade {
 
     private List<RichLiveMessage.Segment> giftSegments(String giftName, String giftIconUrl, int count) {
         List<RichLiveMessage.Segment> segments = new java.util.ArrayList<>();
-        segments.add(new RichLiveMessage.TextSegment("enviou "));
+        segments.add(new RichLiveMessage.TextSegment(Translations.tr("reinodoce.chat.gift_sent_prefix")));
         if (giftIconUrl != null && !giftIconUrl.isBlank()) {
             segments.add(new RichLiveMessage.GiftIconSegment(giftName, giftIconUrl, ""));
             segments.add(new RichLiveMessage.TextSegment(" "));
         }
         segments.addAll(unicodeEmojiParser.parseText(giftName));
-        segments.add(new RichLiveMessage.TextSegment(" x" + Math.max(1, count)));
+        segments.add(new RichLiveMessage.TextSegment(Translations.tr("reinodoce.chat.gift_count_suffix", Math.max(1, count))));
         return segments;
     }
 
     private String resolveUserName(User user) {
         if (user == null) {
-            return "desconhecido";
+            return Translations.tr("reinodoce.chat.user_unknown");
         }
         if (user.getProfileName() != null && !user.getProfileName().isBlank()) {
             return user.getProfileName();
@@ -807,7 +811,7 @@ public class TikTokClientFacade {
         if (user.getName() != null && !user.getName().isBlank()) {
             return user.getName();
         }
-        return "desconhecido";
+        return Translations.tr("reinodoce.chat.user_unknown");
     }
 
     private String chooseRawUserName(String profileName, String username) {
@@ -817,7 +821,7 @@ public class TikTokClientFacade {
         if (username != null && !username.isBlank()) {
             return username;
         }
-        return "desconhecido";
+        return Translations.tr("reinodoce.chat.user_unknown");
     }
 
     private io.github.jwdeveloper.tiktok.messages.data.User resolveBarrageRawUser(
@@ -843,7 +847,7 @@ public class TikTokClientFacade {
         if (rawUser != null) {
             return sanitizeUserName(chooseRawUserName(rawUser.getNickname(), rawUser.getUsername()));
         }
-        return "desconhecido";
+        return Translations.tr("reinodoce.chat.user_unknown");
     }
 
     private String resolveBarrageAvatarUrl(TikTokRichMessageParser.ParsedText parsed, io.github.jwdeveloper.tiktok.messages.data.User rawUser) {
@@ -901,7 +905,7 @@ public class TikTokClientFacade {
 
     private String sanitizeUserName(String raw) {
         String sanitized = MessageSanitizer.sanitize(raw);
-        return sanitized.isBlank() ? "desconhecido" : sanitized;
+        return sanitized.isBlank() ? Translations.tr("reinodoce.chat.user_unknown") : sanitized;
     }
 
     private void sendErrorSystemNotice(String key, String message) {

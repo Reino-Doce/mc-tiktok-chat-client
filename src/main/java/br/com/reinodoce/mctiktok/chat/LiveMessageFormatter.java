@@ -1,6 +1,7 @@
 package br.com.reinodoce.mctiktok.chat;
 
 import br.com.reinodoce.mctiktok.client.font.InlineMediaTokenRegistry;
+import br.com.reinodoce.mctiktok.i18n.Translations;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -37,7 +38,7 @@ public class LiveMessageFormatter {
     public FormattedLiveComment formatSyntheticFollow(String prefix, RichLiveMessage message) {
         return formatRichLine(
                 prefix,
-                message.withBodySegments(List.of(new RichLiveMessage.TextSegment("comecou a seguir"))),
+                message.withBodySegments(List.of(new RichLiveMessage.TextSegment(translate("reinodoce.chat.follow")))),
                 ChatFormatting.GREEN
         );
     }
@@ -45,7 +46,7 @@ public class LiveMessageFormatter {
     public FormattedLiveComment formatSyntheticJoin(String prefix, RichLiveMessage message) {
         return formatRichLine(
                 prefix,
-                message.withBodySegments(List.of(new RichLiveMessage.TextSegment("entrou na live"))),
+                message.withBodySegments(List.of(new RichLiveMessage.TextSegment(translate("reinodoce.chat.join")))),
                 ChatFormatting.AQUA
         );
     }
@@ -53,7 +54,7 @@ public class LiveMessageFormatter {
     public FormattedLiveComment formatSyntheticMemberLevel(String prefix, RichLiveMessage message, int memberLevel) {
         return formatRichLine(
                 prefix,
-                message.withBodySegments(List.of(new RichLiveMessage.TextSegment("alcancou nivel " + memberLevel + " de membro"))),
+                message.withBodySegments(List.of(new RichLiveMessage.TextSegment(translate("reinodoce.chat.member_level", memberLevel)))),
                 ChatFormatting.GOLD
         );
     }
@@ -72,7 +73,11 @@ public class LiveMessageFormatter {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
         line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
-        line.append(Component.literal("enviou " + giftName + " x" + count).withStyle(ChatFormatting.LIGHT_PURPLE));
+        line.append(Component.literal(
+                translate("reinodoce.chat.gift_sent_prefix")
+                        + giftName
+                        + translate("reinodoce.chat.gift_count_suffix", count)
+        ).withStyle(ChatFormatting.LIGHT_PURPLE));
         return line;
     }
 
@@ -80,7 +85,7 @@ public class LiveMessageFormatter {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
         line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
-        line.append(Component.literal("comecou a seguir").withStyle(ChatFormatting.GREEN));
+        line.append(Component.literal(translate("reinodoce.chat.follow")).withStyle(ChatFormatting.GREEN));
         return line;
     }
 
@@ -88,7 +93,7 @@ public class LiveMessageFormatter {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
         line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
-        line.append(Component.literal("entrou na live").withStyle(ChatFormatting.AQUA));
+        line.append(Component.literal(translate("reinodoce.chat.join")).withStyle(ChatFormatting.AQUA));
         return line;
     }
 
@@ -96,7 +101,7 @@ public class LiveMessageFormatter {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
         line.append(Component.literal(" <" + username + "> ").withStyle(ChatFormatting.WHITE));
-        line.append(Component.literal("alcancou nivel " + memberLevel + " de membro").withStyle(ChatFormatting.GOLD));
+        line.append(Component.literal(translate("reinodoce.chat.member_level", memberLevel)).withStyle(ChatFormatting.GOLD));
         return line;
     }
 
@@ -148,5 +153,9 @@ public class LiveMessageFormatter {
         if (starComment) {
             line.append(Component.literal("\u2b50 STAR").withStyle(ChatFormatting.GOLD));
         }
+    }
+
+    private String translate(String key, Object... args) {
+        return Translations.tr(key, args);
     }
 }

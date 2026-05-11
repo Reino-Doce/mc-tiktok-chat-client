@@ -4,6 +4,7 @@ import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
+import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
 import br.com.reinodoce.mctiktok.state.LiveSessionState;
@@ -74,23 +75,26 @@ public class ReinodoceCoreService {
         ReinodoceConfig config = settingsState.getSnapshot();
         LiveSessionState.Snapshot snapshot = tikTokClientFacade.status();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
+        String emptyValue = Translations.tr("reinodoce.status.empty_value");
 
         List<String> lines = new ArrayList<>();
-        lines.add("Estado: " + snapshot.state());
-        lines.add("Username atual: " + (snapshot.username().isBlank() ? "-" : "@" + snapshot.username()));
-        lines.add("Ultimo erro: " + (snapshot.lastError().isBlank() ? "-" : snapshot.lastError()));
-        lines.add("Reconnect: " + config.getReconnectSeconds() + "s");
-        lines.add("Reconnect attempts: " + snapshot.reconnectAttempts());
-        lines.add("Rule follower: " + config.isRuleFollowerOnly());
-        lines.add("Rule min-member-level: " + config.getRuleMinMemberLevel());
-        lines.add("Syntetic gift: " + config.getSynteticGiftMinValue());
-        lines.add("Syntetic gift-combo: " + config.getSynteticGiftComboMode());
-        lines.add("Syntetic follow: " + config.isSynteticFollowEnabled());
-        lines.add("Syntetic join: " + config.isSynteticJoinEnabled());
-        lines.add("Syntetic member-level: " + config.isSynteticMemberLevelEnabled());
-        lines.add("Chat emotes: " + config.isChatEmotesEnabled());
+        lines.add(Translations.tr("reinodoce.status.state", snapshot.state()));
+        lines.add(Translations.tr("reinodoce.status.username",
+                snapshot.username().isBlank() ? emptyValue : "@" + snapshot.username()));
+        lines.add(Translations.tr("reinodoce.status.last_error",
+                snapshot.lastError().isBlank() ? emptyValue : snapshot.lastError()));
+        lines.add(Translations.tr("reinodoce.status.reconnect_seconds", config.getReconnectSeconds()));
+        lines.add(Translations.tr("reinodoce.status.reconnect_attempts", snapshot.reconnectAttempts()));
+        lines.add(Translations.tr("reinodoce.status.rule_follower", config.isRuleFollowerOnly()));
+        lines.add(Translations.tr("reinodoce.status.rule_min_member_level", config.getRuleMinMemberLevel()));
+        lines.add(Translations.tr("reinodoce.status.syntetic_gift", config.getSynteticGiftMinValue()));
+        lines.add(Translations.tr("reinodoce.status.syntetic_gift_combo", config.getSynteticGiftComboMode()));
+        lines.add(Translations.tr("reinodoce.status.syntetic_follow", config.isSynteticFollowEnabled()));
+        lines.add(Translations.tr("reinodoce.status.syntetic_join", config.isSynteticJoinEnabled()));
+        lines.add(Translations.tr("reinodoce.status.syntetic_member_level", config.isSynteticMemberLevelEnabled()));
+        lines.add(Translations.tr("reinodoce.status.chat_emotes", config.isChatEmotesEnabled()));
         if (snapshot.reconnectAt() != null) {
-            lines.add("Proximo reconnect: " + formatter.format(snapshot.reconnectAt()));
+            lines.add(Translations.tr("reinodoce.status.next_reconnect", formatter.format(snapshot.reconnectAt())));
         }
         return lines;
     }
@@ -101,7 +105,7 @@ public class ReinodoceCoreService {
         config.setReconnectSeconds(seconds);
         persist(config);
         tikTokClientFacade.onConfigUpdated();
-        return CommandResult.ok("Reconnect atualizado para " + config.getReconnectSeconds() + "s.");
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.reconnect", config.getReconnectSeconds()));
     }
 
     public CommandResult setFollowerRule(boolean enabled) {
@@ -109,7 +113,7 @@ public class ReinodoceCoreService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setRuleFollowerOnly(enabled);
         persist(config);
-        return CommandResult.ok("Rule follower = " + enabled + ".");
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.follower", enabled));
     }
 
     public CommandResult setMinMemberLevelRule(int level) {
@@ -117,7 +121,7 @@ public class ReinodoceCoreService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setRuleMinMemberLevel(level);
         persist(config);
-        return CommandResult.ok("Rule min-member-level = " + config.getRuleMinMemberLevel() + ".");
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.min_member_level", config.getRuleMinMemberLevel()));
     }
 
     public CommandResult setSynteticGift(int value) {
@@ -125,7 +129,7 @@ public class ReinodoceCoreService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSynteticGiftMinValue(value);
         persist(config);
-        return CommandResult.ok("Syntetic gift = " + config.getSynteticGiftMinValue() + ".");
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_gift", config.getSynteticGiftMinValue()));
     }
 
     public CommandResult setSynteticGiftComboMode(String mode) {
@@ -134,7 +138,7 @@ public class ReinodoceCoreService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSynteticGiftComboMode(parsed.id());
         persist(config);
-        return CommandResult.ok("Syntetic gift-combo = " + parsed.id() + ".");
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_gift_combo", parsed.id()));
     }
 
     public CommandResult setSynteticFollow(boolean enabled) {
@@ -142,7 +146,7 @@ public class ReinodoceCoreService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSynteticFollowEnabled(enabled);
         persist(config);
-        return CommandResult.ok("Syntetic follow = " + enabled + ".");
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_follow", enabled));
     }
 
     public CommandResult setSynteticJoin(boolean enabled) {
@@ -150,7 +154,7 @@ public class ReinodoceCoreService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSynteticJoinEnabled(enabled);
         persist(config);
-        return CommandResult.ok("Syntetic join = " + enabled + ".");
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_join", enabled));
     }
 
     public CommandResult setSynteticMemberLevel(boolean enabled) {
@@ -158,7 +162,7 @@ public class ReinodoceCoreService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSynteticMemberLevelEnabled(enabled);
         persist(config);
-        return CommandResult.ok("Syntetic member-level = " + enabled + ".");
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_member_level", enabled));
     }
 
     public CommandResult setChatEmotesEnabled(boolean enabled) {
@@ -166,7 +170,7 @@ public class ReinodoceCoreService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setChatEmotesEnabled(enabled);
         persist(config);
-        return CommandResult.ok("Inline media = " + enabled + ".");
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.chat_emotes", enabled));
     }
 
     public CommandResult reload() {
@@ -174,7 +178,7 @@ public class ReinodoceCoreService {
         ReinodoceConfig loaded = configRepository.load();
         settingsState.set(loaded);
         tikTokClientFacade.onConfigUpdated();
-        return CommandResult.ok("Configuracao recarregada.");
+        return CommandResult.ok(Translations.tr("reinodoce.command.reload.ok"));
     }
 
     private void ensureInitialized() {

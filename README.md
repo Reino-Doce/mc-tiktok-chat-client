@@ -1,18 +1,20 @@
 # reinodoce-mc-tiktok
 
-Mod **client-side only** para Minecraft Java (Forge) que espelha eventos do chat de uma LIVE do TikTok dentro do chat do Minecraft.
+**Client-side only** Forge mod for Minecraft Java that mirrors chat events
+from a TikTok LIVE inside the Minecraft chat.
 
-## Visao geral
+## Overview
 
-- Projeto: Forge mod cliente, sem dependencia de servidor.
-- Funciona em singleplayer e multiplayer.
-- Nao exige plugin/mod/datapack no servidor.
-- Prefixo padrao no chat: `[LIVE]`.
-- Comandos client-side:
+- Project: client-side Forge mod, no server dependency.
+- Works in singleplayer and multiplayer.
+- Does not require a plugin, mod, or datapack on the server.
+- Default chat prefix: `[LIVE]`.
+- Client-side commands:
   - `/reinodoce connect @username`
   - `/reinodoce disconnect`
   - `/reinodoce status`
   - `/reinodoce settings reconnect <seconds>`
+  - `/reinodoce settings chat-emotes <true|false>`
   - `/reinodoce rule follower <true|false>`
   - `/reinodoce rule min-member-level <level>`
   - `/reinodoce syntetic gift <value>`
@@ -24,69 +26,98 @@ Mod **client-side only** para Minecraft Java (Forge) que espelha eventos do chat
 
 ## Stack
 
-- Minecraft alvo principal: `1.20.1`
-- Forge alvo principal: `47.4.16`
+- Primary Minecraft target: `1.20.1`
+- Primary Forge target: `47.4.16`
 - ForgeGradle: `net.minecraftforge.gradle` `[6.0,6.2)`
 - Gradle wrapper: `8.8`
-- Java alvo para 1.20.1: `17`
-- TikTokLiveJava: `1.11.11-Release` (jar provisionado de release GitHub)
+- Java target for 1.20.1: `17`
+- TikTokLiveJava: `1.11.11-Release` (jar provisioned from a GitHub release)
 
-## Instalacao (uso do mod)
+## Internationalization
 
-1. Gere o jar do mod com `./gradlew build` (ou `gradlew.bat build` no Windows).
-2. Copie o jar gerado em `build/libs` para a pasta `mods` do cliente Forge.
-3. Inicie Minecraft com perfil Forge correspondente.
-4. No jogo, use `/reinodoce connect @username`.
+The mod ships language bundles under `assets/reinodoce_mctiktok/lang/`,
+aligned with the largest TikTok LIVE gaming-streamer markets:
 
-## Exemplo rapido
+- `en_us` — English (baseline / fallback).
+- `pt_br` — Brazilian Portuguese.
+- `id_id` — Indonesian.
+- `es_mx` — Spanish (Mexico / LATAM).
+- `vi_vn` — Vietnamese.
+- `th_th` — Thai.
+- `fil_ph` — Filipino.
+- `tr_tr` — Turkish.
+- `ja_jp` — Japanese.
+- `fr_fr` — French.
+- `de_de` — German.
+- `ar_sa` — Arabic.
+
+The Minecraft client selects the locale automatically based on the
+player's language setting, falling back to English when a key is missing.
+To add a new locale, drop a matching JSON file into the same folder; no
+code change is required.
+
+## Installation (mod usage)
+
+1. Build the mod jar with `./gradlew build` (or `gradlew.bat build` on
+   Windows).
+2. Copy the jar generated under `build/libs` into the Forge client's
+   `mods` folder.
+3. Start Minecraft with the matching Forge profile.
+4. In game, run `/reinodoce connect @username`.
+
+## Quick example
 
 1. `/reinodoce settings reconnect 5`
 2. `/reinodoce rule follower true`
 3. `/reinodoce rule min-member-level 1`
 4. `/reinodoce syntetic gift-combo "bulk"`
-5. `/reinodoce connect @seuusuario`
+5. `/reinodoce connect @yourusername`
 6. `/reinodoce status`
 
 ## Prism Launcher (Side client vs both)
 
-Para mods locais `.jar`, o Prism Launcher normalmente mostra `Side = both` quando nao existe metadado Packwiz no `.index`.
+For local `.jar` mods, Prism Launcher usually shows `Side = both` when no
+Packwiz metadata exists in the `.index`.
 
-Este projeto gera um bundle especifico para Prism com:
+This project produces a Prism-specific bundle with:
 
-- `mods/reinodoce-mc-tiktok-<versao>.jar`
-- `mods/.index/reinodoce-mc-tiktok.pw.toml` com `side = "client"`
+- `mods/reinodoce-mc-tiktok-<version>.jar`
+- `mods/.index/reinodoce-mc-tiktok.pw.toml` with `side = "client"`
 
-Comando para gerar o bundle Prism:
+Command to generate the Prism bundle:
 
 ```bash
 ./gradlew clean build prismBundle verifyPrismMetadata
 ```
 
-No Windows:
+On Windows:
 
 ```powershell
 .\gradlew.bat clean build prismBundle verifyPrismMetadata
 ```
 
-Saida:
+Output:
 
 - `build/prism-bundle/mods`
 
-Uso no Prism:
+Usage in Prism:
 
-1. Feche a instancia no Prism.
-2. Copie todo o conteudo de `build/prism-bundle/mods` para a pasta `mods` da instancia.
-3. Abra a instancia no Prism e confira a coluna Side do mod (`client`).
+1. Close the instance in Prism.
+2. Copy everything from `build/prism-bundle/mods` into the instance's
+   `mods` folder.
+3. Open the instance in Prism and confirm the mod's Side column reads
+   `client`.
 
-Observacao: usar apenas o `.jar` sem o `.pw.toml` continua funcionando no Forge, mas o Prism pode exibir `both` na UI.
+Note: using only the `.jar` without the `.pw.toml` still works under Forge,
+but Prism may keep showing `both` in the UI.
 
-## Persistencia de configuracao
+## Configuration persistence
 
-Configuracao local do cliente em:
+Local client configuration lives at:
 
 - `config/reinodoce-mc-tiktok-client.json`
 
-Campos persistidos:
+Persisted fields:
 
 - `lastUsername`
 - `reconnectSeconds`
@@ -99,97 +130,110 @@ Campos persistidos:
 - `synteticMemberLevelEnabled`
 - `chatPrefix`
 
-## Build da branch
+## Branch build
 
-Esta branch e fixa em:
+This branch is pinned to:
 
 - Minecraft `1.20.1`
 - Forge `47.4.16`
 - Java `17`
 
-Build local:
+Local build:
 
 ```powershell
 .\gradlew.bat build
 ```
 
-O artefato desta branch existe para o adapter Forge 1.20.1. O nucleo compartilhado vive nas branches `shared/latest` e `shared/java17`.
+The artifact on this branch exists for the Forge 1.20.1 adapter. The
+shared core lives in the `shared/latest` and `shared/java17` branches.
 
-## Estrategia entre branches
+## Branch strategy
 
-- `shared/latest`: linha compartilhada mais nova
-- `shared/java17`: linha compartilhada Java 17
-- `1.20.1`: adapter Forge 1.20.1 em cima de `shared/java17`
+- `shared/latest`: newest shared baseline.
+- `shared/java17`: Java 17 shared baseline.
+- `1.20.1`: Forge 1.20.1 adapter built on top of `shared/java17`.
 
-Fluxo de manutencao:
+Maintenance flow:
 
-- mudancas comuns entram primeiro na branch `shared/*` pertinente;
-- depois sao mescladas para a branch de versao;
-- nao ha merge lateral entre branches de versao.
+- Common changes land first on the relevant `shared/*` branch.
+- They are then merged into the version-specific branch.
+- There is no lateral merge between version branches.
 
-Observacao: Git nao permite coexistir `shared` e `shared/java17` como branches. Por isso a linha compartilhada mais nova foi implementada como `shared/latest`.
+Note: Git does not allow `shared` and `shared/java17` to coexist as
+branches. That is why the newest shared baseline was implemented as
+`shared/latest`.
 
-## Dependencia TikTokLiveJava
+## TikTokLiveJava dependency
 
-Para evitar instabilidade de JitPack no build, o projeto provisiona automaticamente:
+To avoid JitPack instability during the build, the project automatically
+provisions:
 
-- `Client-<version>-all.jar` da release oficial do repositrio TikTokLiveJava no GitHub.
-- O artefato final do mod inclui essa dependencia embutida no `.jar` final.
-- Para compatibilidade com Forge + Connector/Fabric API, libs fornecidas pelo host (`com.google.gson` e `org.slf4j`) sao excluidas do empacotamento final do mod.
+- `Client-<version>-all.jar` from the official TikTokLiveJava GitHub
+  release.
+- The final mod artifact embeds this dependency inside the produced `.jar`.
+- For compatibility with Forge + Connector / Fabric API, libraries
+  provided by the host (`com.google.gson` and `org.slf4j`) are excluded
+  from the final mod packaging.
 
-Propriedade opcional para usar caminho customizado:
+Optional property to use a custom path:
 
-- `-Ptiktoklive_jar_path=<caminho-do-jar>`
+- `-Ptiktoklive_jar_path=<path-to-jar>`
 
-## Threading e robustez
+## Threading and robustness
 
-- Integracao TikTok roda fora da game thread.
-- Chat do Minecraft e sempre enviado no contexto seguro do cliente.
-- Reconnect com scheduler dedicado.
-- Telemetria local de reconnect (contador de tentativas no `/reinodoce status`).
-- Token de ciclo de vida evita callback antigo afetar sessao atual.
-- Protecao para connect/disconnect repetidos e troca de username ativa.
-- Avisos de erro/reconnect no chat com throttling para reduzir flood.
+- The TikTok integration runs off the game thread.
+- Minecraft chat is always dispatched from the client's safe context.
+- Reconnect uses a dedicated scheduler.
+- Local reconnect telemetry (attempt counter in `/reinodoce status`).
+- Lifecycle token prevents stale callbacks from affecting the current
+  session.
+- Protection against repeated connect / disconnect calls and active
+  username swaps.
+- Error / reconnect chat warnings are throttled to reduce flooding.
 
-## Limitacoes
+## Limitations
 
-- Integracao TikTok usa API nao oficial.
-- Mudancas no TikTok podem quebrar eventos/conexao sem aviso.
-- Member level pode variar por regiao/payload da live.
+- The TikTok integration uses an unofficial API.
+- Changes on TikTok may break events or the connection without notice.
+- Member level may vary per region or LIVE payload.
 
 ## Troubleshooting
 
-- Erro de Java no Gradle:
-  - use JDK 17 para build 1.20.1 (`JAVA_HOME` apontando para Java 17).
-- Falha ao testar nova versao no launcher:
-  - remova o jar antigo do mod na pasta `mods` antes de copiar o novo artefato.
-- Sem mensagens no jogo:
-  - valide se o chat HUD esta habilitado.
-  - rode `/reinodoce status` para ver estado e ultimo erro.
-- Username invalido:
-  - use `@username` com letras, numeros, `.` ou `_`.
-- Live offline:
-  - ajuste reconnect com `/reinodoce settings reconnect <seconds>`.
+- Gradle reports a Java error:
+  - use JDK 17 for the 1.20.1 build (point `JAVA_HOME` at Java 17).
+- Launcher fails to load the new mod build:
+  - remove the old mod jar from the `mods` folder before copying the new
+    artifact.
+- No messages appear in game:
+  - check that the chat HUD is enabled.
+  - run `/reinodoce status` to inspect state and the last error.
+- Invalid username:
+  - use `@username` with letters, digits, `.`, or `_`.
+- LIVE offline:
+  - tune the reconnect interval with
+    `/reinodoce settings reconnect <seconds>`.
 
-## Nota importante
+## Important note
 
-Este mod nao tenta se passar por jogador real do servidor. Todas as mensagens de LIVE aparecem com prefixo visual (`[LIVE]`) para manter identidade de origem externa.
+This mod does not try to impersonate a real player on the server. Every
+LIVE message is rendered with a visible prefix (`[LIVE]`) so the external
+origin stays identifiable.
 
-## Verificacao
+## Verification
 
 ```powershell
 .\gradlew.bat test
 .\gradlew.bat build
 ```
 
-Se `JAVA_HOME` nao estiver definido, `gradlew.bat` tenta usar uma instalacao
-local compativel de Java antes de cair no `java.exe` padrao do sistema. Isso
-evita falhas comuns quando o Java global da maquina e mais novo que o suportado
-pelo wrapper Gradle atual.
+If `JAVA_HOME` is not set, `gradlew.bat` tries to discover a compatible
+local Java installation before falling back to the system `java.exe`.
+This avoids the common failure where the machine's global Java is newer
+than what the current Gradle wrapper supports.
 
-## Agentes de IA
+## AI agents
 
-Leia `AGENTS.md` antes de editar este repositorio. Preserve os comandos
-`/reinodoce ...`, o arquivo `config/reinodoce-mc-tiktok-client.json` e a linha
-Forge/Minecraft documentada neste README quando atualizar codigo ou
-documentacao.
+Read `AGENTS.md` before editing this repository. Preserve the
+`/reinodoce ...` commands, the `config/reinodoce-mc-tiktok-client.json`
+file, and the Forge / Minecraft line documented in this README when
+updating code or documentation.
