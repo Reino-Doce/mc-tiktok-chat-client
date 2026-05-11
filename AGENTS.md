@@ -40,6 +40,9 @@
 - Test: `.\gradlew.bat test`
 - Smoke: `.\gradlew.bat build`
 - Typecheck: not configured
+- Lint: `.\gradlew.bat check` (runs Checkstyle, PMD, SpotBugs)
+- Individual: `.\gradlew.bat pmdMain checkstyleMain spotbugsMain`
+- Reports: `build/reports/{checkstyle,pmd,spotbugs}/`
 
 When `JAVA_HOME` is not set, `gradlew.bat` tries to pick a compatible local
 Java installation (`jdk-22`, `jdk-21`, `jdk-17`, or `jre1.8`) before falling
@@ -51,6 +54,7 @@ back to the system's default Java.
 
 - Keep the mod client-side only.
 - Preserve Prism metadata that marks the package as `side = "client"`.
+- Treat findings from PMD / Checkstyle / SpotBugs as defects to fix at the call site, not to suppress. Add a file-level suppression only with a one-line justification.
 
 ### Ask first
 

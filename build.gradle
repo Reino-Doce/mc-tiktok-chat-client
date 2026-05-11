@@ -3,9 +3,15 @@ plugins {
     id 'idea'
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'checkstyle'
+    id 'pmd'
+    id 'com.github.spotbugs' version '6.0.18'
 }
 
 import java.security.MessageDigest
+import com.github.spotbugs.snom.Confidence
+import com.github.spotbugs.snom.Effort
+import com.github.spotbugs.snom.SpotBugsTask
 
 ext {
     minecraftVersion = '1.20.1'
@@ -434,4 +440,51 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+checkstyle {
+    toolVersion = '10.17.0'
+    configFile = file('config/checkstyle/checkstyle.xml')
+    configDirectory = file('config/checkstyle')
+    maxWarnings = 0
+    ignoreFailures = true   // ratchet to false once baseline is clean
+}
+
+pmd {
+    toolVersion = '7.4.0'
+    consoleOutput = true
+    ruleSetFiles = files('config/pmd/pmd-ruleset.xml')
+    ruleSets = []            // disable the built-in defaults; use only ours
+    ignoreFailures = true   // ratchet to false once baseline is clean
+}
+
+spotbugs {
+    toolVersion = '4.8.6'
+    effort.set(Effort.valueOf('MAX'))
+    reportLevel.set(Confidence.valueOf('MEDIUM'))
+    excludeFilter = file('config/spotbugs/spotbugs-exclude.xml')
+    ignoreFailures = true   // ratchet to false once baseline is clean
+}
+
+tasks.withType(SpotBugsTask).configureEach {
+    reports {
+        html { required = true }
+        xml { required = false }
+    }
+}
+
+// Restrict analysis to our sources only — never the reobf'd outputs or generated resources.
+tasks.withType(Pmd).configureEach {
+    exclude '**/build/**'
+    exclude '**/generated/**'
+}
+tasks.withType(Checkstyle).configureEach {
+    exclude '**/build/**'
+    exclude '**/generated/**'
+}
+
+tasks.named('check').configure {
+    dependsOn 'checkstyleMain', 'checkstyleTest',
+              'pmdMain', 'pmdTest',
+              'spotbugsMain', 'spotbugsTest'
 }
