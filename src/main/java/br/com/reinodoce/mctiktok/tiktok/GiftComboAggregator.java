@@ -2,7 +2,6 @@ package br.com.reinodoce.mctiktok.tiktok;
 
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

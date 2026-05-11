@@ -40,7 +40,10 @@ public final class InlineMediaTokenRegistry {
     public InlineMediaCache.TextureHandle resolveHandle(int codePoint) {
         TokenEntry entry = lookup(codePoint);
         if (entry == null) {
-            return InlineMediaCache.TextureHandle.error(InlineMediaCache.ERROR_TEXTURE, 16, 16);
+            return InlineMediaCache.TextureHandle.error(
+                    InlineMediaCache.ERROR_TEXTURE,
+                    InlineMediaCache.FALLBACK_DIMENSION,
+                    InlineMediaCache.FALLBACK_DIMENSION);
         }
         return mediaCache.resolve(entry.segment());
     }

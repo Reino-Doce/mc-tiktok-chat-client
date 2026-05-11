@@ -9,7 +9,7 @@ public final class Translations {
     public static String tr(String key, Object... args) {
         try {
             return Component.translatable(key, args).getString();
-        } catch (Throwable ignored) {
+        } catch (IllegalArgumentException | IllegalStateException ignored) {
             return fallback(key, args);
         }
     }

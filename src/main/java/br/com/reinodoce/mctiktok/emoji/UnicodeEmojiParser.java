@@ -50,6 +50,7 @@ public final class UnicodeEmojiParser {
         return List.copyOf(expanded);
     }
 
+    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     private void appendExpandedText(List<RichLiveMessage.Segment> output, String text) {
         if (text == null || text.isEmpty()) {
             return;

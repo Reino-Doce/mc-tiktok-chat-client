@@ -447,7 +447,7 @@ checkstyle {
     configFile = file('config/checkstyle/checkstyle.xml')
     configDirectory = file('config/checkstyle')
     maxWarnings = 0
-    ignoreFailures = true   // ratchet to false once baseline is clean
+    ignoreFailures = false
 }
 
 pmd {
@@ -455,7 +455,7 @@ pmd {
     consoleOutput = true
     ruleSetFiles = files('config/pmd/pmd-ruleset.xml')
     ruleSets = []            // disable the built-in defaults; use only ours
-    ignoreFailures = true   // ratchet to false once baseline is clean
+    ignoreFailures = false
 }
 
 spotbugs {
@@ -463,7 +463,7 @@ spotbugs {
     effort.set(Effort.valueOf('MAX'))
     reportLevel.set(Confidence.valueOf('MEDIUM'))
     excludeFilter = file('config/spotbugs/spotbugs-exclude.xml')
-    ignoreFailures = true   // ratchet to false once baseline is clean
+    ignoreFailures = false
 }
 
 tasks.withType(SpotBugsTask).configureEach {

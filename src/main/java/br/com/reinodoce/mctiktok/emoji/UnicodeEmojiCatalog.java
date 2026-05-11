@@ -12,6 +12,7 @@ import java.util.Map;
 
 public final class UnicodeEmojiCatalog {
     private static final String RESOURCE_PATH = "emoji/twemoji_rgi_sequences.txt";
+    private static final int HEX_RADIX = 16;
     private static final UnicodeEmojiCatalog INSTANCE = new UnicodeEmojiCatalog(loadRoot());
 
     private final TrieNode root;
@@ -41,6 +42,7 @@ public final class UnicodeEmojiCatalog {
         return endExclusive < 0 ? null : new Match(startIndex, endExclusive);
     }
 
+    @SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
     private static TrieNode loadRoot() {
         TrieNode root = new TrieNode();
         try (InputStream inputStream = UnicodeEmojiCatalog.class.getClassLoader().getResourceAsStream(RESOURCE_PATH)) {
@@ -59,7 +61,7 @@ public final class UnicodeEmojiCatalog {
                     String[] parts = trimmed.split("-");
                     TrieNode node = root;
                     for (String part : parts) {
-                        int codePoint = Integer.parseInt(part, 16);
+                        int codePoint = Integer.parseInt(part, HEX_RADIX);
                         node = node.children.computeIfAbsent(codePoint, ignored -> new TrieNode());
                     }
                     node.terminal = true;

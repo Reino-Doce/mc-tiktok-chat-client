@@ -6,6 +6,7 @@ import net.minecraftforge.common.MinecraftForge;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 public final class ReinodoceClientBootstrap {
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
     private static final ReinodoceClientService SERVICE = new ReinodoceClientService(new Forge1201PlatformBridge());
