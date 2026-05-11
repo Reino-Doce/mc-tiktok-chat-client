@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.util.InlineMediaUrls;
 import io.github.jwdeveloper.tiktok.data.models.badges.Badge;
 import io.github.jwdeveloper.tiktok.data.models.badges.CombineBadge;
@@ -113,7 +114,7 @@ public class MemberLevelResolver {
 
     private String chooseUserName(User user) {
         if (user == null) {
-            return "desconhecido";
+            return Translations.tr("reinodoce.chat.user_unknown");
         }
         if (user.getProfileName() != null && !user.getProfileName().isBlank()) {
             return user.getProfileName();
@@ -121,14 +122,14 @@ public class MemberLevelResolver {
         if (user.getName() != null && !user.getName().isBlank()) {
             return user.getName();
         }
-        return "desconhecido";
+        return Translations.tr("reinodoce.chat.user_unknown");
     }
 
     private String chooseUserName(long userId, String username) {
         if (username != null && !username.isBlank()) {
             return username;
         }
-        return usernames.getOrDefault(userId, "desconhecido");
+        return usernames.getOrDefault(userId, Translations.tr("reinodoce.chat.user_unknown"));
     }
 
     private String chooseAvatarUrl(long userId, String avatarUrl) {

@@ -41,9 +41,9 @@
 - Smoke: `.\gradlew.bat build`
 - Typecheck: not configured
 
-Quando `JAVA_HOME` nao estiver definido, `gradlew.bat` tenta selecionar um Java
-local compativel (`jdk-22`, `jdk-21`, `jdk-17` ou `jre1.8`) antes de usar o
-Java padrao do sistema.
+When `JAVA_HOME` is not set, `gradlew.bat` tries to pick a compatible local
+Java installation (`jdk-22`, `jdk-21`, `jdk-17`, or `jre1.8`) before falling
+back to the system's default Java.
 
 ## Boundaries
 
