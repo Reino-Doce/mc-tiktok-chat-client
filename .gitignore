@@ -84,7 +84,7 @@ replay_pid*
 run/
 logs/
 crash-reports/
-config/
+/config/
 saves/
 screenshots/
 options.txt
