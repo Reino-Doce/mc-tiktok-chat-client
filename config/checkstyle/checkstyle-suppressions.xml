@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+  "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+  "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+  <!-- Add file-targeted suppressions here only with a justification comment. -->
+  <suppress checks="MagicNumber" files=".*[\\/]src[\\/]test[\\/].*"/>
+  <suppress checks="MultipleStringLiterals" files=".*[\\/]src[\\/]test[\\/].*"/>
+  <!-- Test sources favor readability over wrapping for fixture literals and protobuf builders. -->
+  <suppress checks="LineLength" files=".*[\\/]src[\\/]test[\\/].*"/>
+
+  <!-- Forge mod entry point requires a public no-arg constructor; not a utility class despite static-only state. -->
+  <suppress checks="HideUtilityClassConstructor" files=".*[\\/]ReinodoceMcTiktokMod\.java"/>
+
+  <!-- TikTokFacadeWiring is a dependency-injection factory; high coupling is intrinsic to its role. -->
+  <suppress checks="ClassDataAbstractionCoupling" files=".*[\\/]TikTokFacadeWiring\.java"/>
+  <suppress checks="ClassFanOutComplexity" files=".*[\\/]TikTokFacadeWiring\.java"/>
+
+  <!-- Third-party TikTok library boundary: connect/disconnect can throw arbitrary unchecked exceptions, and the session must
+       always transition out of CONNECTING/cleanup-in-progress; catching RuntimeException at this seam is intrinsic. -->
+  <suppress checks="IllegalCatch" files=".*[\\/]TikTokConnectionLifecycle\.java"/>
+
+  <!-- HTTP/IO/decoder boundary: HttpURLConnection, ImageIO and metadata parsing can throw arbitrary unchecked exceptions, and
+       cache entries must always transition out of LOADING; catching RuntimeException at this seam is intrinsic. -->
+  <suppress checks="IllegalCatch" files=".*[\\/]InlineMediaDownloader\.java"/>
+</suppressions>

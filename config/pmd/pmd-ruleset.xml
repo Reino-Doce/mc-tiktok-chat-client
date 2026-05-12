@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="mc-tiktok-chat-client"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>Curated PMD rules: catches AI-generated sprawl and anti-patterns without becoming noise.</description>
+
+  <!-- Best practices -->
+  <rule ref="category/java/bestpractices.xml/AvoidPrintStackTrace"/>
+  <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters"/>
+  <rule ref="category/java/bestpractices.xml/AvoidStringBufferField"/>
+  <rule ref="category/java/bestpractices.xml/AvoidUsingHardCodedIP"/>
+  <rule ref="category/java/bestpractices.xml/ConstantsInInterface"/>
+  <rule ref="category/java/bestpractices.xml/ForLoopCanBeForeach"/>
+  <rule ref="category/java/bestpractices.xml/LiteralsFirstInComparisons"/>
+  <rule ref="category/java/bestpractices.xml/PreserveStackTrace"/>
+  <rule ref="category/java/bestpractices.xml/SwitchStmtsShouldHaveDefault"/>
+  <rule ref="category/java/bestpractices.xml/UnusedFormalParameter"/>
+  <rule ref="category/java/bestpractices.xml/UnusedLocalVariable"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/>
+  <rule ref="category/java/bestpractices.xml/UseCollectionIsEmpty"/>
+  <rule ref="category/java/bestpractices.xml/UseTryWithResources"/>
+
+  <!-- Design / complexity -->
+  <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts">
+    <properties><property name="problemDepth" value="3"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml/AvoidCatchingGenericException"/>
+  <rule ref="category/java/design.xml/AvoidRethrowingException"/>
+  <rule ref="category/java/design.xml/AvoidThrowingNullPointerException"/>
+  <rule ref="category/java/design.xml/AvoidThrowingRawExceptionTypes"/>
+  <rule ref="category/java/design.xml/CognitiveComplexity">
+    <properties><property name="reportLevel" value="15"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml/CollapsibleIfStatements"/>
+  <rule ref="category/java/design.xml/CouplingBetweenObjects">
+    <properties><property name="threshold" value="20"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml/CyclomaticComplexity">
+    <properties>
+      <property name="methodReportLevel" value="10"/>
+      <property name="classReportLevel" value="60"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/design.xml/DataClass"/>
+  <rule ref="category/java/design.xml/ExcessiveParameterList">
+    <properties><property name="minimum" value="6"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml/ExcessivePublicCount"/>
+  <rule ref="category/java/design.xml/GodClass"/>
+  <rule ref="category/java/design.xml/NPathComplexity">
+    <properties><property name="reportLevel" value="200"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml/SimplifyBooleanExpressions"/>
+  <rule ref="category/java/design.xml/SimplifyBooleanReturns"/>
+  <rule ref="category/java/design.xml/TooManyFields">
+    <properties><property name="maxfields" value="15"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml/TooManyMethods">
+    <properties><property name="maxmethods" value="25"/></properties>
+  </rule>
+  <rule ref="category/java/design.xml/UselessOverridingMethod"/>
+
+  <!-- Error-prone patterns -->
+  <rule ref="category/java/errorprone.xml/AvoidCatchingNPE"/>
+  <rule ref="category/java/errorprone.xml/AvoidCatchingThrowable"/>
+  <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+    <properties>
+      <property name="maxDuplicateLiterals" value="4"/>
+      <property name="skipAnnotations" value="true"/>
+    </properties>
+  </rule>
+  <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingMethodName"/>
+  <rule ref="category/java/errorprone.xml/AvoidLiteralsInIfCondition">
+    <properties><property name="ignoreMagicNumbers" value="-1,0,1"/></properties>
+  </rule>
+  <rule ref="category/java/errorprone.xml/CloseResource"/>
+  <rule ref="category/java/errorprone.xml/CompareObjectsWithEquals"/>
+  <rule ref="category/java/errorprone.xml/EmptyCatchBlock">
+    <properties><property name="allowCommentedBlocks" value="true"/></properties>
+  </rule>
+  <!-- EmptyFinallyBlock was consolidated into EmptyControlStatement in PMD 7. -->
+  <rule ref="category/java/codestyle.xml/EmptyControlStatement"/>
+  <rule ref="category/java/errorprone.xml/EqualsNull"/>
+  <rule ref="category/java/errorprone.xml/MissingStaticMethodInNonInstantiatableClass"/>
+  <rule ref="category/java/errorprone.xml/NonStaticInitializer"/>
+  <rule ref="category/java/errorprone.xml/ReturnEmptyCollectionRatherThanNull"/>
+  <rule ref="category/java/bestpractices.xml/SystemPrintln"/>
+
+  <!-- Performance (cheap wins only) -->
+  <rule ref="category/java/performance.xml/AvoidInstantiatingObjectsInLoops"/>
+  <rule ref="category/java/performance.xml/UseStringBufferForStringAppends"/>
+
+  <!-- Code style (only the rules that catch real over-engineering) -->
+  <rule ref="category/java/codestyle.xml/UnnecessaryConstructor"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryFullyQualifiedName"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryImport"/>
+  <rule ref="category/java/codestyle.xml/UnnecessaryReturn"/>
+  <rule ref="category/java/codestyle.xml/UselessParentheses"/>
+
+</ruleset>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+  <!-- Mojang/Forge code has many EI_EXPOSE_REP-style patterns we can't avoid -->
+  <Match><Bug pattern="EI_EXPOSE_REP"/></Match>
+  <Match><Bug pattern="EI_EXPOSE_REP2"/></Match>
+  <Match><Bug pattern="MS_EXPOSE_REP"/></Match>
+  <!-- Serialization not in use; SpotBugs warns aggressively otherwise -->
+  <Match><Bug pattern="SE_BAD_FIELD"/></Match>
+  <Match><Bug pattern="SE_NO_SERIALVERSIONID"/></Match>
+</FindBugsFilter>
