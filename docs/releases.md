@@ -1,5 +1,19 @@
 # Release automation (GitHub Actions)
 
+Two workflows live in `.github/workflows/`:
+
+- **`ci.yml`** — runs on every push (any branch except tags) and on every
+  pull request. Builds the mod jar and the Packwiz bundle, runs the lint
+  suite (`check`) and tests, and uploads the artifacts plus
+  `SHA256SUMS.txt` / `SHA512SUMS.txt` so any commit produces a downloadable
+  build under the Actions tab. Use this for verifying changes, sharing a
+  preview build, or grabbing a snapshot jar without cutting a tag.
+- **`release.yml`** — the publishing pipeline. Runs only on
+  `mc*-v*` tag pushes (and `workflow_dispatch`) and attaches the same
+  artifacts to a real GitHub Release.
+
+## When a tagged release fires
+
 Releases are created automatically when a tag of the form
 `mc<minecraft_version>-v<mod_version>` is pushed to the GitHub
 repository (e.g. `mc1.20.1-v0.1.0`). The workflow lives in
