@@ -20,6 +20,11 @@ public final class CommandFeedback {
         }
     }
 
+    public static int sendResult(CommandSourceStack source, CommandResult result) {
+        send(source, result);
+        return result.success() ? 1 : 0;
+    }
+
     public static void sendLine(CommandSourceStack source, String line) {
         source.sendSuccess(() -> Component.literal("[ReinoDoce] ").withStyle(ChatFormatting.DARK_AQUA)
                 .append(Component.literal(line).withStyle(ChatFormatting.GRAY)), false);

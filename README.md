@@ -19,11 +19,13 @@ For the full command surface, see [docs/commands.md](docs/commands.md).
 
 ## Install (release version)
 
-1. Download the latest release from the GitHub Releases page. Two
-   artifacts are published per release:
+1. Download the latest release from the GitHub Releases page. The main
+   runtime artifacts are:
    - `reinodoce-mc-tiktok-<mc>-<v>.jar` — the bare mod jar.
    - `reinodoce-mc-tiktok-<mc>-<v>-packwiz.zip` — the same jar plus
      Packwiz metadata that marks the mod as client-only.
+   - `SHA256SUMS.txt` / `SHA512SUMS.txt` — checksums for the jar and
+     Packwiz zip.
 2. Install one of them into your Forge instance:
 
    **Vanilla Forge / CurseForge / ATLauncher / manual install** —
@@ -37,11 +39,17 @@ For the full command surface, see [docs/commands.md](docs/commands.md).
 3. Start Minecraft with the matching Forge profile.
 4. In game, run `/reinodoce connect @username`.
 
-Optional — verify the download with the published checksum files:
+Optional — verify the downloaded jar and Packwiz zip with the published
+checksum files:
 
 ```powershell
 # Windows
-Get-FileHash .\reinodoce-mc-tiktok-*.jar -Algorithm SHA256
+$checksums = Get-Content .\SHA256SUMS.txt
+foreach ($line in $checksums) {
+  $hash, $file = $line -split '\s+', 2
+  $actual = (Get-FileHash ".\$file" -Algorithm SHA256).Hash.ToLowerInvariant()
+  if ($actual -ne $hash) { throw "Checksum mismatch: $file" }
+}
 ```
 
 ```bash

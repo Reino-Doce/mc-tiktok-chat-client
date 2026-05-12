@@ -16,6 +16,15 @@ automatically.
 
 ## [Unreleased]
 
+### Changed
+
+- Keep inline media cache maintenance off the download queue and retry disk
+  cleanup promptly when scheduling is rejected.
+- Reuse one ready-metadata write path for inline media disk hits and cache
+  access refreshes.
+- Clarify release artifact checksum verification and `/reinodoce status`
+  diagnostics in the docs.
+
 ## [0.1.0]
 
 ### Changed

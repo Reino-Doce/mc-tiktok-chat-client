@@ -6,6 +6,7 @@ import br.com.reinodoce.mctiktok.client.font.InlineMediaFontHooks;
 import br.com.reinodoce.mctiktok.client.font.InlineMediaTokenRegistry;
 import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
 import br.com.reinodoce.mctiktok.command.CommandResult;
+import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
 import br.com.reinodoce.mctiktok.core.ReinodoceCoreService;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
@@ -14,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class ReinodoceClientService {
+public class ReinodoceClientService implements ReinodoceCommandService {
     private final ReinodoceCoreService coreService;
     private final InlineMediaCache inlineMediaCache;
     private final InlineMediaTokenRegistry inlineMediaTokenRegistry;

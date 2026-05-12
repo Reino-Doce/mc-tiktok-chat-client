@@ -25,8 +25,11 @@ final class InlineMediaAddressPolicy {
     private static final int OCTET_BENCHMARK_MIN = 18;
     private static final int OCTET_BENCHMARK_MAX = 19;
     private static final int OCTET_TEST_NET_2_SECOND = 51;
+    private static final int OCTET_TEST_NET_2_THIRD = 100;
     private static final int OCTET_TEST_NET_3 = 203;
     private static final int OCTET_TEST_NET_SECOND = 0;
+    private static final int OCTET_TEST_NET_THIRD = 2;
+    private static final int OCTET_TEST_NET_3_THIRD = 113;
     private static final int OCTET_MULTICAST_MIN = 224;
     private static final int OCTET_MAX = 255;
     private static final int IPV6_UNIQUE_LOCAL_MASK = 0xfe;
@@ -36,17 +39,18 @@ final class InlineMediaAddressPolicy {
             Ipv4Range.firstOctet(OCTET_ANY_LOCAL),
             Ipv4Range.firstOctet(OCTET_PRIVATE_10),
             Ipv4Range.firstOctet(OCTET_LOOPBACK),
-            new Ipv4Range(
+            Ipv4Range.secondOctetRange(
                     OCTET_CARRIER_GRADE_NAT,
                     OCTET_CARRIER_GRADE_NAT_MIN,
                     OCTET_CARRIER_GRADE_NAT_MAX),
-            new Ipv4Range(OCTET_LINK_LOCAL, OCTET_LINK_LOCAL_SECOND, OCTET_LINK_LOCAL_SECOND),
-            new Ipv4Range(OCTET_PRIVATE_172, OCTET_PRIVATE_172_MIN, OCTET_PRIVATE_172_MAX),
-            new Ipv4Range(OCTET_PRIVATE_192, OCTET_TEST_NET_SECOND, OCTET_TEST_NET_SECOND),
-            new Ipv4Range(OCTET_PRIVATE_192, OCTET_PRIVATE_192_SECOND, OCTET_PRIVATE_192_SECOND),
-            new Ipv4Range(OCTET_BENCHMARK, OCTET_BENCHMARK_MIN, OCTET_BENCHMARK_MAX),
-            new Ipv4Range(OCTET_BENCHMARK, OCTET_TEST_NET_2_SECOND, OCTET_TEST_NET_2_SECOND),
-            new Ipv4Range(OCTET_TEST_NET_3, OCTET_TEST_NET_SECOND, OCTET_TEST_NET_SECOND));
+            Ipv4Range.secondOctetRange(OCTET_LINK_LOCAL, OCTET_LINK_LOCAL_SECOND, OCTET_LINK_LOCAL_SECOND),
+            Ipv4Range.secondOctetRange(OCTET_PRIVATE_172, OCTET_PRIVATE_172_MIN, OCTET_PRIVATE_172_MAX),
+            Ipv4Range.prefix24(OCTET_PRIVATE_192, OCTET_TEST_NET_SECOND, OCTET_TEST_NET_SECOND),
+            Ipv4Range.secondOctetRange(OCTET_PRIVATE_192, OCTET_PRIVATE_192_SECOND, OCTET_PRIVATE_192_SECOND),
+            Ipv4Range.secondOctetRange(OCTET_BENCHMARK, OCTET_BENCHMARK_MIN, OCTET_BENCHMARK_MAX),
+            Ipv4Range.prefix24(OCTET_BENCHMARK, OCTET_TEST_NET_2_SECOND, OCTET_TEST_NET_2_THIRD),
+            Ipv4Range.prefix24(OCTET_TEST_NET_3, OCTET_TEST_NET_SECOND, OCTET_TEST_NET_3_THIRD),
+            Ipv4Range.prefix24(OCTET_PRIVATE_192, OCTET_TEST_NET_SECOND, OCTET_TEST_NET_THIRD));
 
     private InlineMediaAddressPolicy() {
     }
@@ -83,11 +87,12 @@ final class InlineMediaAddressPolicy {
     private static boolean isBlockedIpv4(byte[] address) {
         int first = Byte.toUnsignedInt(address[0]);
         int second = Byte.toUnsignedInt(address[1]);
+        int third = Byte.toUnsignedInt(address[2]);
         if (first >= OCTET_MULTICAST_MIN) {
             return true;
         }
         for (Ipv4Range range : BLOCKED_IPV4_RANGES) {
-            if (range.matches(first, second)) {
+            if (range.matches(first, second, third)) {
                 return true;
             }
         }
@@ -103,13 +108,45 @@ final class InlineMediaAddressPolicy {
         return url.getProtocol() + "://" + url.getHost();
     }
 
-    private record Ipv4Range(int firstOctet, int secondOctetMin, int secondOctetMax) {
+    private record Ipv4Range(
+            int firstOctet,
+            int secondOctetMin,
+            int secondOctetMax,
+            int thirdOctetMin,
+            int thirdOctetMax
+    ) {
         static Ipv4Range firstOctet(int firstOctet) {
-            return new Ipv4Range(firstOctet, OCTET_TEST_NET_SECOND, OCTET_MAX);
+            return new Ipv4Range(
+                    firstOctet,
+                    OCTET_TEST_NET_SECOND,
+                    OCTET_MAX,
+                    OCTET_TEST_NET_SECOND,
+                    OCTET_MAX);
         }
 
-        boolean matches(int first, int second) {
-            return first == firstOctet && second >= secondOctetMin && second <= secondOctetMax;
+        static Ipv4Range secondOctetRange(int firstOctet, int secondOctetMin, int secondOctetMax) {
+            return new Ipv4Range(
+                    firstOctet,
+                    secondOctetMin,
+                    secondOctetMax,
+                    OCTET_TEST_NET_SECOND,
+                    OCTET_MAX);
+        }
+
+        static Ipv4Range prefix24(int firstOctet, int secondOctet, int thirdOctet) {
+            return new Ipv4Range(firstOctet, secondOctet, secondOctet, thirdOctet, thirdOctet);
+        }
+
+        boolean matches(int first, int second, int third) {
+            return first == firstOctet && matchesSecondOctet(second) && matchesThirdOctet(third);
+        }
+
+        private boolean matchesSecondOctet(int second) {
+            return second >= secondOctetMin && second <= secondOctetMax;
+        }
+
+        private boolean matchesThirdOctet(int third) {
+            return third >= thirdOctetMin && third <= thirdOctetMax;
         }
     }
 }

@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 final class InlineMediaDiskCacheCleaner {
@@ -19,22 +22,30 @@ final class InlineMediaDiskCacheCleaner {
     private static final Duration CLEANUP_INTERVAL = Duration.ofMinutes(5);
 
     private final Map<String, InlineMediaCacheEntry> entries;
+    private final ExecutorService cleanupExecutor;
+    private final AtomicBoolean cleanupRunning = new AtomicBoolean();
     private long lastCleanupAt;
 
-    InlineMediaDiskCacheCleaner(Map<String, InlineMediaCacheEntry> entries) {
+    InlineMediaDiskCacheCleaner(Map<String, InlineMediaCacheEntry> entries, ExecutorService cleanupExecutor) {
         this.entries = entries;
+        this.cleanupExecutor = cleanupExecutor;
     }
 
     void cleanup(long now) {
-        if (lastCleanupAt != 0L && now - lastCleanupAt < CLEANUP_INTERVAL.toMillis()) {
+        cleanup(InlineMediaCacheEntry.cacheRootIfAvailable(), now);
+    }
+
+    void cleanup(Path root, long now) {
+        if (root == null || !shouldSchedule(now)) {
             return;
         }
-        lastCleanupAt = now;
-        Path root = InlineMediaCacheEntry.cacheRootIfAvailable();
-        if (root == null) {
-            return;
+        try {
+            cleanupExecutor.execute(() -> runCleanup(root, now));
+            markScheduled(now);
+        } catch (RejectedExecutionException exception) {
+            cleanupRunning.set(false);
+            ReinodoceLogger.LOGGER.debug("Failed to schedule inline media disk cache cleanup", exception);
         }
-        cleanup(root, entries, now, new Limits(MAX_DISK_BYTES, DISK_ENTRY_TTL.toMillis()));
     }
 
     static void cleanup(Path root, Map<String, InlineMediaCacheEntry> entries, long now, Limits limits) {
@@ -44,6 +55,25 @@ final class InlineMediaDiskCacheCleaner {
         List<DiskEntry> diskEntries = listDiskEntries(root, entries, now);
         long totalBytes = evictExpiredEntries(diskEntries, now, limits.ttlMillis());
         evictEntriesOverQuota(diskEntries, totalBytes, limits.maxBytes());
+    }
+
+    private synchronized boolean shouldSchedule(long now) {
+        if (lastCleanupAt != 0L && now - lastCleanupAt < CLEANUP_INTERVAL.toMillis()) {
+            return false;
+        }
+        return cleanupRunning.compareAndSet(false, true);
+    }
+
+    private synchronized void markScheduled(long now) {
+        lastCleanupAt = now;
+    }
+
+    private void runCleanup(Path root, long now) {
+        try {
+            cleanup(root, entries, now, new Limits(MAX_DISK_BYTES, DISK_ENTRY_TTL.toMillis()));
+        } finally {
+            cleanupRunning.set(false);
+        }
     }
 
     static void deleteDirectory(Path directory) {
@@ -68,7 +98,7 @@ final class InlineMediaDiskCacheCleaner {
     private static long evictExpiredEntries(List<DiskEntry> diskEntries, long now, long ttlMillis) {
         long totalBytes = totalBytes(diskEntries);
         for (DiskEntry entry : diskEntries) {
-            if (now - entry.lastUsedAt() > ttlMillis) {
+            if (entry.evictable() && now - entry.lastUsedAt() > ttlMillis) {
                 deleteDirectory(entry.path());
                 totalBytes -= entry.bytes();
             }
@@ -85,7 +115,7 @@ final class InlineMediaDiskCacheCleaner {
     }
 
     private static long evictEntryOverQuota(DiskEntry entry, long totalBytes, long maxBytes) {
-        if (totalBytes <= maxBytes || !Files.exists(entry.path())) {
+        if (totalBytes <= maxBytes || !entry.evictable() || !Files.exists(entry.path())) {
             return totalBytes;
         }
         deleteDirectory(entry.path());
@@ -98,28 +128,32 @@ final class InlineMediaDiskCacheCleaner {
         List<DiskEntry> diskEntries = new ArrayList<>();
         try (Stream<Path> paths = Files.list(root)) {
             paths.filter(Files::isDirectory)
-                    .filter(path -> isEvictionCandidate(path, entries, now))
-                    .forEach(path -> diskEntries.add(toDiskEntry(path)));
+                    .forEach(path -> diskEntries.add(toDiskEntry(path, entryFor(path, entries), now)));
         } catch (IOException exception) {
             ReinodoceLogger.LOGGER.debug("Failed to inspect inline media disk cache {}", root, exception);
         }
         return diskEntries;
     }
 
-    private static boolean isEvictionCandidate(
-            Path path, Map<String, InlineMediaCacheEntry> entries, long now
-    ) {
+    private static InlineMediaCacheEntry entryFor(Path path, Map<String, InlineMediaCacheEntry> entries) {
         Path fileName = path.getFileName();
         if (fileName == null) {
-            return false;
+            return null;
         }
-        InlineMediaCacheEntry entry = entries.get(fileName.toString());
+        return entries.get(fileName.toString());
+    }
+
+    private static boolean isEvictionCandidate(InlineMediaCacheEntry entry, long now) {
         return entry == null
                 || (entry.state != InlineMediaCacheEntry.EntryState.LOADING && !entry.isRecentlyVisible(now));
     }
 
-    private static DiskEntry toDiskEntry(Path path) {
-        return new DiskEntry(path, directorySize(path), lastUsedAt(path));
+    private static DiskEntry toDiskEntry(Path path, InlineMediaCacheEntry entry, long now) {
+        return new DiskEntry(
+                path,
+                directorySize(path),
+                lastUsedAt(path, entry),
+                isEvictionCandidate(entry, now));
     }
 
     private static long directorySize(Path path) {
@@ -141,16 +175,37 @@ final class InlineMediaDiskCacheCleaner {
         }
     }
 
-    private static long lastUsedAt(Path path) {
+    private static long lastUsedAt(Path path, InlineMediaCacheEntry entry) {
+        long metadataLastUsedAt = metadataLastUsedAt(path);
+        long memoryLastUsedAt = entry == null ? 0L : entry.lastAccessAt;
+        long explicitLastUsedAt = Math.max(metadataLastUsedAt, memoryLastUsedAt);
+        return explicitLastUsedAt > 0L ? explicitLastUsedAt : filesystemLastModifiedAt(path);
+    }
+
+    private static long metadataLastUsedAt(Path path) {
         try {
             InlineMediaMetadata metadata = InlineMediaMetadata.read(path.resolve("metadata.json"));
             return Math.max(metadata.lastUsedAt(), metadata.fetchedAt());
         } catch (IOException exception) {
-            try {
-                return Files.getLastModifiedTime(path).toMillis();
-            } catch (IOException ignored) {
-                return 0L;
-            }
+            return 0L;
+        }
+    }
+
+    private static long filesystemLastModifiedAt(Path path) {
+        try (Stream<Path> paths = Files.walk(path)) {
+            return paths.mapToLong(InlineMediaDiskCacheCleaner::lastModifiedAt)
+                    .max()
+                    .orElse(0L);
+        } catch (IOException exception) {
+            return lastModifiedAt(path);
+        }
+    }
+
+    private static long lastModifiedAt(Path path) {
+        try {
+            return Files.getLastModifiedTime(path).toMillis();
+        } catch (IOException exception) {
+            return 0L;
         }
     }
 
@@ -165,6 +220,6 @@ final class InlineMediaDiskCacheCleaner {
     record Limits(long maxBytes, long ttlMillis) {
     }
 
-    private record DiskEntry(Path path, long bytes, long lastUsedAt) {
+    private record DiskEntry(Path path, long bytes, long lastUsedAt, boolean evictable) {
     }
 }

@@ -20,6 +20,7 @@ final class InlineMediaCacheEntry {
     volatile int width = FALLBACK_DIMENSION;
     volatile int height = FALLBACK_DIMENSION;
     volatile long lastAccessAt = System.currentTimeMillis();
+    volatile long lastMetadataTouchAt;
     volatile long protectedUntilAt;
     volatile long lastFailureAt;
 

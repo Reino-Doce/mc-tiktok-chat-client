@@ -101,7 +101,12 @@ After downloading the artifacts from the release page:
 
 ```powershell
 # Windows
-Get-FileHash .\reinodoce-mc-tiktok-*.jar -Algorithm SHA256
+$checksums = Get-Content .\SHA256SUMS.txt
+foreach ($line in $checksums) {
+  $hash, $file = $line -split '\s+', 2
+  $actual = (Get-FileHash ".\$file" -Algorithm SHA256).Hash.ToLowerInvariant()
+  if ($actual -ne $hash) { throw "Checksum mismatch: $file" }
+}
 ```
 
 ```bash

@@ -25,11 +25,14 @@ public class InlineMediaCache {
                     ReinodoceMcTiktokMod.MOD_ID, "textures/gui/emote_error.png"));
 
     private final Map<String, InlineMediaCacheEntry> entries = new ConcurrentHashMap<>();
-    private final ExecutorService executor = ExecutorsFactory.newSingleThreadExecutor("reinodoce-inline-media");
+    private final ExecutorService loadExecutor = ExecutorsFactory.newSingleThreadExecutor("reinodoce-inline-media-load");
+    private final ExecutorService maintenanceExecutor =
+            ExecutorsFactory.newSingleThreadExecutor("reinodoce-inline-media-maintenance");
     private final InlineMediaCacheStats stats = new InlineMediaCacheStats();
     private final InlineMediaDownloader downloader = new InlineMediaDownloader(stats);
-    private final InlineMediaCacheLoader cacheLoader = new InlineMediaCacheLoader(entries, executor, downloader, stats);
-    private final InlineMediaEvictor evictor = new InlineMediaEvictor(entries, stats);
+    private final InlineMediaCacheLoader cacheLoader = new InlineMediaCacheLoader(
+            entries, loadExecutor, maintenanceExecutor, downloader, stats);
+    private final InlineMediaEvictor evictor = new InlineMediaEvictor(entries, stats, maintenanceExecutor);
 
     public InlineMediaCache() {
         ImageIoBootstrap.ensureInitialized();

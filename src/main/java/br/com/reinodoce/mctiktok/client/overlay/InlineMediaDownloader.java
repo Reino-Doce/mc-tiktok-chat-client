@@ -23,12 +23,11 @@ final class InlineMediaDownloader {
     void loadFromDisk(InlineMediaCacheEntry entry) {
         try {
             byte[] bytes = Files.readAllBytes(entry.payloadPath());
-            InlineMediaMetadata metadata = InlineMediaMetadata.read(entry.metadataPath())
-                    .withDefaults(entry.sourceReference(), entry.kind)
-                    .withSourceUrl(entry.sourceReference());
+            InlineMediaMetadata metadata = InlineMediaMetadataStore.readWithEntryDefaults(entry);
             InlineMediaLoadedMedia loaded = InlineMediaImageDecoder.decode(bytes, metadata.contentType());
-            registerTexture(entry, loaded, metadata.withLastUsedAt(System.currentTimeMillis()));
-            metadata.withStatus(InlineMediaMetadata.STATUS_READY).writeTo(entry.metadataPath());
+            long now = System.currentTimeMillis();
+            InlineMediaMetadata updatedMetadata = metadata.withLastUsedAt(now);
+            registerTexture(entry, loaded, updatedMetadata);
         } catch (IOException | RuntimeException exception) {
             markFailure(entry, "disk-load", exception);
         }
@@ -60,7 +59,7 @@ final class InlineMediaDownloader {
             long now
     ) throws IOException {
         String resolvedContentType = contentType == null ? InlineMediaMetadata.DEFAULT_CONTENT_TYPE : contentType;
-        new InlineMediaMetadata(
+        InlineMediaMetadataStore.writeReady(entry, new InlineMediaMetadata(
                 entry.sourceReference(),
                 entry.kind,
                 resolvedContentType,
@@ -69,7 +68,7 @@ final class InlineMediaDownloader {
                 loaded.height(),
                 now,
                 now,
-                InlineMediaMetadata.STATUS_READY).writeTo(entry.metadataPath());
+                InlineMediaMetadata.STATUS_READY), now);
     }
 
     private void registerTexture(
@@ -99,7 +98,7 @@ final class InlineMediaDownloader {
 
     private static void persistReady(InlineMediaCacheEntry entry, InlineMediaMetadata metadataToPersist) {
         try {
-            metadataToPersist.withStatus(InlineMediaMetadata.STATUS_READY).writeTo(entry.metadataPath());
+            InlineMediaMetadataStore.writeReady(entry, metadataToPersist, metadataToPersist.lastUsedAt());
         } catch (IOException exception) {
             ReinodoceLogger.LOGGER.warn(
                     "Failed to update inline media metadata for {}", entry.sourceReference(), exception);
@@ -128,6 +127,7 @@ final class InlineMediaDownloader {
                     entry.lastFailureAt,
                     entry.lastFailureAt,
                     InlineMediaMetadata.STATUS_ERROR).writeTo(entry.metadataPath());
+            entry.lastMetadataTouchAt = entry.lastFailureAt;
         } catch (IOException ignored) {
             // failure metadata is best-effort; entry is already marked ERROR.
         }

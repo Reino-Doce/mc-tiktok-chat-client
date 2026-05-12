@@ -39,4 +39,24 @@ class InlineMediaDownloaderTest {
                 IOException.class,
                 () -> InlineMediaAddressPolicy.validatePublicRemote(new URL("https://192.168.1.10/avatar.png")));
     }
+
+    @Test
+    void ipv4SpecialUseBlocksOnlyDocumentedPrefixes() {
+        assertThrows(
+                IOException.class,
+                () -> InlineMediaAddressPolicy.validatePublicRemote(new URL("https://192.0.2.1/avatar.png")));
+        assertThrows(
+                IOException.class,
+                () -> InlineMediaAddressPolicy.validatePublicRemote(new URL("https://198.51.100.1/avatar.png")));
+        assertThrows(
+                IOException.class,
+                () -> InlineMediaAddressPolicy.validatePublicRemote(new URL("https://203.0.113.1/avatar.png")));
+
+        assertDoesNotThrow(
+                () -> InlineMediaAddressPolicy.validatePublicRemote(new URL("https://192.0.3.1/avatar.png")));
+        assertDoesNotThrow(
+                () -> InlineMediaAddressPolicy.validatePublicRemote(new URL("https://198.51.42.1/avatar.png")));
+        assertDoesNotThrow(
+                () -> InlineMediaAddressPolicy.validatePublicRemote(new URL("https://203.0.42.1/avatar.png")));
+    }
 }

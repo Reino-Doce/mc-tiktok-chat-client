@@ -148,6 +148,7 @@ dependencies {
     embeddedLibraries 'com.twelvemonkeys.imageio:imageio-webp:3.13.1'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test', Test).configure {

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 
 final class InlineMediaEvictor {
     private static final int MAX_MEMORY_ENTRIES = 256;
@@ -17,10 +18,14 @@ final class InlineMediaEvictor {
     private final InlineMediaCacheStats stats;
     private final InlineMediaDiskCacheCleaner diskCacheCleaner;
 
-    InlineMediaEvictor(Map<String, InlineMediaCacheEntry> entries, InlineMediaCacheStats stats) {
+    InlineMediaEvictor(
+            Map<String, InlineMediaCacheEntry> entries,
+            InlineMediaCacheStats stats,
+            ExecutorService diskCleanupExecutor
+    ) {
         this.entries = entries;
         this.stats = stats;
-        this.diskCacheCleaner = new InlineMediaDiskCacheCleaner(entries);
+        this.diskCacheCleaner = new InlineMediaDiskCacheCleaner(entries, diskCleanupExecutor);
     }
 
     void cleanup(long now) {
