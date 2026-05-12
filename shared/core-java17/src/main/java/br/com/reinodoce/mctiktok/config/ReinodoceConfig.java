@@ -1,0 +1,123 @@
+package br.com.reinodoce.mctiktok.config;
+
+public class ReinodoceConfig {
+    private String lastUsername;
+    private int reconnectSeconds;
+    private boolean ruleFollowerOnly;
+    private int ruleMinMemberLevel;
+    private int synteticGiftMinValue;
+    private String synteticGiftComboMode;
+    private boolean synteticFollowEnabled;
+    private boolean synteticJoinEnabled;
+    private boolean synteticMemberLevelEnabled;
+    private boolean chatEmotesEnabled;
+    private String chatPrefix;
+
+    public static ReinodoceConfig defaults() {
+        return ReinodoceConfigDefaults.create();
+    }
+
+    public ReinodoceConfig copy() {
+        ReinodoceConfig copy = new ReinodoceConfig();
+        copy.setLastUsername(lastUsername);
+        copy.setReconnectSeconds(reconnectSeconds);
+        copy.setRuleFollowerOnly(ruleFollowerOnly);
+        copy.setRuleMinMemberLevel(ruleMinMemberLevel);
+        copy.setSynteticGiftMinValue(synteticGiftMinValue);
+        copy.setSynteticGiftComboMode(synteticGiftComboMode);
+        copy.setSynteticFollowEnabled(synteticFollowEnabled);
+        copy.setSynteticJoinEnabled(synteticJoinEnabled);
+        copy.setSynteticMemberLevelEnabled(synteticMemberLevelEnabled);
+        copy.setChatEmotesEnabled(chatEmotesEnabled);
+        copy.setChatPrefix(chatPrefix);
+        return copy;
+    }
+
+    public String getLastUsername() {
+        return lastUsername;
+    }
+
+    public void setLastUsername(String lastUsername) {
+        this.lastUsername = lastUsername;
+    }
+
+    public int getReconnectSeconds() {
+        return reconnectSeconds;
+    }
+
+    public void setReconnectSeconds(int reconnectSeconds) {
+        this.reconnectSeconds = Math.max(0, reconnectSeconds);
+    }
+
+    public boolean isRuleFollowerOnly() {
+        return ruleFollowerOnly;
+    }
+
+    public void setRuleFollowerOnly(boolean ruleFollowerOnly) {
+        this.ruleFollowerOnly = ruleFollowerOnly;
+    }
+
+    public int getRuleMinMemberLevel() {
+        return ruleMinMemberLevel;
+    }
+
+    public void setRuleMinMemberLevel(int ruleMinMemberLevel) {
+        this.ruleMinMemberLevel = Math.max(0, ruleMinMemberLevel);
+    }
+
+    public int getSynteticGiftMinValue() {
+        return synteticGiftMinValue;
+    }
+
+    public void setSynteticGiftMinValue(int synteticGiftMinValue) {
+        this.synteticGiftMinValue = Math.max(0, synteticGiftMinValue);
+    }
+
+    public String getSynteticGiftComboMode() {
+        return synteticGiftComboMode;
+    }
+
+    public void setSynteticGiftComboMode(String synteticGiftComboMode) {
+        this.synteticGiftComboMode = synteticGiftComboMode;
+    }
+
+    public boolean isSynteticFollowEnabled() {
+        return synteticFollowEnabled;
+    }
+
+    public void setSynteticFollowEnabled(boolean synteticFollowEnabled) {
+        this.synteticFollowEnabled = synteticFollowEnabled;
+    }
+
+    public boolean isSynteticJoinEnabled() {
+        return synteticJoinEnabled;
+    }
+
+    public void setSynteticJoinEnabled(boolean synteticJoinEnabled) {
+        this.synteticJoinEnabled = synteticJoinEnabled;
+    }
+
+    public boolean isSynteticMemberLevelEnabled() {
+        return synteticMemberLevelEnabled;
+    }
+
+    public void setSynteticMemberLevelEnabled(boolean synteticMemberLevelEnabled) {
+        this.synteticMemberLevelEnabled = synteticMemberLevelEnabled;
+    }
+
+    public boolean isChatEmotesEnabled() {
+        return chatEmotesEnabled;
+    }
+
+    public void setChatEmotesEnabled(boolean chatEmotesEnabled) {
+        this.chatEmotesEnabled = chatEmotesEnabled;
+    }
+
+    public String getChatPrefix() {
+        return chatPrefix;
+    }
+
+    public void setChatPrefix(String chatPrefix) {
+        this.chatPrefix = chatPrefix;
+    }
+}

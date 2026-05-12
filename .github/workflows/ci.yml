@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Read Gradle wrapper version
+        id: gradle_wrapper
+        shell: bash
+        run: |
+          version=$(sed -nE 's@^distributionUrl=.*/gradle-([0-9.]+)-bin\.zip$@\1@p' gradle/wrapper/gradle-wrapper.properties)
+          if [ -z "$version" ]; then
+            echo "::error::Could not parse Gradle version from gradle/wrapper/gradle-wrapper.properties"
+            exit 1
+          fi
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Gradle wrapper version: ${version}"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        with:
+          gradle-version: ${{ steps.gradle_wrapper.outputs.version }}
+
+      - name: Materialize Gradle wrapper jar
+        shell: bash
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            gradle wrapper --no-daemon
+            git checkout -- gradlew gradlew.bat gradle/wrapper/gradle-wrapper.properties
+          fi
+          test -f gradle/wrapper/gradle-wrapper.jar
+
+      - name: Read project metadata
+        id: vars
+        shell: bash
+        run: |
+          mod_version=$(grep -E '^mod_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
+          artifact_base=$(grep -E '^artifact_base_name=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
+          tiktoklive_version=$(grep -E '^tiktoklive_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
+          mc_version=$(grep -E "^\s*minecraftVersion\s*=" build.gradle | head -n1 | sed -E "s/.*'([^']+)'.*/\1/")
+          short_sha="${GITHUB_SHA::7}"
+          {
+            echo "mod_version=${mod_version}"
+            echo "artifact_base=${artifact_base}"
+            echo "tiktoklive_version=${tiktoklive_version}"
+            echo "mc_version=${mc_version}"
+            echo "short_sha=${short_sha}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Resolved: artifact_base=${artifact_base} mod_version=${mod_version} mc_version=${mc_version} tiktoklive=${tiktoklive_version} sha=${short_sha}"
+
+      - name: Cache TikTokLiveJava jar
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: libs
+          key: tiktoklive-${{ steps.vars.outputs.tiktoklive_version }}
+          restore-keys: |
+            tiktoklive-
+
+      - name: Build, lint, test, and bundle
+        run: ./gradlew --no-daemon --stacktrace clean check build prismBundle verifyPrismMetadata
+
+      - name: Package Packwiz client bundle zip
+        id: packwiz
+        shell: bash
+        run: |
+          bundle_zip="${{ steps.vars.outputs.artifact_base }}-${{ steps.vars.outputs.mc_version }}-${{ steps.vars.outputs.mod_version }}-packwiz.zip"
+          (cd build/prism-bundle && zip -r "../../${bundle_zip}" .)
+          echo "bundle_zip=${bundle_zip}" >> "$GITHUB_OUTPUT"
+
+      - name: Stage build artifacts
+        shell: bash
+        run: |
+          mkdir -p ci-artifacts
+          cp build/libs/*.jar ci-artifacts/
+          cp "${{ steps.packwiz.outputs.bundle_zip }}" ci-artifacts/
+          ls -la ci-artifacts/
+
+      - name: Generate checksums
+        shell: bash
+        working-directory: ci-artifacts
+        run: |
+          files=$(find . -maxdepth 1 -type f ! -name 'SHA*SUMS.txt' -printf '%f\n' | sort)
+          if [ -z "$files" ]; then
+            echo "::error::No assets staged for checksum generation."
+            exit 1
+          fi
+          echo "$files" | xargs -d '\n' sha256sum > SHA256SUMS.txt
+          echo "$files" | xargs -d '\n' sha512sum > SHA512SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload CI build
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ steps.vars.outputs.artifact_base }}-${{ steps.vars.outputs.mc_version }}-${{ steps.vars.outputs.mod_version }}-${{ steps.vars.outputs.short_sha }}
+          path: ci-artifacts/
+          if-no-files-found: error
+
+      - name: Upload lint reports on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: lint-reports-${{ steps.vars.outputs.short_sha }}
+          path: |
+            build/reports/checkstyle/
+            build/reports/pmd/
+            build/reports/spotbugs/
+          if-no-files-found: ignore
