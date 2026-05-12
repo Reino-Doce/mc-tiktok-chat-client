@@ -15,15 +15,18 @@ final class InlineMediaEvictor {
 
     private final Map<String, InlineMediaCacheEntry> entries;
     private final InlineMediaCacheStats stats;
+    private final InlineMediaDiskCacheCleaner diskCacheCleaner;
 
     InlineMediaEvictor(Map<String, InlineMediaCacheEntry> entries, InlineMediaCacheStats stats) {
         this.entries = entries;
         this.stats = stats;
+        this.diskCacheCleaner = new InlineMediaDiskCacheCleaner(entries);
     }
 
     void cleanup(long now) {
         evictTtlExpired(now);
         evictForCapacity(now);
+        diskCacheCleaner.cleanup(now);
     }
 
     private void evictTtlExpired(long now) {
@@ -79,6 +82,7 @@ final class InlineMediaEvictor {
             stats.recordCapacityEviction();
         }
         releaseTexture(removed);
+        InlineMediaDiskCacheCleaner.deleteDirectory(removed.directoryPath());
     }
 
     @SuppressWarnings("PMD.CloseResource")

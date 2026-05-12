@@ -12,9 +12,9 @@ public final class ReinodoceConfigDefaults {
         config.setRuleMinMemberLevel(0);
         config.setSynteticGiftMinValue(1);
         config.setSynteticGiftComboMode("bulk");
-        config.setSynteticFollowEnabled(true);
-        config.setSynteticJoinEnabled(true);
-        config.setSynteticMemberLevelEnabled(true);
+        config.setSynteticFollowEnabled(false);
+        config.setSynteticJoinEnabled(false);
+        config.setSynteticMemberLevelEnabled(false);
         config.setChatEmotesEnabled(true);
         config.setChatPrefix("[LIVE]");
         return config;

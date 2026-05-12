@@ -26,7 +26,9 @@ publish tags independently without colliding in the same namespace.
 
 - Builds with Temurin JDK 17 and Gradle action cache.
 - Caches the `TikTokLiveJava` jar in `libs/` keyed by `tiktoklive_version`
-  in `gradle.properties`, avoiding redownload on every run.
+  in `gradle.properties`, avoiding redownload on every run. The build
+  verifies cached and freshly downloaded copies against
+  `tiktoklive_sha512`.
 - Enforces that the tag matches both `minecraftVersion` in `build.gradle`
   **and** `mod_version` in `gradle.properties`, and that a `## <mod_version>`
   section exists in the branch's `CHANGELOG.md`.

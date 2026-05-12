@@ -30,3 +30,11 @@ identifiable in the Minecraft chat HUD.
 The prefix is a client-side render decoration — no network packet is
 sent to the server. See [configuration.md](configuration.md) for how
 to change it.
+
+## Inline media bounds
+
+Remote inline media is fetched only over HTTPS, must use a supported
+raster image content type, and is bounded before rendering. The client
+rejects oversized responses and images whose decoded dimensions exceed
+the configured pixel limit. Cached media is also cleaned up by age and
+disk quota.

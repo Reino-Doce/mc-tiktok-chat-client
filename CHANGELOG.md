@@ -16,6 +16,16 @@ automatically.
 
 ## [Unreleased]
 
+### Changed
+
+- Verify the provisioned `TikTokLiveJava` jar against a pinned SHA-512 before embedding it in release artifacts.
+- Bound inline media downloads by scheme, content type, response size, decoded dimensions, and disk cache cleanup.
+- Align shared Java 17 config defaults with the documented client defaults.
+
+### Added
+
+- Command-tree and config-contract tests for the public `/reinodoce` and persisted config surfaces.
+
 ## [0.1.0]
 
 ### Added

@@ -2,7 +2,13 @@
 
 - `shared/latest` — newest shared baseline.
 - `shared/java17` — Java 17 shared baseline.
-- `1.20.1` — Forge 1.20.1 adapter built on top of `shared/java17`.
+- `1.20.1` — Forge 1.20.1 adapter that carries the Java 17 shared
+  lineage from `shared/java17`.
+
+The `shared/core-java17/` tree in this repository is a local lineage
+snapshot, not a Gradle source set or subproject in the `1.20.1` build.
+Keep public config defaults and shared defaults aligned before syncing
+common changes across branches.
 
 Each version-specific branch is pinned to one Minecraft / Forge / Java
 combination. The `1.20.1` branch, for example, is pinned to:

@@ -89,7 +89,8 @@ The mod jar lands in `build/libs/`. Drop it into your Forge instance's
 ```
 
 This produces both the bare jar and the Packwiz bundle under
-`build/prism-bundle/`.
+`build/prism-bundle/`. The build also verifies the provisioned
+`TikTokLiveJava` jar against the SHA-512 recorded in `gradle.properties`.
 
 For deeper development topics — repo layout, the auto-provisioned
 `TikTokLiveJava` jar, the lint suite, etc. — see

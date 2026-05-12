@@ -69,11 +69,18 @@ The final mod artifact embeds this dependency inside the produced
 provided by the host (`com.google.gson` and `org.slf4j`) are excluded
 from the final mod packaging.
 
+The provisioned jar is verified against `tiktoklive_sha512` in
+`gradle.properties`. Cached copies and freshly downloaded copies both
+fail the build when the digest does not match.
+
 To point at a local jar instead of the auto-provisioned one:
 
 ```bash
 ./gradlew build -Ptiktoklive_jar_path=/absolute/path/to/Client-1.11.11-Release-all.jar
 ```
+
+When using a local jar override, also pass the matching
+`-Ptiktoklive_sha512=<sha512>` value.
 
 ## Verification commands
 

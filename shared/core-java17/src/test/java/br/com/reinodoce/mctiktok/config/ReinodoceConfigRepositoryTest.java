@@ -59,6 +59,9 @@ class ReinodoceConfigRepositoryTest {
         assertEquals("", loaded.getLastUsername());
         assertEquals(5, loaded.getReconnectSeconds());
         assertEquals("bulk", loaded.getSynteticGiftComboMode());
+        assertFalse(loaded.isSynteticFollowEnabled());
+        assertFalse(loaded.isSynteticJoinEnabled());
+        assertFalse(loaded.isSynteticMemberLevelEnabled());
         assertEquals("[LIVE]", loaded.getChatPrefix());
     }
 
