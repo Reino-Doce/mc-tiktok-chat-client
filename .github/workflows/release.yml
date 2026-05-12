@@ -24,31 +24,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Read Gradle wrapper version
-        id: gradle_wrapper
-        shell: bash
-        run: |
-          version=$(sed -nE 's@^distributionUrl=.*/gradle-([0-9.]+)-bin\.zip$@\1@p' gradle/wrapper/gradle-wrapper.properties)
-          if [ -z "$version" ]; then
-            echo "::error::Could not parse Gradle version from gradle/wrapper/gradle-wrapper.properties"
-            exit 1
-          fi
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "Gradle wrapper version: ${version}"
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
-        with:
-          gradle-version: ${{ steps.gradle_wrapper.outputs.version }}
 
-      - name: Materialize Gradle wrapper jar
+      - name: Verify Gradle wrapper integrity metadata
         shell: bash
         run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            gradle wrapper --no-daemon
-            git checkout -- gradlew gradlew.bat gradle/wrapper/gradle-wrapper.properties
-          fi
           test -f gradle/wrapper/gradle-wrapper.jar
+          grep -q '^distributionSha256Sum=' gradle/wrapper/gradle-wrapper.properties
 
       - name: Read project metadata
         id: vars
@@ -120,8 +103,8 @@ jobs:
           restore-keys: |
             tiktoklive-
 
-      - name: Build mod jar and Prism bundle
-        run: ./gradlew --no-daemon --stacktrace clean build prismBundle verifyPrismMetadata
+      - name: Build, lint, test, and bundle
+        run: ./gradlew --no-daemon --stacktrace clean check build prismBundle verifyPrismMetadata
 
       - name: Package Packwiz client bundle zip
         id: packwiz

@@ -4,7 +4,7 @@ import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 
 @SuppressWarnings("PMD.DataClass")
 public class ReinodoceConfig {
-    private static final String DEFAULT_CHAT_PREFIX = "[LIVE]";
+    public static final String DEFAULT_CHAT_PREFIX = "[LIVE]";
     private static final int DEFAULT_RECONNECT_SECONDS = 5;
     private static final int DEFAULT_SYNTHETIC_GIFT_MIN_VALUE = 1;
 

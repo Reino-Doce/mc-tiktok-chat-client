@@ -52,24 +52,10 @@ sha512sum -c SHA512SUMS.txt
 
 ## Build locally
 
-Requirements: JDK 17 (`JAVA_HOME` pointing at it) and Gradle 8.8 to
-bootstrap the wrapper.
-
-The wrapper jar (`gradle/wrapper/gradle-wrapper.jar`) is **not** tracked
-in the repository — `*.jar` is in `.gitignore`. After cloning,
-materialize it once with a system Gradle:
-
-```powershell
-gradle wrapper --gradle-version=8.8
-```
-
-```bash
-gradle wrapper --gradle-version=8.8
-```
-
-If you do not have Gradle installed, use [SDKMAN!](https://sdkman.io/)
-(`sdk install gradle 8.8`) or [Scoop](https://scoop.sh/)
-(`scoop install gradle@8.8`).
+Requirement: JDK 17 (`JAVA_HOME` pointing at it). The Gradle wrapper jar
+is tracked, and `gradle/wrapper/gradle-wrapper.properties` pins the
+Gradle distribution checksum, so no system Gradle bootstrap step is
+required after cloning.
 
 Then build:
 

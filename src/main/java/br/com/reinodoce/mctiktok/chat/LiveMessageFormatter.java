@@ -1,6 +1,7 @@
 package br.com.reinodoce.mctiktok.chat;
 
 import br.com.reinodoce.mctiktok.client.font.InlineMediaTokenRegistry;
+import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.i18n.Translations;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -148,7 +149,7 @@ public class LiveMessageFormatter {
     }
 
     private Component prefix(String prefix) {
-        String value = prefix == null || prefix.isBlank() ? "[LIVE]" : prefix;
+        String value = prefix == null || prefix.isBlank() ? ReinodoceConfig.DEFAULT_CHAT_PREFIX : prefix;
         return Component.literal(value + " ").withStyle(ChatFormatting.YELLOW);
     }
 

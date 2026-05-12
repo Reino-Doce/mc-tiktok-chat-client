@@ -16,17 +16,13 @@ automatically.
 
 ## [Unreleased]
 
+## [0.1.0]
+
 ### Changed
 
 - Verify the provisioned `TikTokLiveJava` jar against a pinned SHA-512 before embedding it in release artifacts.
-- Bound inline media downloads by scheme, content type, response size, decoded dimensions, and disk cache cleanup.
+- Bound inline media downloads by scheme, host address, content type, response size, decoded dimensions, and disk cache cleanup.
 - Align shared Java 17 config defaults with the documented client defaults.
-
-### Added
-
-- Command-tree and config-contract tests for the public `/reinodoce` and persisted config surfaces.
-
-## [0.1.0]
 
 ### Added
 
@@ -34,3 +30,4 @@ automatically.
 - Commands: `/reinodoce connect|disconnect|status|settings|rule|syntetic|reload`.
 - Client-side mod bundle in Packwiz format with `side = "client"` metadata (`prismBundle`, `verifyPrismMetadata`); launcher-agnostic, consumable by Prism Launcher and other Packwiz-aware launchers.
 - GitHub Actions release workflow with SHA-256/SHA-512 checksums, TikTokLiveJava jar caching, changelog gate, and SHA-pinned third-party actions.
+- Command-tree and config-contract tests for the public `/reinodoce` and persisted config surfaces.

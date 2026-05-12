@@ -41,6 +41,7 @@ final class InlineMediaNetworkClient {
     private static HttpURLConnection openConnection(String sourceUrl) throws IOException {
         URL initialUrl = new URL(sourceUrl);
         validateHttps(initialUrl);
+        InlineMediaAddressPolicy.validatePublicRemote(initialUrl);
         URL currentUrl = initialUrl;
         for (int redirectCount = 0; redirectCount <= MAX_REDIRECTS; redirectCount++) {
             HttpURLConnection connection = createConnection(currentUrl);
@@ -55,6 +56,7 @@ final class InlineMediaNetworkClient {
             }
             URL redirected = redirectedUrl(currentUrl, location);
             validateSameHostRedirect(initialUrl, redirected);
+            InlineMediaAddressPolicy.validatePublicRemote(redirected);
             currentUrl = redirected;
         }
         throw new IOException("Too many inline media redirects for " + redactedUrl(initialUrl));

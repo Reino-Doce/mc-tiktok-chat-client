@@ -3,6 +3,7 @@ package br.com.reinodoce.mctiktok.client.overlay;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.net.URL;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -27,5 +28,15 @@ class InlineMediaDownloaderTest {
 
         assertThrows(IOException.class, () -> InlineMediaDownloader.validateDimensions(0, 16));
         assertThrows(IOException.class, () -> InlineMediaDownloader.validateDimensions(2048, 2048));
+    }
+
+    @Test
+    void rejectsNonPublicRemoteMediaHosts() {
+        assertThrows(
+                IOException.class,
+                () -> InlineMediaAddressPolicy.validatePublicRemote(new URL("https://127.0.0.1/avatar.png")));
+        assertThrows(
+                IOException.class,
+                () -> InlineMediaAddressPolicy.validatePublicRemote(new URL("https://192.168.1.10/avatar.png")));
     }
 }

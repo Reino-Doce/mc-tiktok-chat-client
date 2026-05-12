@@ -33,8 +33,10 @@ to change it.
 
 ## Inline media bounds
 
-Remote inline media is fetched only over HTTPS, must use a supported
-raster image content type, and is bounded before rendering. The client
-rejects oversized responses and images whose decoded dimensions exceed
-the configured pixel limit. Cached media is also cleaned up by age and
-disk quota.
+Remote inline media is fetched only over HTTPS from public remote
+addresses, must use a supported raster image content type, and is
+bounded before rendering. The client rejects same-host redirects to
+private, loopback, link-local, multicast, or otherwise non-public
+addresses, oversized responses, and images whose decoded dimensions
+exceed the configured pixel limit. Cached media is also cleaned up by
+age and disk quota.

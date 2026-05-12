@@ -24,7 +24,9 @@ publish tags independently without colliding in the same namespace.
 
 ## What the workflow does
 
-- Builds with Temurin JDK 17 and Gradle action cache.
+- Builds with Temurin JDK 17, the checked-in Gradle wrapper, and the
+  Gradle action cache. The wrapper distribution checksum is pinned in
+  `gradle/wrapper/gradle-wrapper.properties`.
 - Caches the `TikTokLiveJava` jar in `libs/` keyed by `tiktoklive_version`
   in `gradle.properties`, avoiding redownload on every run. The build
   verifies cached and freshly downloaded copies against
@@ -32,9 +34,9 @@ publish tags independently without colliding in the same namespace.
 - Enforces that the tag matches both `minecraftVersion` in `build.gradle`
   **and** `mod_version` in `gradle.properties`, and that a `## <mod_version>`
   section exists in the branch's `CHANGELOG.md`.
-- Runs `./gradlew clean build prismBundle verifyPrismMetadata`, chaining
-  the `verifyEmbeddedPackages` and `verifyCoremodResources` gates via
-  `check`.
+- Runs `./gradlew clean check build prismBundle verifyPrismMetadata`,
+  including the `verifyEmbeddedPackages` and `verifyCoremodResources`
+  gates wired into `check`.
 - Packages `build/prism-bundle/` into a helper zip.
 - Generates `SHA256SUMS.txt` and `SHA512SUMS.txt` for all artifacts.
 - Attaches the mod `.jar`, the bundle zip, and the checksum files to

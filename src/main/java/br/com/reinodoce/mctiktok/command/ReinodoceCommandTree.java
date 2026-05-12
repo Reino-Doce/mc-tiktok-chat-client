@@ -7,6 +7,7 @@ import br.com.reinodoce.mctiktok.command.handlers.RuleCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.SettingsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.StatusCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.SynteticCommandHandler;
+import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -15,10 +16,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 
-import java.util.List;
-
 public final class ReinodoceCommandTree {
-    private static final List<String> GIFT_COMBO_MODES = List.of("ignore", "single", "bulk");
     private static final String ARG_ENABLED = "enabled";
 
     private ReinodoceCommandTree() {
@@ -91,7 +89,8 @@ public final class ReinodoceCommandTree {
                                         IntegerArgumentType.getInteger(ctx, "value")))))
                 .then(Commands.literal("gift-combo")
                         .then(Commands.argument("mode", StringArgumentType.string())
-                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(GIFT_COMBO_MODES, builder))
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                        GiftComboMode.ids(), builder))
                                 .executes(ctx -> SynteticCommandHandler.giftCombo(
                                         ctx.getSource(),
                                         StringArgumentType.getString(ctx, "mode")))))

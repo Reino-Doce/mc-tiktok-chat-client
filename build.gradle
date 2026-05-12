@@ -368,7 +368,9 @@ tasks.register('verifyCoremodResources') {
         def requiredEntries = [
                 'META-INF/coremods.json',
                 'coremods/reinodoce_inline_media_font.js',
-                "assets/${mod_id}/textures/gui/no_user_image.png"
+                "assets/${mod_id}/textures/gui/no_user_image.png",
+                "assets/${mod_id}/textures/gui/emote_loading.png",
+                "assets/${mod_id}/textures/gui/emote_error.png"
         ]
 
         def missingEntries = [] as Set

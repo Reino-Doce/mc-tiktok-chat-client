@@ -1,17 +1,24 @@
 package br.com.reinodoce.mctiktok.config;
 
+import java.util.Locale;
+
 public class ReinodoceConfig {
-    private String lastUsername;
-    private int reconnectSeconds;
+    private static final String DEFAULT_CHAT_PREFIX = "[LIVE]";
+    private static final String DEFAULT_GIFT_COMBO_MODE = "bulk";
+    private static final int DEFAULT_RECONNECT_SECONDS = 5;
+    private static final int DEFAULT_SYNTHETIC_GIFT_MIN_VALUE = 1;
+
+    private String lastUsername = "";
+    private int reconnectSeconds = DEFAULT_RECONNECT_SECONDS;
     private boolean ruleFollowerOnly;
     private int ruleMinMemberLevel;
-    private int synteticGiftMinValue;
-    private String synteticGiftComboMode;
+    private int synteticGiftMinValue = DEFAULT_SYNTHETIC_GIFT_MIN_VALUE;
+    private String synteticGiftComboMode = DEFAULT_GIFT_COMBO_MODE;
     private boolean synteticFollowEnabled;
     private boolean synteticJoinEnabled;
     private boolean synteticMemberLevelEnabled;
-    private boolean chatEmotesEnabled;
-    private String chatPrefix;
+    private boolean chatEmotesEnabled = true;
+    private String chatPrefix = DEFAULT_CHAT_PREFIX;
 
     public static ReinodoceConfig defaults() {
         return ReinodoceConfigDefaults.create();
@@ -38,7 +45,7 @@ public class ReinodoceConfig {
     }
 
     public void setLastUsername(String lastUsername) {
-        this.lastUsername = lastUsername;
+        this.lastUsername = lastUsername == null ? "" : lastUsername.trim();
     }
 
     public int getReconnectSeconds() {
@@ -78,7 +85,7 @@ public class ReinodoceConfig {
     }
 
     public void setSynteticGiftComboMode(String synteticGiftComboMode) {
-        this.synteticGiftComboMode = synteticGiftComboMode;
+        this.synteticGiftComboMode = normalizedGiftComboMode(synteticGiftComboMode);
     }
 
     public boolean isSynteticFollowEnabled() {
@@ -118,6 +125,21 @@ public class ReinodoceConfig {
     }
 
     public void setChatPrefix(String chatPrefix) {
-        this.chatPrefix = chatPrefix;
+        if (chatPrefix == null || chatPrefix.isBlank()) {
+            this.chatPrefix = DEFAULT_CHAT_PREFIX;
+            return;
+        }
+        this.chatPrefix = chatPrefix.trim();
+    }
+
+    private String normalizedGiftComboMode(String value) {
+        if (value == null) {
+            return DEFAULT_GIFT_COMBO_MODE;
+        }
+        String normalized = value.toLowerCase(Locale.ROOT);
+        if ("ignore".equals(normalized) || "single".equals(normalized) || DEFAULT_GIFT_COMBO_MODE.equals(normalized)) {
+            return normalized;
+        }
+        return DEFAULT_GIFT_COMBO_MODE;
     }
 }
