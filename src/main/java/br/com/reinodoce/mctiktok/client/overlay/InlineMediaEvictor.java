@@ -82,7 +82,6 @@ final class InlineMediaEvictor {
             stats.recordCapacityEviction();
         }
         releaseTexture(removed);
-        InlineMediaDiskCacheCleaner.deleteDirectory(removed.directoryPath());
     }
 
     @SuppressWarnings("PMD.CloseResource")

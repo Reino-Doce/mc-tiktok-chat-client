@@ -65,6 +65,10 @@ void verifyTikTokLiveJar(File inputFile, String expectedSha512) {
 }
 
 tasks.register('prepareTikTokLiveJar') {
+    inputs.property('tiktoklive_version', tiktokLiveVersion)
+    inputs.property('tiktoklive_jar_path', tiktokLiveJarPath)
+    inputs.property('tiktoklive_sha512', tiktokLiveSha512)
+    inputs.property('tiktoklive_release_url', tikTokLiveReleaseUrl)
     outputs.file(tikTokLiveJar)
     doLast {
         if (tikTokLiveJar.exists()) {
