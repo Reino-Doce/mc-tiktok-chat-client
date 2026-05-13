@@ -53,6 +53,10 @@ publish tags independently without colliding in the same namespace.
 - Every third-party action is **pinned by 40-char commit SHA** (with the
   short tag as a trailing comment). Version bumps require updating the
   SHA explicitly in the workflow.
+- MC-Publish is checked out at the pinned commit before publishing. Its
+  action metadata is patched from Node16 to Node24 at runtime because the
+  pinned MC-Publish release still declares Node16, which GitHub-hosted
+  runners no longer support.
 - Modrinth credentials must be stored only as the GitHub Actions
   repository secret `MODRINTH_TOKEN`; do not commit API tokens or local
   `.env` files.
@@ -63,9 +67,12 @@ publish tags independently without colliding in the same namespace.
 ## Modrinth publishing
 
 The Modrinth publish step uses MC-Publish and the project id configured
-in `.github/workflows/release.yml`. Before the first tagged release,
-create a GitHub Actions repository secret named `MODRINTH_TOKEN` with a
-Modrinth token that can create versions for the project.
+in `.github/workflows/release.yml`. The workflow checks out the pinned
+MC-Publish commit locally, verifies the resolved commit, updates only the
+runtime declared in `action.yml`, and then invokes that local action.
+Before the first tagged release, create a GitHub Actions repository secret
+named `MODRINTH_TOKEN` with a Modrinth token that can create versions for
+the project.
 
 Version type is derived from `mod_version`:
 

@@ -45,7 +45,14 @@ jobs:
           mod_version=$(grep -E '^mod_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           artifact_base=$(grep -E '^artifact_base_name=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           tiktoklive_version=$(grep -E '^tiktoklive_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
-          mc_version=$(grep -E "^\s*minecraftVersion\s*=" build.gradle | head -n1 | sed -E "s/.*'([^']+)'.*/\1/")
+          mc_version=$(grep -E "^[[:space:]]*minecraftVersion[[:space:]]*=" build.gradle | head -n1 | sed -E "s/.*'([^']+)'.*/\1/")
+          required_vars=(mod_version artifact_base tiktoklive_version mc_version)
+          for required_var in "${required_vars[@]}"; do
+            if [ -z "${!required_var}" ]; then
+              echo "::error::Required build metadata '${required_var}' resolved to an empty value."
+              exit 1
+            fi
+          done
           short_sha="${GITHUB_SHA::7}"
           {
             echo "mod_version=${mod_version}"
