@@ -22,25 +22,35 @@ For the full command surface, see [docs/commands.md](docs/commands.md).
 1. Download the latest release from Modrinth or the GitHub Releases
    page. The main runtime artifacts are:
    - `reinodoce-mc-tiktok-<mc>-<v>.jar` — the bare mod jar.
+   - `reinodoce-mc-tiktok-<mc>-<v>.mrpack` — a Modrinth pack import for
+     creating a client instance with Forge and this client-side mod.
    - `reinodoce-mc-tiktok-<mc>-<v>-packwiz.zip` — the same jar plus
-     Packwiz metadata that marks the mod as client-only. This helper
-     bundle is published on GitHub Releases.
-   - `SHA256SUMS.txt` / `SHA512SUMS.txt` — checksums for the jar and
-     Packwiz zip on GitHub Releases.
+     Packwiz / Prism metadata that marks the mod as client-only in
+     Prism's mod list.
+   - `SHA256SUMS.txt` / `SHA512SUMS.txt` — checksums for the jar,
+     `.mrpack`, and Packwiz zip on GitHub Releases.
 2. Install one of them into your Forge instance:
 
    **Vanilla Forge / CurseForge / ATLauncher / manual install** —
    copy the `.jar` into the instance's `mods/` folder.
 
-   **Prism Launcher** (or any Packwiz-aware launcher) — extract the
-   `-packwiz.zip` directly into the instance, so that both the `.jar`
-   and the `mods/.index/*.pw.toml` file land in `mods/`. The launcher
-   will then show the mod's Side column as `client`. See
+   **Prism Launcher, existing instance** — use the bare `.jar` with the
+   Mods tab's **Add File** button. Do not add `.mrpack` or `-packwiz.zip`
+   there; Prism copies those archives into `mods/` as files.
+
+   **Prism Launcher, new instance** — import the `.mrpack`. The pack puts
+   the mod jar under `mods/` and marks it client-only in the Modrinth
+   pack metadata, so it can join servers that do not have it.
+
+   Optional for an existing Prism instance: to make Prism's Side column
+   show `client`, close Prism and extract `-packwiz.zip` into the
+   instance's Minecraft root, so that both the `.jar` and
+   `mods/.index/*.pw.toml` land under `mods/`. See
    [docs/packwiz-bundle.md](docs/packwiz-bundle.md).
 3. Start Minecraft with the matching Forge profile.
 4. In game, run `/reinodoce connect @username`.
 
-Optional — verify the downloaded jar and Packwiz zip with the published
+Optional: verify the downloaded artifacts with the published
 checksum files:
 
 ```powershell
@@ -83,8 +93,9 @@ The mod jar lands in `build/libs/`. Drop it into your Forge instance's
 .\gradlew.bat clean build prismBundle verifyPrismMetadata
 ```
 
-This produces both the bare jar and the Packwiz bundle under
-`build/prism-bundle/`. The build also verifies the provisioned
+This produces the bare jar, the Packwiz bundle under
+`build/prism-bundle/`, and the `.mrpack` under `build/distributions/`.
+The build also verifies the provisioned
 `TikTokLiveJava` jar against the SHA-512 recorded in `gradle.properties`.
 
 For deeper development topics — repo layout, the auto-provisioned
@@ -97,7 +108,7 @@ For deeper development topics — repo layout, the auto-provisioned
 | ---------------------------------------------------- | ------------------------------------------------------ |
 | `/reinodoce` command reference                       | [docs/commands.md](docs/commands.md)                   |
 | Client config file fields, defaults, validation      | [docs/configuration.md](docs/configuration.md)         |
-| Packwiz bundle (client-only distribution)            | [docs/packwiz-bundle.md](docs/packwiz-bundle.md)       |
+| Packwiz and `.mrpack` bundles                        | [docs/packwiz-bundle.md](docs/packwiz-bundle.md)       |
 | Release automation, tag format, checksum verify      | [docs/releases.md](docs/releases.md)                   |
 | Branch strategy across Minecraft versions            | [docs/branches.md](docs/branches.md)                   |
 | Internationalization (locale list, adding a locale)  | [docs/internationalization.md](docs/internationalization.md) |

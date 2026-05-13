@@ -3,8 +3,8 @@
 Two workflows live in `.github/workflows/`:
 
 - **`ci.yml`** — runs on every push (any branch except tags) and on every
-  pull request. Builds the mod jar and the Packwiz bundle, runs the lint
-  suite (`check`) and tests, and uploads the artifacts plus
+  pull request. Builds the mod jar, the Packwiz bundle, and the
+  `.mrpack`, runs the lint suite (`check`) and tests, and uploads the artifacts plus
   `SHA256SUMS.txt` / `SHA512SUMS.txt` so any commit produces a downloadable
   build under the Actions tab. Use this for verifying changes, sharing a
   preview build, or grabbing a snapshot jar without cutting a tag.
@@ -42,13 +42,14 @@ publish tags independently without colliding in the same namespace.
 - Runs `./gradlew clean check build prismBundle verifyPrismMetadata`,
   including the `verifyEmbeddedPackages` and `verifyCoremodResources`
   gates wired into `check`.
-- Packages `build/prism-bundle/` into a helper zip.
+- Packages `build/prism-bundle/` into a Packwiz helper zip and builds
+  `build/distributions/<artifact>.mrpack`.
 - Generates `SHA256SUMS.txt` and `SHA512SUMS.txt` for all artifacts.
-- Attaches the mod `.jar`, the bundle zip, and the checksum files to
+- Attaches the mod `.jar`, `.mrpack`, Packwiz zip, and checksum files to
   the release, with notes auto-generated from history.
 - Publishes the bare Forge mod jar to the Modrinth project using
-  `secrets.MODRINTH_TOKEN`. The Packwiz helper zip remains a GitHub
-  Release artifact.
+  `secrets.MODRINTH_TOKEN`. The `.mrpack` and Packwiz helper zip remain
+  GitHub Release artifacts.
 
 ## Security policy
 
@@ -100,12 +101,12 @@ git tag mc1.20.1-v0.1.1
 git push github mc1.20.1-v0.1.1
 ```
 
-The published artifact is named
+The published jar is named
 `reinodoce-mc-tiktok-<mc_version>-<mod_version>.jar`, making the
-Minecraft version explicit in the filename. The client bundle zip
-follows the same pattern with the `-packwiz.zip` suffix (Packwiz
-format, consumed by Prism Launcher and other Packwiz-compatible
-launchers — see [packwiz-bundle.md](packwiz-bundle.md)).
+Minecraft version explicit in the filename. The `.mrpack` follows the
+same base filename with the `.mrpack` extension for launcher import. The
+Packwiz helper zip follows the same pattern with the `-packwiz.zip`
+suffix. See [packwiz-bundle.md](packwiz-bundle.md).
 
 ## Pre-releases (alpha / beta / rc)
 

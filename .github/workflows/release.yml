@@ -40,9 +40,10 @@ jobs:
           mod_version=$(grep -E '^mod_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           artifact_base=$(grep -E '^artifact_base_name=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           mod_name=$(grep -E '^mod_name=' gradle.properties | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          modrinth_project_id=$(grep -E '^modrinth_project_id=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           tiktoklive_version=$(grep -E '^tiktoklive_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           mc_version=$(grep -E "^[[:space:]]*minecraftVersion[[:space:]]*=" build.gradle | head -n1 | sed -E "s/.*'([^']+)'.*/\1/")
-          required_vars=(mod_version artifact_base mod_name tiktoklive_version mc_version)
+          required_vars=(mod_version artifact_base mod_name modrinth_project_id tiktoklive_version mc_version)
           for required_var in "${required_vars[@]}"; do
             if [ -z "${!required_var}" ]; then
               echo "::error::Required release metadata '${required_var}' resolved to an empty value."
@@ -62,6 +63,7 @@ jobs:
             echo "mod_version=${mod_version}"
             echo "artifact_base=${artifact_base}"
             echo "mod_name=${mod_name}"
+            echo "modrinth_project_id=${modrinth_project_id}"
             echo "tiktoklive_version=${tiktoklive_version}"
             echo "mc_version=${mc_version}"
             echo "expected_tag=mc${mc_version}-v${mod_version}"
@@ -69,7 +71,7 @@ jobs:
             echo "prerelease=${prerelease}"
             echo "modrinth_version_type=${modrinth_version_type}"
           } >> "$GITHUB_OUTPUT"
-          echo "Resolved: artifact_base=${artifact_base} mod_version=${mod_version} mc_version=${mc_version} tiktoklive=${tiktoklive_version} prerelease=${prerelease} modrinth_type=${modrinth_version_type}"
+          echo "Resolved: artifact_base=${artifact_base} mod_version=${mod_version} mc_version=${mc_version} tiktoklive=${tiktoklive_version} modrinth=${modrinth_project_id} prerelease=${prerelease} modrinth_type=${modrinth_version_type}"
 
       - name: Verify tag matches branch metadata
         if: startsWith(github.ref, 'refs/tags/mc')
@@ -153,7 +155,7 @@ jobs:
             tiktoklive-
 
       - name: Build, lint, test, and bundle
-        run: ./gradlew --no-daemon --stacktrace clean check build prismBundle verifyPrismMetadata
+        run: ./gradlew --no-daemon --stacktrace clean check build prismBundle verifyPrismMetadata modrinthPack verifyModrinthPack
 
       - name: Package Packwiz client bundle zip
         id: packwiz
@@ -169,6 +171,7 @@ jobs:
           mkdir -p release-assets
           cp build/libs/*.jar release-assets/
           cp "${{ steps.packwiz.outputs.bundle_zip }}" release-assets/
+          cp build/distributions/*.mrpack release-assets/
           ls -la release-assets/
 
       - name: Generate checksums
@@ -230,7 +233,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/mc')
         uses: ./.github/actions/mc-publish
         with:
-          modrinth-id: OrIKDIK6
+          modrinth-id: ${{ steps.vars.outputs.modrinth_project_id }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           modrinth-files: build/libs/${{ steps.vars.outputs.mod_jar }}
           modrinth-featured: ${{ steps.vars.outputs.modrinth_version_type == 'release' }}

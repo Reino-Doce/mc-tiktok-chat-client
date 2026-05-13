@@ -9,6 +9,8 @@ plugins {
 }
 
 import java.security.MessageDigest
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 import com.github.spotbugs.snom.Confidence
 import com.github.spotbugs.snom.Effort
 import com.github.spotbugs.snom.SpotBugsTask
@@ -42,6 +44,12 @@ def prismMetadataFile = layout.buildDirectory.file("prism-index/reinodoce-mc-tik
 def prismBundleRoot = layout.buildDirectory.dir("prism-bundle")
 def prismBundleModsDir = layout.buildDirectory.dir("prism-bundle/mods")
 def prismBundleIndexDir = layout.buildDirectory.dir("prism-bundle/mods/.index")
+def modrinthPackManifestFile = layout.buildDirectory.file("modrinth-pack/modrinth.index.json")
+def releaseJarDownloadUrl = (project.findProperty('release_jar_download_url')
+        ?: "https://github.com/Reino-Doce/mc-tiktok-chat-client/releases/download/mc${minecraftVersion}-v${mod_version}/${artifact_base_name}-${minecraftVersion}-${mod_version}.jar")
+        .toString()
+def modrinthProjectId = (project.findProperty('modrinth_project_id') ?: '').toString()
+def modrinthVersionId = (project.findProperty('modrinth_version_id') ?: '').toString()
 def mergedImageIoServicesDir = layout.buildDirectory.dir("generated/imageio-services")
 
 configurations {
@@ -50,6 +58,10 @@ configurations {
 
 String sha512Hex(File inputFile) {
     MessageDigest.getInstance("SHA-512").digest(inputFile.bytes).collect { String.format("%02x", it) }.join()
+}
+
+String sha1Hex(File inputFile) {
+    MessageDigest.getInstance("SHA-1").digest(inputFile.bytes).collect { String.format("%02x", it) }.join()
 }
 
 void verifyTikTokLiveJar(File inputFile, String expectedSha512) {
@@ -199,6 +211,9 @@ tasks.register('generateEmbeddedImageIoServices') {
 tasks.register('prismMetadata') {
     dependsOn 'reobfJar'
     inputs.file(tasks.named('jar', Jar).flatMap { it.archiveFile })
+    inputs.property('release_jar_download_url', releaseJarDownloadUrl)
+    inputs.property('modrinth_project_id', modrinthProjectId)
+    inputs.property('modrinth_version_id', modrinthVersionId)
     outputs.file(prismMetadataFile)
     doLast {
         def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
@@ -208,6 +223,18 @@ tasks.register('prismMetadata') {
 
         String sha512 = sha512Hex(jarFile)
         String jarFileName = jarFile.name
+        String modrinthUpdateBlock = ''
+        if (!modrinthVersionId.isBlank()) {
+            if (modrinthProjectId.isBlank()) {
+                throw new GradleException("Missing modrinth_project_id while modrinth_version_id is set.")
+            }
+            modrinthUpdateBlock = """
+
+[update.modrinth]
+mod-id = "${modrinthProjectId}"
+version = "${modrinthVersionId}"
+"""
+        }
 
         String content = """name = "${mod_name}"
 filename = "${jarFileName}"
@@ -220,14 +247,10 @@ x-prismlauncher-dependencies = []
 
 [download]
 mode = "url"
-url = "https://local.invalid/${jarFileName}"
+url = "${releaseJarDownloadUrl}"
 hash-format = "sha512"
 hash = "${sha512}"
-
-[update.modrinth]
-mod-id = "local.${mod_id}"
-version = "local-${mod_version}"
-"""
+${modrinthUpdateBlock}"""
 
         def output = prismMetadataFile.get().asFile
         output.parentFile.mkdirs()
@@ -270,6 +293,121 @@ tasks.register('prismBundle') {
     }
 }
 
+tasks.register('modrinthPackManifest') {
+    dependsOn 'jar'
+    inputs.file(tasks.named('jar', Jar).flatMap { it.archiveFile })
+    inputs.property('minecraftVersion', minecraftVersion)
+    inputs.property('forgeVersion', forgeVersion)
+    inputs.property('mod_version', mod_version)
+    inputs.property('mod_name', mod_name)
+    inputs.property('mod_description', mod_description)
+    inputs.property('release_jar_download_url', releaseJarDownloadUrl)
+    outputs.file(modrinthPackManifestFile)
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        if (!jarFile.exists()) {
+            throw new GradleException("Jar file not found for Modrinth pack manifest: ${jarFile}")
+        }
+        String jarPath = "mods/${jarFile.name}"
+        def manifest = [
+                formatVersion: 1,
+                game         : 'minecraft',
+                versionId    : "mc${minecraftVersion}-v${mod_version}",
+                name         : mod_name,
+                summary      : mod_description,
+                files        : [[
+                        path     : jarPath,
+                        hashes   : [
+                                sha1  : sha1Hex(jarFile),
+                                sha512: sha512Hex(jarFile)
+                        ],
+                        env      : [
+                                client: 'required',
+                                server: 'unsupported'
+                        ],
+                        downloads: [releaseJarDownloadUrl],
+                        fileSize : jarFile.length()
+                ]],
+                dependencies : [
+                        minecraft: minecraftVersion,
+                        forge    : forgeVersion
+                ]
+        ]
+
+        def output = modrinthPackManifestFile.get().asFile
+        output.parentFile.mkdirs()
+        output.setText(JsonOutput.prettyPrint(JsonOutput.toJson(manifest)) + System.lineSeparator(), 'UTF-8')
+    }
+}
+
+tasks.register('modrinthPack', Zip) {
+    dependsOn 'modrinthPackManifest', 'jar'
+    group = 'build'
+    description = 'Packages a Modrinth .mrpack with client-only mod metadata.'
+    archiveFileName = "${artifact_base_name}-${minecraftVersion}-${mod_version}.mrpack"
+    destinationDirectory = layout.buildDirectory.dir("distributions")
+    includeEmptyDirs = false
+
+    from(modrinthPackManifestFile)
+}
+
+tasks.register('verifyModrinthPack') {
+    dependsOn 'modrinthPack'
+    doLast {
+        def jarFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+        def packFile = tasks.named('modrinthPack', Zip).get().archiveFile.get().asFile
+        if (!packFile.exists()) {
+            throw new GradleException("Modrinth pack file not found: ${packFile}")
+        }
+
+        new java.util.zip.ZipFile(packFile).withCloseable { zip ->
+            def manifestEntry = zip.getEntry('modrinth.index.json')
+            if (manifestEntry == null) {
+                throw new GradleException("Modrinth pack is missing modrinth.index.json.")
+            }
+
+            def manifest = new JsonSlurper().parse(zip.getInputStream(manifestEntry))
+            if (manifest.formatVersion != 1) {
+                throw new GradleException("Modrinth pack formatVersion must be 1.")
+            }
+            if (manifest.game != 'minecraft') {
+                throw new GradleException("Modrinth pack game must be minecraft.")
+            }
+            if (manifest.dependencies?.minecraft != minecraftVersion) {
+                throw new GradleException("Modrinth pack Minecraft dependency does not match ${minecraftVersion}.")
+            }
+            if (manifest.dependencies?.forge != forgeVersion) {
+                throw new GradleException("Modrinth pack Forge dependency does not match ${forgeVersion}.")
+            }
+            if (!(manifest.files instanceof List) || manifest.files.size() != 1) {
+                throw new GradleException("Modrinth pack must list exactly one mod file.")
+            }
+
+            def modFile = manifest.files[0]
+            if (modFile.path != "mods/${jarFile.name}") {
+                throw new GradleException("Modrinth pack mod path must be mods/${jarFile.name}.")
+            }
+            if (modFile.env?.client != 'required' || modFile.env?.server != 'unsupported') {
+                throw new GradleException("Modrinth pack mod file must be marked client required and server unsupported.")
+            }
+            if (modFile.hashes?.sha1 != sha1Hex(jarFile) || modFile.hashes?.sha512 != sha512Hex(jarFile)) {
+                throw new GradleException("Modrinth pack mod hashes do not match built jar.")
+            }
+            if (modFile.fileSize != jarFile.length()) {
+                throw new GradleException("Modrinth pack mod file size does not match built jar.")
+            }
+            if (!(modFile.downloads instanceof List) || modFile.downloads != [releaseJarDownloadUrl]) {
+                throw new GradleException("Modrinth pack mod download URL does not match ${releaseJarDownloadUrl}.")
+            }
+            if (zip.getEntry("client-overrides/mods/${jarFile.name}") != null
+                    || zip.getEntry("server-overrides/mods/${jarFile.name}") != null
+                    || zip.getEntry("overrides/mods/${jarFile.name}") != null) {
+                throw new GradleException("Modrinth pack must not embed the mod jar in overrides.")
+            }
+        }
+    }
+}
+
 tasks.register('verifyPrismMetadata') {
     dependsOn 'prismMetadata'
     doLast {
@@ -287,6 +425,26 @@ tasks.register('verifyPrismMetadata') {
         if (!metadata.contains('side = "client"')) {
             throw new GradleException("Prism metadata is missing side=client.")
         }
+        if (metadata.contains('local.invalid')) {
+            throw new GradleException("Prism metadata must not contain placeholder download metadata.")
+        }
+        if (modrinthVersionId.isBlank()) {
+            if (metadata.contains('[update.modrinth]')) {
+                throw new GradleException("Prism metadata must not contain incomplete Modrinth update metadata.")
+            }
+        } else {
+            if (!metadata.contains('[update.modrinth]')) {
+                throw new GradleException("Prism metadata is missing Modrinth update metadata.")
+            }
+            def modrinthIdMatch = (metadata =~ /(?m)^mod-id = "([^"]+)"$/)
+            if (!modrinthIdMatch.find() || modrinthIdMatch.group(1) != modrinthProjectId) {
+                throw new GradleException("Prism metadata Modrinth project ID does not match ${modrinthProjectId}.")
+            }
+            def modrinthVersionMatch = (metadata =~ /(?m)^version = "([^"]+)"$/)
+            if (!modrinthVersionMatch.find() || modrinthVersionMatch.group(1) != modrinthVersionId) {
+                throw new GradleException("Prism metadata Modrinth version ID does not match ${modrinthVersionId}.")
+            }
+        }
 
         def filenameMatch = (metadata =~ /(?m)^filename = "([^"]+)"$/)
         if (!filenameMatch.find()) {
@@ -300,6 +458,10 @@ tasks.register('verifyPrismMetadata') {
         def hashFormatMatch = (metadata =~ /(?m)^hash-format = "([^"]+)"$/)
         if (!hashFormatMatch.find() || hashFormatMatch.group(1).toLowerCase(Locale.ROOT) != 'sha512') {
             throw new GradleException("Prism metadata hash-format must be sha512.")
+        }
+        def urlMatch = (metadata =~ /(?m)^url = "([^"]+)"$/)
+        if (!urlMatch.find() || urlMatch.group(1) != releaseJarDownloadUrl) {
+            throw new GradleException("Prism metadata download URL does not match ${releaseJarDownloadUrl}.")
         }
 
         def hashMatch = (metadata =~ /(?m)^hash = "([0-9a-fA-F]+)"$/)

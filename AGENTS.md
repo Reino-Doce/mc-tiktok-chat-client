@@ -5,14 +5,14 @@
 ```powershell
 .\gradlew.bat test
 .\gradlew.bat build
-.\gradlew.bat clean build prismBundle verifyPrismMetadata
+.\gradlew.bat clean build prismBundle verifyPrismMetadata modrinthPack verifyModrinthPack
 ```
 
 ## Purpose
 
 - Forge 1.20.1 client-side Minecraft mod that mirrors TikTok LIVE chat into the local game client.
 - The public user-facing surface is the `/reinodoce` command tree plus the persisted client config file.
-- The repo also owns Prism bundle metadata for a client-only distribution flow.
+- The repo also owns Prism / Packwiz metadata and `.mrpack` packaging for a client-only distribution flow.
 
 ## Public contracts
 
@@ -31,7 +31,7 @@
 
 1. Preserve the `/reinodoce` command surface and config file shape unless the user asks for a break.
 2. Keep branch-line assumptions (`1.20.1`, `shared/latest`, `shared/java17`) consistent with the current maintenance model.
-3. Update `README.md` in the same change when mod behavior or Prism packaging changes.
+3. Update `README.md` in the same change when mod behavior or launcher packaging changes.
 4. Run the Gradle verification commands before finalizing.
 
 ## Verification commands
@@ -53,7 +53,7 @@ back to the system's default Java.
 ### Always
 
 - Keep the mod client-side only.
-- Preserve Prism metadata that marks the package as `side = "client"`.
+- Preserve Prism metadata and `.mrpack` layout that mark the package as client-side only.
 - Treat findings from PMD / Checkstyle / SpotBugs as defects to fix at the call site, not to suppress. Add a file-level suppression only with a one-line justification.
 
 ### Ask first
