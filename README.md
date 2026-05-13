@@ -19,13 +19,14 @@ For the full command surface, see [docs/commands.md](docs/commands.md).
 
 ## Install (release version)
 
-1. Download the latest release from the GitHub Releases page. The main
-   runtime artifacts are:
+1. Download the latest release from Modrinth or the GitHub Releases
+   page. The main runtime artifacts are:
    - `reinodoce-mc-tiktok-<mc>-<v>.jar` — the bare mod jar.
    - `reinodoce-mc-tiktok-<mc>-<v>-packwiz.zip` — the same jar plus
-     Packwiz metadata that marks the mod as client-only.
+     Packwiz metadata that marks the mod as client-only. This helper
+     bundle is published on GitHub Releases.
    - `SHA256SUMS.txt` / `SHA512SUMS.txt` — checksums for the jar and
-     Packwiz zip.
+     Packwiz zip on GitHub Releases.
 2. Install one of them into your Forge instance:
 
    **Vanilla Forge / CurseForge / ATLauncher / manual install** —

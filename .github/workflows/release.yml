@@ -39,21 +39,30 @@ jobs:
         run: |
           mod_version=$(grep -E '^mod_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           artifact_base=$(grep -E '^artifact_base_name=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
+          mod_name=$(grep -E '^mod_name=' gradle.properties | cut -d'=' -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
           tiktoklive_version=$(grep -E '^tiktoklive_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           mc_version=$(grep -E "^\s*minecraftVersion\s*=" build.gradle | head -n1 | sed -E "s/.*'([^']+)'.*/\1/")
           prerelease=false
-          if echo "$mod_version" | grep -iqE -- '-(alpha|beta|rc)(\.[0-9]+)?$|-(pre|snapshot)$'; then
+          modrinth_version_type=release
+          if echo "$mod_version" | grep -iqE -- '-alpha(\.[0-9]+)?$|-snapshot$'; then
             prerelease=true
+            modrinth_version_type=alpha
+          elif echo "$mod_version" | grep -iqE -- '-(beta|rc)(\.[0-9]+)?$|-pre$'; then
+            prerelease=true
+            modrinth_version_type=beta
           fi
           {
             echo "mod_version=${mod_version}"
             echo "artifact_base=${artifact_base}"
+            echo "mod_name=${mod_name}"
             echo "tiktoklive_version=${tiktoklive_version}"
             echo "mc_version=${mc_version}"
             echo "expected_tag=mc${mc_version}-v${mod_version}"
+            echo "mod_jar=${artifact_base}-${mc_version}-${mod_version}.jar"
             echo "prerelease=${prerelease}"
+            echo "modrinth_version_type=${modrinth_version_type}"
           } >> "$GITHUB_OUTPUT"
-          echo "Resolved: artifact_base=${artifact_base} mod_version=${mod_version} mc_version=${mc_version} tiktoklive=${tiktoklive_version} prerelease=${prerelease}"
+          echo "Resolved: artifact_base=${artifact_base} mod_version=${mod_version} mc_version=${mc_version} tiktoklive=${tiktoklive_version} prerelease=${prerelease} modrinth_type=${modrinth_version_type}"
 
       - name: Verify tag matches branch metadata
         if: startsWith(github.ref, 'refs/tags/mc')
@@ -92,6 +101,28 @@ jobs:
             END { exit !found }
           ' CHANGELOG.md; then
             echo "::error::CHANGELOG.md has no '## ${version}' (or '## [${version}]') section. Add a release note before tagging."
+            exit 1
+          fi
+
+          awk -v ver="$version" '
+            /^##[[:space:]]+/ {
+              line = $0
+              sub(/^##[[:space:]]+/, "", line)
+              sub(/^\[/, "", line)
+              n = index(line, "]")
+              if (n > 0) {
+                line = substr(line, 1, n - 1)
+              } else if (match(line, /[[:space:]]/) > 0) {
+                line = substr(line, 1, RSTART - 1)
+              }
+              if (found) { exit }
+              if (line == ver) { found = 1; next }
+            }
+            found { print }
+            END { exit !found }
+          ' CHANGELOG.md > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "::error::CHANGELOG.md section for '${version}' is empty."
             exit 1
           fi
 
@@ -155,3 +186,22 @@ jobs:
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to Modrinth
+        if: startsWith(github.ref, 'refs/tags/mc')
+        uses: Kira-NT/mc-publish@995edadc13559a8b28d0b7e6571229f067ec7659 # v3.3.0
+        with:
+          modrinth-id: OrIKDIK6
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-files: build/libs/${{ steps.vars.outputs.mod_jar }}
+          modrinth-featured: ${{ steps.vars.outputs.modrinth_version_type == 'release' }}
+          name: ${{ steps.vars.outputs.mod_name }} v${{ steps.vars.outputs.mod_version }} (MC ${{ steps.vars.outputs.mc_version }})
+          version: ${{ github.ref_name }}
+          version-type: ${{ steps.vars.outputs.modrinth_version_type }}
+          changelog-file: release-notes.md
+          loaders: |
+            forge
+          game-versions: |
+            ${{ steps.vars.outputs.mc_version }}
+          java: |
+            17
