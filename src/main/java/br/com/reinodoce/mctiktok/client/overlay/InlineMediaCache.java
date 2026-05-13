@@ -11,30 +11,48 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 
+/**
+ * Runtime cache that maps rich-message inline media segments to Minecraft textures.
+ */
 public class InlineMediaCache {
+    /** Pixel dimension used for fallback, loading, and error textures. */
     public static final int FALLBACK_DIMENSION = 16;
 
+    /** Bundled avatar texture used when a user image is missing or blank. */
     public static final ResourceLocation DEFAULT_AVATAR_TEXTURE = Objects.requireNonNull(
             ResourceLocation.fromNamespaceAndPath(
                     InlineMediaUrls.DEFAULT_NAMESPACE, InlineMediaUrls.DEFAULT_AVATAR_PATH));
+    /** Bundled texture shown while remote media is loading. */
     public static final ResourceLocation LOADING_TEXTURE = Objects.requireNonNull(
             ResourceLocation.fromNamespaceAndPath(
                     ReinodoceMcTiktokMod.MOD_ID, "textures/gui/emote_loading.png"));
+    /** Bundled texture shown when remote media fails to load. */
     public static final ResourceLocation ERROR_TEXTURE = Objects.requireNonNull(
             ResourceLocation.fromNamespaceAndPath(
                     ReinodoceMcTiktokMod.MOD_ID, "textures/gui/emote_error.png"));
 
     private final Map<String, InlineMediaCacheEntry> entries = new ConcurrentHashMap<>();
-    private final ExecutorService executor = ExecutorsFactory.newSingleThreadExecutor("reinodoce-inline-media");
+    private final ExecutorService loadExecutor = ExecutorsFactory.newSingleThreadExecutor("reinodoce-inline-media-load");
+    private final ExecutorService maintenanceExecutor =
+            ExecutorsFactory.newSingleThreadExecutor("reinodoce-inline-media-maintenance");
     private final InlineMediaCacheStats stats = new InlineMediaCacheStats();
     private final InlineMediaDownloader downloader = new InlineMediaDownloader(stats);
-    private final InlineMediaCacheLoader cacheLoader = new InlineMediaCacheLoader(entries, executor, downloader, stats);
-    private final InlineMediaEvictor evictor = new InlineMediaEvictor(entries, stats);
+    private final InlineMediaCacheLoader cacheLoader = new InlineMediaCacheLoader(
+            entries, loadExecutor, maintenanceExecutor, downloader, stats);
+    private final InlineMediaEvictor evictor = new InlineMediaEvictor(entries, stats, maintenanceExecutor);
 
+    /**
+     * Creates a cache and initializes bundled ImageIO decoders.
+     */
     public InlineMediaCache() {
         ImageIoBootstrap.ensureInitialized();
     }
 
+    /**
+     * Starts background loads for each remote inline media segment in a message.
+     *
+     * @param message rich message to prefetch
+     */
     public void prefetch(RichLiveMessage message) {
         if (message == null) {
             return;
@@ -48,6 +66,12 @@ public class InlineMediaCache {
         }
     }
 
+    /**
+     * Resolves a texture handle for a media segment, scheduling a load if needed.
+     *
+     * @param segment media segment to resolve
+     * @return ready, loading, or error texture handle
+     */
     public TextureHandle resolve(RichLiveMessage.InlineMediaSegment segment) {
         if (segment == null || segment.sourceUrl().isBlank()) {
             return resolveBlank(segment);
@@ -63,6 +87,12 @@ public class InlineMediaCache {
         return handleForState(segment, entry);
     }
 
+    /**
+     * Returns the best-known source dimensions for a media segment.
+     *
+     * @param segment media segment to inspect
+     * @return known dimensions or fallback dimensions
+     */
     public Dimensions dimensionsFor(RichLiveMessage.InlineMediaSegment segment) {
         if (segment == null || segment.sourceUrl().isBlank()) {
             return new Dimensions(FALLBACK_DIMENSION, FALLBACK_DIMENSION);
@@ -77,6 +107,11 @@ public class InlineMediaCache {
         return new Dimensions(Math.max(1, entry.width), Math.max(1, entry.height));
     }
 
+    /**
+     * Captures current cache counters and resident-entry counts.
+     *
+     * @return immutable cache snapshot
+     */
     public Snapshot snapshot() {
         return stats.snapshotFor(entries.values());
     }
@@ -112,6 +147,22 @@ public class InlineMediaCache {
         return ResourceLocation.fromNamespaceAndPath(reference.namespace(), reference.path());
     }
 
+    /**
+     * Immutable inline-media cache counters for `/reinodoce status`.
+     *
+     * @param resident entries currently resident in memory
+     * @param ready entries with ready textures
+     * @param loading entries currently loading
+     * @param error entries currently in error state
+     * @param downloadsStarted number of remote downloads started
+     * @param downloadsSucceeded number of remote downloads completed successfully
+     * @param downloadsFailed number of remote downloads that failed
+     * @param diskHits number of cache hits loaded from disk
+     * @param diskReloads number of reloads from disk metadata
+     * @param memoryHits number of cache hits served from memory
+     * @param ttlEvictions number of entries removed by TTL cleanup
+     * @param capacityEvictions number of entries removed by capacity cleanup
+     */
     public record Snapshot(
             int resident,
             int ready,
@@ -128,20 +179,59 @@ public class InlineMediaCache {
     ) {
     }
 
+    /**
+     * Source dimensions for an inline media segment.
+     *
+     * @param width source width in pixels
+     * @param height source height in pixels
+     */
     public record Dimensions(int width, int height) {
     }
 
+    /**
+     * Texture and source-state metadata returned to font rendering hooks.
+     *
+     * @param texture texture to render
+     * @param sourceWidth original source width in pixels
+     * @param sourceHeight original source height in pixels
+     * @param loading whether this handle represents a loading placeholder
+     * @param error whether this handle represents an error placeholder
+     */
     public record TextureHandle(
             ResourceLocation texture, int sourceWidth, int sourceHeight, boolean loading, boolean error
     ) {
+        /**
+         * Creates a ready texture handle.
+         *
+         * @param texture texture to render
+         * @param sourceWidth original source width in pixels
+         * @param sourceHeight original source height in pixels
+         * @return ready texture handle
+         */
         public static TextureHandle ready(ResourceLocation texture, int sourceWidth, int sourceHeight) {
             return new TextureHandle(texture, sourceWidth, sourceHeight, false, false);
         }
 
+        /**
+         * Creates a loading-placeholder texture handle.
+         *
+         * @param texture placeholder texture to render
+         * @param sourceWidth placeholder source width in pixels
+         * @param sourceHeight placeholder source height in pixels
+         * @return loading texture handle
+         */
         public static TextureHandle loading(ResourceLocation texture, int sourceWidth, int sourceHeight) {
             return new TextureHandle(texture, sourceWidth, sourceHeight, true, false);
         }
 
+        /**
+         * Creates an error-placeholder texture handle.
+         *
+         * @param texture placeholder texture to render
+         * @param sourceWidth placeholder source width in pixels
+         * @param sourceHeight placeholder source height in pixels
+         * @return error texture handle
+         */
         public static TextureHandle error(ResourceLocation texture, int sourceWidth, int sourceHeight) {
             return new TextureHandle(texture, sourceWidth, sourceHeight, false, true);
         }

@@ -1,41 +1,73 @@
 package br.com.reinodoce.mctiktok.command.handlers;
 
-import br.com.reinodoce.mctiktok.client.ReinodoceClientBootstrap;
 import br.com.reinodoce.mctiktok.command.CommandFeedback;
-import br.com.reinodoce.mctiktok.command.CommandResult;
+import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
 import net.minecraft.commands.CommandSourceStack;
 
+/**
+ * Handles `/reinodoce syntetic ...` command execution.
+ */
 public final class SynteticCommandHandler {
     private SynteticCommandHandler() {
     }
 
-    public static int gift(CommandSourceStack source, int value) {
-        CommandResult result = ReinodoceClientBootstrap.service().setSynteticGift(value);
-        CommandFeedback.send(source, result);
-        return result.success() ? 1 : 0;
+    /**
+     * Updates the minimum diamond value for synthetic gift output.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param value minimum gift value
+     * @return Brigadier command result code
+     */
+    public static int gift(ReinodoceCommandService service, CommandSourceStack source, int value) {
+        return CommandFeedback.sendResult(source, service.setSynteticGift(value));
     }
 
-    public static int giftCombo(CommandSourceStack source, String mode) {
-        CommandResult result = ReinodoceClientBootstrap.service().setSynteticGiftComboMode(mode);
-        CommandFeedback.send(source, result);
-        return result.success() ? 1 : 0;
+    /**
+     * Updates synthetic gift combo aggregation mode.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param mode combo mode identifier
+     * @return Brigadier command result code
+     */
+    public static int giftCombo(ReinodoceCommandService service, CommandSourceStack source, String mode) {
+        return CommandFeedback.sendResult(source, service.setSynteticGiftComboMode(mode));
     }
 
-    public static int follow(CommandSourceStack source, boolean enabled) {
-        CommandResult result = ReinodoceClientBootstrap.service().setSynteticFollow(enabled);
-        CommandFeedback.send(source, result);
-        return result.success() ? 1 : 0;
+    /**
+     * Updates synthetic follow output.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param enabled whether synthetic follows should be emitted
+     * @return Brigadier command result code
+     */
+    public static int follow(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
+        return CommandFeedback.sendResult(source, service.setSynteticFollow(enabled));
     }
 
-    public static int join(CommandSourceStack source, boolean enabled) {
-        CommandResult result = ReinodoceClientBootstrap.service().setSynteticJoin(enabled);
-        CommandFeedback.send(source, result);
-        return result.success() ? 1 : 0;
+    /**
+     * Updates synthetic join output.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param enabled whether synthetic joins should be emitted
+     * @return Brigadier command result code
+     */
+    public static int join(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
+        return CommandFeedback.sendResult(source, service.setSynteticJoin(enabled));
     }
 
-    public static int memberLevel(CommandSourceStack source, boolean enabled) {
-        CommandResult result = ReinodoceClientBootstrap.service().setSynteticMemberLevel(enabled);
-        CommandFeedback.send(source, result);
-        return result.success() ? 1 : 0;
+    /**
+     * Updates synthetic member-level output.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param enabled whether member-level messages should be emitted
+     * @return Brigadier command result code
+     */
+    public static int memberLevel(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
+        return CommandFeedback.sendResult(source, service.setSynteticMemberLevel(enabled));
     }
 }

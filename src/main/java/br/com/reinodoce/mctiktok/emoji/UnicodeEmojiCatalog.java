@@ -10,6 +10,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Trie-backed catalog of renderable Unicode emoji sequences.
+ */
 public final class UnicodeEmojiCatalog {
     private static final String RESOURCE_PATH = "emoji/twemoji_rgi_sequences.txt";
     private static final int HEX_RADIX = 16;
@@ -21,10 +24,22 @@ public final class UnicodeEmojiCatalog {
         this.root = root;
     }
 
+    /**
+     * Returns the shared emoji catalog loaded from bundled resources.
+     *
+     * @return shared catalog
+     */
     public static UnicodeEmojiCatalog getInstance() {
         return INSTANCE;
     }
 
+    /**
+     * Finds the longest emoji sequence beginning at a code-point index.
+     *
+     * @param codePoints source code points
+     * @param startIndex index to start matching
+     * @return match range, or {@code null} when no emoji sequence starts there
+     */
     public Match longestMatch(int[] codePoints, int startIndex) {
         TrieNode node = root;
         int cursor = startIndex;
@@ -75,6 +90,12 @@ public final class UnicodeEmojiCatalog {
         return root;
     }
 
+    /**
+     * Inclusive/exclusive match range in a code-point array.
+     *
+     * @param startInclusive first matched index
+     * @param endExclusive index after the last matched code point
+     */
     public record Match(int startInclusive, int endExclusive) {
     }
 

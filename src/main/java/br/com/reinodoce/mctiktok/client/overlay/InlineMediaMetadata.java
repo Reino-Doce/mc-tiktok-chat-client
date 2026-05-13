@@ -60,6 +60,11 @@ record InlineMediaMetadata(
                 sourceUrl, kind, contentType, byteSize, width, height, fetchedAt, newLastUsedAt, status);
     }
 
+    InlineMediaMetadata withSourceUrl(String newSourceUrl) {
+        return new InlineMediaMetadata(
+                newSourceUrl, kind, contentType, byteSize, width, height, fetchedAt, lastUsedAt, status);
+    }
+
     InlineMediaMetadata withDefaults(String defaultSourceUrl, String defaultKind) {
         return new InlineMediaMetadata(
                 isBlank(sourceUrl) ? defaultSourceUrl : sourceUrl,

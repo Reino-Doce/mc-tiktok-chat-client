@@ -12,7 +12,17 @@ import io.github.jwdeveloper.tiktok.messages.webcast.WebcastEmoteChatMessage;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Parses TikTok protobuf message text and emote structures into rich chat messages.
+ */
 public class TikTokRichMessageParser {
+    /**
+     * Parses a standard chat message.
+     *
+     * @param message TikTok chat message
+     * @param username display username
+     * @return rich chat message
+     */
     public RichLiveMessage parseChatMessage(WebcastChatMessage message, String username) {
         if (message == null) {
             return new RichLiveMessage(0L, username, List.of());
@@ -25,6 +35,12 @@ public class TikTokRichMessageParser {
         return new RichLiveMessage(resolveMessageId(messageCommon(message)), username, segments);
     }
 
+    /**
+     * Parses display text from common message data.
+     *
+     * @param common common TikTok message data
+     * @return parsed text
+     */
     public ParsedText parseDisplayText(CommonMessageData common) {
         if (common == null || !common.hasDisplayText()) {
             return ParsedText.empty();
@@ -32,10 +48,22 @@ public class TikTokRichMessageParser {
         return parseText(common.getDisplayText());
     }
 
+    /**
+     * Parses TikTok text into rich segments.
+     *
+     * @param text TikTok text protobuf
+     * @return parsed text
+     */
     public ParsedText parseText(Text text) {
         return parseText(text, false);
     }
 
+    /**
+     * Parses barrage message content, suppressing duplicated leading user pieces.
+     *
+     * @param message TikTok barrage message
+     * @return parsed text
+     */
     public ParsedText parseBarrageText(WebcastBarrageMessage message) {
         if (message == null) {
             return ParsedText.empty();
@@ -49,6 +77,13 @@ public class TikTokRichMessageParser {
         return trimLeadingWhitespace(mergeBarrageParts(content, common));
     }
 
+    /**
+     * Parses an emote-only chat message.
+     *
+     * @param message TikTok emote chat message
+     * @param username display username
+     * @return rich chat message
+     */
     public RichLiveMessage parseEmoteChatMessage(WebcastEmoteChatMessage message, String username) {
         if (message == null) {
             return new RichLiveMessage(0L, username, List.of());
@@ -154,22 +189,48 @@ public class TikTokRichMessageParser {
         return common == null ? 0L : common.getMsgId();
     }
 
+    /**
+     * Parsed text plus any author hints discovered in TikTok text pieces.
+     *
+     * @param segments parsed rich segments
+     * @param detectedUsername detected author username, or blank
+     * @param detectedAvatarUrl detected author avatar URL, or blank
+     * @param detectedUser detected TikTok protobuf user, or {@code null}
+     */
     public record ParsedText(
             List<RichLiveMessage.Segment> segments,
             String detectedUsername,
             String detectedAvatarUrl,
             User detectedUser
     ) {
+        /**
+         * Normalizes null parsed fields.
+         *
+         * @param segments parsed rich segments
+         * @param detectedUsername detected author username
+         * @param detectedAvatarUrl detected author avatar URL
+         * @param detectedUser detected TikTok user
+         */
         public ParsedText {
             segments = segments == null ? List.of() : List.copyOf(segments);
             detectedUsername = detectedUsername == null ? "" : detectedUsername;
             detectedAvatarUrl = detectedAvatarUrl == null ? "" : detectedAvatarUrl;
         }
 
+        /**
+         * Returns an empty parsed-text value.
+         *
+         * @return empty parsed text
+         */
         public static ParsedText empty() {
             return new ParsedText(List.of(), "", "", null);
         }
 
+        /**
+         * Reports whether any parsed segment should render visibly.
+         *
+         * @return true when the parsed text contains renderable content
+         */
         public boolean hasRenderableContent() {
             if (segments.isEmpty()) {
                 return false;
@@ -182,6 +243,11 @@ public class TikTokRichMessageParser {
             return false;
         }
 
+        /**
+         * Flattens parsed segments into plain text.
+         *
+         * @return plain text
+         */
         public String plainText() {
             StringBuilder builder = new StringBuilder();
             for (RichLiveMessage.Segment segment : segments) {
@@ -190,6 +256,14 @@ public class TikTokRichMessageParser {
             return builder.toString();
         }
 
+        /**
+         * Returns a copy with replacement detected-author fields.
+         *
+         * @param username detected username
+         * @param avatarUrl detected avatar URL
+         * @param user detected TikTok user
+         * @return copied parsed text
+         */
         public ParsedText withDetectedAuthor(String username, String avatarUrl, User user) {
             return new ParsedText(segments, username, avatarUrl, user);
         }

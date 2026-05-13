@@ -29,31 +29,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Read Gradle wrapper version
-        id: gradle_wrapper
-        shell: bash
-        run: |
-          version=$(sed -nE 's@^distributionUrl=.*/gradle-([0-9.]+)-bin\.zip$@\1@p' gradle/wrapper/gradle-wrapper.properties)
-          if [ -z "$version" ]; then
-            echo "::error::Could not parse Gradle version from gradle/wrapper/gradle-wrapper.properties"
-            exit 1
-          fi
-          echo "version=${version}" >> "$GITHUB_OUTPUT"
-          echo "Gradle wrapper version: ${version}"
-
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
-        with:
-          gradle-version: ${{ steps.gradle_wrapper.outputs.version }}
 
-      - name: Materialize Gradle wrapper jar
+      - name: Verify Gradle wrapper integrity metadata
         shell: bash
         run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            gradle wrapper --no-daemon
-            git checkout -- gradlew gradlew.bat gradle/wrapper/gradle-wrapper.properties
-          fi
           test -f gradle/wrapper/gradle-wrapper.jar
+          grep -q '^distributionSha256Sum=' gradle/wrapper/gradle-wrapper.properties
 
       - name: Read project metadata
         id: vars
@@ -62,7 +45,14 @@ jobs:
           mod_version=$(grep -E '^mod_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           artifact_base=$(grep -E '^artifact_base_name=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
           tiktoklive_version=$(grep -E '^tiktoklive_version=' gradle.properties | cut -d'=' -f2- | tr -d '[:space:]')
-          mc_version=$(grep -E "^\s*minecraftVersion\s*=" build.gradle | head -n1 | sed -E "s/.*'([^']+)'.*/\1/")
+          mc_version=$(grep -E "^[[:space:]]*minecraftVersion[[:space:]]*=" build.gradle | head -n1 | sed -E "s/.*'([^']+)'.*/\1/")
+          required_vars=(mod_version artifact_base tiktoklive_version mc_version)
+          for required_var in "${required_vars[@]}"; do
+            if [ -z "${!required_var}" ]; then
+              echo "::error::Required build metadata '${required_var}' resolved to an empty value."
+              exit 1
+            fi
+          done
           short_sha="${GITHUB_SHA::7}"
           {
             echo "mod_version=${mod_version}"

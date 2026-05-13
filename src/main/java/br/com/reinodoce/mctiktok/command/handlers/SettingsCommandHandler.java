@@ -1,23 +1,37 @@
 package br.com.reinodoce.mctiktok.command.handlers;
 
-import br.com.reinodoce.mctiktok.client.ReinodoceClientBootstrap;
 import br.com.reinodoce.mctiktok.command.CommandFeedback;
-import br.com.reinodoce.mctiktok.command.CommandResult;
+import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
 import net.minecraft.commands.CommandSourceStack;
 
+/**
+ * Handles `/reinodoce settings ...` command execution.
+ */
 public final class SettingsCommandHandler {
     private SettingsCommandHandler() {
     }
 
-    public static int reconnect(CommandSourceStack source, int seconds) {
-        CommandResult result = ReinodoceClientBootstrap.service().setReconnectSeconds(seconds);
-        CommandFeedback.send(source, result);
-        return result.success() ? 1 : 0;
+    /**
+     * Updates reconnect delay settings.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param seconds reconnect delay in seconds
+     * @return Brigadier command result code
+     */
+    public static int reconnect(ReinodoceCommandService service, CommandSourceStack source, int seconds) {
+        return CommandFeedback.sendResult(source, service.setReconnectSeconds(seconds));
     }
 
-    public static int chatEmotes(CommandSourceStack source, boolean enabled) {
-        CommandResult result = ReinodoceClientBootstrap.service().setChatEmotesEnabled(enabled);
-        CommandFeedback.send(source, result);
-        return result.success() ? 1 : 0;
+    /**
+     * Updates chat inline-emote rendering settings.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param enabled whether inline emotes should be enabled
+     * @return Brigadier command result code
+     */
+    public static int chatEmotes(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
+        return CommandFeedback.sendResult(source, service.setChatEmotesEnabled(enabled));
     }
 }

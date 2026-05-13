@@ -15,7 +15,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 
+/**
+ * Loads and saves the persisted client configuration JSON file.
+ */
 public class ReinodoceConfigRepository {
+    /** Default persisted configuration file name. */
     public static final String DEFAULT_FILE_NAME = "reinodoce-mc-tiktok-client.json";
     private static final Gson GSON = new GsonBuilder()
             .disableHtmlEscaping()
@@ -24,18 +28,36 @@ public class ReinodoceConfigRepository {
 
     private final Path storedConfigPath;
 
+    /**
+     * Creates a repository using the default client config path.
+     */
     public ReinodoceConfigRepository() {
         this(Paths.get("config").resolve(DEFAULT_FILE_NAME));
     }
 
+    /**
+     * Creates a repository using a custom path.
+     *
+     * @param configPath path to the config JSON file
+     */
     public ReinodoceConfigRepository(Path configPath) {
         this.storedConfigPath = Objects.requireNonNull(configPath, "configPath");
     }
 
+    /**
+     * Returns the path used by this repository.
+     *
+     * @return config file path
+     */
     public Path configPath() {
         return storedConfigPath;
     }
 
+    /**
+     * Loads and sanitizes configuration, returning defaults when the file is missing or invalid.
+     *
+     * @return loaded configuration or defaults
+     */
     public ReinodoceConfig load() {
         if (!Files.exists(storedConfigPath)) {
             return ReinodoceConfig.defaults();
@@ -48,6 +70,11 @@ public class ReinodoceConfigRepository {
         }
     }
 
+    /**
+     * Saves a sanitized configuration to disk.
+     *
+     * @param config configuration to save
+     */
     public void save(ReinodoceConfig config) {
         ReinodoceConfig safeConfig = sanitize(config);
         Path parent = storedConfigPath.getParent();

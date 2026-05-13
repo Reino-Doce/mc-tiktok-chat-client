@@ -4,6 +4,9 @@ import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
+/**
+ * Forge 1.20.1 implementation of the Minecraft client adapter.
+ */
 @SuppressWarnings("PMD.CloseResource")
 public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
     @Override

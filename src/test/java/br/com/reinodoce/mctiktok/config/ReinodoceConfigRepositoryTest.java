@@ -20,9 +20,36 @@ class ReinodoceConfigRepositoryTest {
 
         ReinodoceConfig loaded = repository.load();
 
+        assertEquals("", loaded.getLastUsername());
         assertEquals("[LIVE]", loaded.getChatPrefix());
+        assertEquals(5, loaded.getReconnectSeconds());
+        assertEquals(0, loaded.getRuleMinMemberLevel());
+        assertEquals(1, loaded.getSynteticGiftMinValue());
+        assertEquals("bulk", loaded.getSynteticGiftComboMode());
+        assertFalse(loaded.isSynteticFollowEnabled());
+        assertFalse(loaded.isSynteticJoinEnabled());
+        assertFalse(loaded.isSynteticMemberLevelEnabled());
         assertTrue(loaded.isChatEmotesEnabled());
         assertFalse(loaded.isRuleFollowerOnly());
+    }
+
+    @Test
+    void settersApplyDocumentedSanitizationRules() {
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+
+        config.setLastUsername("  streamer  ");
+        config.setReconnectSeconds(-1);
+        config.setRuleMinMemberLevel(-2);
+        config.setSynteticGiftMinValue(-3);
+        config.setSynteticGiftComboMode("unknown");
+        config.setChatPrefix("   ");
+
+        assertEquals("streamer", config.getLastUsername());
+        assertEquals(0, config.getReconnectSeconds());
+        assertEquals(0, config.getRuleMinMemberLevel());
+        assertEquals(0, config.getSynteticGiftMinValue());
+        assertEquals("bulk", config.getSynteticGiftComboMode());
+        assertEquals("[LIVE]", config.getChatPrefix());
     }
 
     @Test

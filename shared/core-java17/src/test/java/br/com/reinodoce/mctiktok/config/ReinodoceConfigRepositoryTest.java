@@ -59,6 +59,9 @@ class ReinodoceConfigRepositoryTest {
         assertEquals("", loaded.getLastUsername());
         assertEquals(5, loaded.getReconnectSeconds());
         assertEquals("bulk", loaded.getSynteticGiftComboMode());
+        assertFalse(loaded.isSynteticFollowEnabled());
+        assertFalse(loaded.isSynteticJoinEnabled());
+        assertFalse(loaded.isSynteticMemberLevelEnabled());
         assertEquals("[LIVE]", loaded.getChatPrefix());
     }
 
@@ -79,5 +82,25 @@ class ReinodoceConfigRepositoryTest {
 
         assertEquals("streamer", loaded.getLastUsername());
         assertEquals(0, loaded.getReconnectSeconds());
+    }
+
+    @Test
+    void loadPartialJsonPreservesDocumentedDefaults() throws IOException {
+        Path file = tempDir.resolve("reinodoce-mc-tiktok-client.json");
+        Files.writeString(file, """
+                {
+                  "lastUsername": "streamer"
+                }
+                """, StandardCharsets.UTF_8);
+
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(tempDir);
+        ReinodoceConfig loaded = repository.load();
+
+        assertEquals("streamer", loaded.getLastUsername());
+        assertEquals(5, loaded.getReconnectSeconds());
+        assertEquals(1, loaded.getSynteticGiftMinValue());
+        assertEquals("bulk", loaded.getSynteticGiftComboMode());
+        assertTrue(loaded.isChatEmotesEnabled());
+        assertEquals("[LIVE]", loaded.getChatPrefix());
     }
 }

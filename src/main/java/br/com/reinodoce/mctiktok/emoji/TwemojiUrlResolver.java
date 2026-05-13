@@ -1,6 +1,10 @@
 package br.com.reinodoce.mctiktok.emoji;
 
+/**
+ * Resolves Twemoji icon identifiers and CDN URLs.
+ */
 public final class TwemojiUrlResolver {
+    /** Base CDN URL for Twemoji PNG assets. */
     public static final String BASE_URL = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@17.0.2/assets/72x72/";
 
     private static final int VARIATION_SELECTOR_15 = 0xFE0E;
@@ -9,6 +13,12 @@ public final class TwemojiUrlResolver {
     private TwemojiUrlResolver() {
     }
 
+    /**
+     * Converts Unicode code points into a Twemoji icon id.
+     *
+     * @param codePoints emoji code points
+     * @return lowercase hyphen-separated icon id
+     */
     public static String toIconId(int[] codePoints) {
         StringBuilder builder = new StringBuilder();
         boolean first = true;
@@ -25,6 +35,12 @@ public final class TwemojiUrlResolver {
         return builder.toString();
     }
 
+    /**
+     * Builds a Twemoji CDN URL for an icon id.
+     *
+     * @param iconId Twemoji icon id
+     * @return PNG URL, or blank when the id is blank
+     */
     public static String toUrl(String iconId) {
         if (iconId == null || iconId.isBlank()) {
             return "";

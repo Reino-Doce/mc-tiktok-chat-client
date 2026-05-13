@@ -21,6 +21,7 @@ ext {
     targetJavaVersion = 17
     tiktokLiveVersion = (project.findProperty('tiktoklive_version') ?: '1.11.11-Release').toString()
     tiktokLiveJarPath = (project.findProperty('tiktoklive_jar_path') ?: "libs/Client-${tiktokLiveVersion}-all.jar").toString()
+    tiktokLiveSha512 = (project.findProperty('tiktoklive_sha512') ?: '').toString().toLowerCase(Locale.ROOT)
 }
 
 version = mod_version
@@ -47,10 +48,31 @@ configurations {
     embeddedLibraries
 }
 
+String sha512Hex(File inputFile) {
+    MessageDigest.getInstance("SHA-512").digest(inputFile.bytes).collect { String.format("%02x", it) }.join()
+}
+
+void verifyTikTokLiveJar(File inputFile, String expectedSha512) {
+    if (expectedSha512.isBlank()) {
+        throw new GradleException("Missing tiktoklive_sha512 in gradle.properties.")
+    }
+    String actualSha512 = sha512Hex(inputFile)
+    if (actualSha512 != expectedSha512) {
+        throw new GradleException(
+                "TikTokLiveJava jar SHA-512 mismatch for ${inputFile}. "
+                        + "Expected ${expectedSha512}, got ${actualSha512}.")
+    }
+}
+
 tasks.register('prepareTikTokLiveJar') {
+    inputs.property('tiktoklive_version', tiktokLiveVersion)
+    inputs.property('tiktoklive_jar_path', tiktokLiveJarPath)
+    inputs.property('tiktoklive_sha512', tiktokLiveSha512)
+    inputs.property('tiktoklive_release_url', tikTokLiveReleaseUrl)
     outputs.file(tikTokLiveJar)
     doLast {
         if (tikTokLiveJar.exists()) {
+            verifyTikTokLiveJar(tikTokLiveJar, tiktokLiveSha512)
             return
         }
         tikTokLiveJar.parentFile.mkdirs()
@@ -63,6 +85,7 @@ tasks.register('prepareTikTokLiveJar') {
         if (!tikTokLiveJar.exists()) {
             throw new GradleException("Failed to provision TikTokLiveJava jar at ${tikTokLiveJar}")
         }
+        verifyTikTokLiveJar(tikTokLiveJar, tiktokLiveSha512)
     }
 }
 
@@ -125,6 +148,7 @@ dependencies {
     embeddedLibraries 'com.twelvemonkeys.imageio:imageio-webp:3.13.1'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test', Test).configure {
@@ -182,8 +206,7 @@ tasks.register('prismMetadata') {
             throw new GradleException("Jar file not found for Prism metadata generation: ${jarFile}")
         }
 
-        byte[] bytes = jarFile.bytes
-        String sha512 = MessageDigest.getInstance("SHA-512").digest(bytes).collect { String.format("%02x", it) }.join()
+        String sha512 = sha512Hex(jarFile)
         String jarFileName = jarFile.name
 
         String content = """name = "${mod_name}"
@@ -346,7 +369,9 @@ tasks.register('verifyCoremodResources') {
         def requiredEntries = [
                 'META-INF/coremods.json',
                 'coremods/reinodoce_inline_media_font.js',
-                "assets/${mod_id}/textures/gui/no_user_image.png"
+                "assets/${mod_id}/textures/gui/no_user_image.png",
+                "assets/${mod_id}/textures/gui/emote_loading.png",
+                "assets/${mod_id}/textures/gui/emote_error.png"
         ]
 
         def missingEntries = [] as Set
@@ -440,6 +465,12 @@ publishing {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+    options.docEncoding = 'UTF-8'
 }
 
 checkstyle {

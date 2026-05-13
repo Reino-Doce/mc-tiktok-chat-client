@@ -19,11 +19,14 @@ For the full command surface, see [docs/commands.md](docs/commands.md).
 
 ## Install (release version)
 
-1. Download the latest release from the GitHub Releases page. Two
-   artifacts are published per release:
+1. Download the latest release from Modrinth or the GitHub Releases
+   page. The main runtime artifacts are:
    - `reinodoce-mc-tiktok-<mc>-<v>.jar` — the bare mod jar.
    - `reinodoce-mc-tiktok-<mc>-<v>-packwiz.zip` — the same jar plus
-     Packwiz metadata that marks the mod as client-only.
+     Packwiz metadata that marks the mod as client-only. This helper
+     bundle is published on GitHub Releases.
+   - `SHA256SUMS.txt` / `SHA512SUMS.txt` — checksums for the jar and
+     Packwiz zip on GitHub Releases.
 2. Install one of them into your Forge instance:
 
    **Vanilla Forge / CurseForge / ATLauncher / manual install** —
@@ -37,11 +40,17 @@ For the full command surface, see [docs/commands.md](docs/commands.md).
 3. Start Minecraft with the matching Forge profile.
 4. In game, run `/reinodoce connect @username`.
 
-Optional — verify the download with the published checksum files:
+Optional — verify the downloaded jar and Packwiz zip with the published
+checksum files:
 
 ```powershell
 # Windows
-Get-FileHash .\reinodoce-mc-tiktok-*.jar -Algorithm SHA256
+$checksums = Get-Content .\SHA256SUMS.txt
+foreach ($line in $checksums) {
+  $hash, $file = $line -split '\s+', 2
+  $actual = (Get-FileHash ".\$file" -Algorithm SHA256).Hash.ToLowerInvariant()
+  if ($actual -ne $hash) { throw "Checksum mismatch: $file" }
+}
 ```
 
 ```bash
@@ -52,24 +61,10 @@ sha512sum -c SHA512SUMS.txt
 
 ## Build locally
 
-Requirements: JDK 17 (`JAVA_HOME` pointing at it) and Gradle 8.8 to
-bootstrap the wrapper.
-
-The wrapper jar (`gradle/wrapper/gradle-wrapper.jar`) is **not** tracked
-in the repository — `*.jar` is in `.gitignore`. After cloning,
-materialize it once with a system Gradle:
-
-```powershell
-gradle wrapper --gradle-version=8.8
-```
-
-```bash
-gradle wrapper --gradle-version=8.8
-```
-
-If you do not have Gradle installed, use [SDKMAN!](https://sdkman.io/)
-(`sdk install gradle 8.8`) or [Scoop](https://scoop.sh/)
-(`scoop install gradle@8.8`).
+Requirement: JDK 17 (`JAVA_HOME` pointing at it). The Gradle wrapper jar
+is tracked, and `gradle/wrapper/gradle-wrapper.properties` pins the
+Gradle distribution checksum, so no system Gradle bootstrap step is
+required after cloning.
 
 Then build:
 
@@ -89,7 +84,8 @@ The mod jar lands in `build/libs/`. Drop it into your Forge instance's
 ```
 
 This produces both the bare jar and the Packwiz bundle under
-`build/prism-bundle/`.
+`build/prism-bundle/`. The build also verifies the provisioned
+`TikTokLiveJava` jar against the SHA-512 recorded in `gradle.properties`.
 
 For deeper development topics — repo layout, the auto-provisioned
 `TikTokLiveJava` jar, the lint suite, etc. — see

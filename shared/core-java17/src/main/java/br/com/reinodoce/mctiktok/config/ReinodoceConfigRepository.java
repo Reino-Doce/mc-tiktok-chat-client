@@ -1,7 +1,6 @@
 package br.com.reinodoce.mctiktok.config;
 
 import br.com.reinodoce.mctiktok.util.ReinodoceLogger;
-import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -65,7 +64,7 @@ public class ReinodoceConfigRepository {
         sanitized.setRuleFollowerOnly(incoming.isRuleFollowerOnly());
         sanitized.setRuleMinMemberLevel(Math.max(0, incoming.getRuleMinMemberLevel()));
         sanitized.setSynteticGiftMinValue(Math.max(0, incoming.getSynteticGiftMinValue()));
-        sanitized.setSynteticGiftComboMode(GiftComboMode.fromString(incoming.getSynteticGiftComboMode()).id());
+        sanitized.setSynteticGiftComboMode(incoming.getSynteticGiftComboMode());
         sanitized.setSynteticFollowEnabled(incoming.isSynteticFollowEnabled());
         sanitized.setSynteticJoinEnabled(incoming.isSynteticJoinEnabled());
         sanitized.setSynteticMemberLevelEnabled(incoming.isSynteticMemberLevelEnabled());

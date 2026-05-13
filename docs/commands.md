@@ -10,9 +10,9 @@ Bare `/reinodoce` (no subcommand) is equivalent to `/reinodoce status`.
 
 | Command | Argument | Effect |
 | ------- | -------- | ------ |
-| `/reinodoce connect <username>` | TikTok handle, 2–30 chars of `A-Z a-z 0-9 . _` (the leading `@` is optional and stripped) | Starts the TikTok LIVE connection for `<username>` and mirrors chat events into Minecraft. Persists `<username>` as `lastUsername`. |
+| `/reinodoce connect <username>` | TikTok handle, 2–30 chars of `A-Z a-z 0-9 . _` (the leading `@` is optional and stripped) | Starts the TikTok LIVE connection for `<username>` and mirrors chat events into Minecraft. Persists `<username>` as `lastUsername` after a successful connection start. |
 | `/reinodoce disconnect` | — | Closes the active connection and cancels any pending reconnect. |
-| `/reinodoce status` | — | Prints the current connection state, target username, attempt counter, and last error (if any). |
+| `/reinodoce status` | — | Prints connection state, target username, reconnect timing, active rules, last error (if any), inline media renderer state, token count, cache stats, download counters, and cache eviction counters. |
 | `/reinodoce reload` | — | Re-reads `config/reinodoce-mc-tiktok-client.json` from disk and propagates the new values to the active TikTok session. Use it after editing the file by hand. |
 
 ## Settings

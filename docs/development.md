@@ -27,34 +27,16 @@ The shared / multi-version layout is described in
 - Java target for 1.20.1: `17`
 - `TikTokLiveJava` `1.11.11-Release` (jar provisioned from a GitHub release)
 
-## Bootstrapping the Gradle wrapper
+## Gradle wrapper integrity
 
-The wrapper jar (`gradle/wrapper/gradle-wrapper.jar`) is **not** tracked
-in this repository — `*.jar` is listed in `.gitignore`. After cloning,
-materialize it once using an existing Gradle installation on your
-system:
+The wrapper jar (`gradle/wrapper/gradle-wrapper.jar`) is tracked in this
+repository, and `gradle/wrapper/gradle-wrapper.properties` pins the
+Gradle `8.8` distribution with `distributionSha256Sum`. After cloning,
+`./gradlew` (Linux / macOS) and `.\gradlew.bat` (Windows) work normally
+without an ambient system Gradle bootstrap step.
 
-```bash
-gradle wrapper --gradle-version=8.8
-```
-
-```powershell
-gradle wrapper --gradle-version=8.8
-```
-
-The version must match the one recorded in
-`gradle/wrapper/gradle-wrapper.properties` (currently `8.8`). After
-this step, `./gradlew` (Linux / macOS) and `.\gradlew.bat` (Windows)
-work normally for all the commands described below.
-
-If you do not have `gradle` installed, use
-[SDKMAN!](https://sdkman.io/) (`sdk install gradle 8.8`) on Linux /
-macOS or [Scoop](https://scoop.sh/) (`scoop install gradle@8.8`) on
-Windows.
-
-The CI workflow runs `gradle wrapper` automatically before the build,
-so `mc<MC>-v<mod_version>` tags pushed for release produce artifacts
-without requiring this manual step.
+CI and release workflows fail early if the wrapper jar or distribution
+checksum metadata is missing.
 
 ## TikTokLiveJava dependency
 
@@ -69,11 +51,18 @@ The final mod artifact embeds this dependency inside the produced
 provided by the host (`com.google.gson` and `org.slf4j`) are excluded
 from the final mod packaging.
 
+The provisioned jar is verified against `tiktoklive_sha512` in
+`gradle.properties`. Cached copies and freshly downloaded copies both
+fail the build when the digest does not match.
+
 To point at a local jar instead of the auto-provisioned one:
 
 ```bash
 ./gradlew build -Ptiktoklive_jar_path=/absolute/path/to/Client-1.11.11-Release-all.jar
 ```
+
+When using a local jar override, also pass the matching
+`-Ptiktoklive_sha512=<sha512>` value.
 
 ## Verification commands
 
