@@ -31,12 +31,12 @@ final class MemberLevelEmitter {
         String username = TikTokUserNames.sanitizeUserName(update.username());
         if (config.isChatEmotesEnabled()) {
             chatGateway.sendSyntheticMemberLevel(
-                    config.getChatPrefix(),
+                    config,
                     messageFactory.richAuthorOnlyMessage(username, update.avatarUrl()),
                     update.newLevel());
             return true;
         }
-        chatGateway.sendSyntheticMemberLevel(config.getChatPrefix(), username, update.newLevel());
+        chatGateway.sendSyntheticMemberLevel(config, username, update.newLevel());
         return true;
     }
 }

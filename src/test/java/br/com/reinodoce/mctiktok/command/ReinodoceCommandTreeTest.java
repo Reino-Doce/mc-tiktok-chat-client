@@ -25,6 +25,8 @@ class ReinodoceCommandTreeTest {
         CommandNode<CommandSourceStack> settings = root.getChild("settings");
         assertNotNull(settings.getChild("reconnect").getChild("seconds"));
         assertNotNull(settings.getChild("chat-emotes").getChild(ENABLED_ARGUMENT));
+        assertNotNull(settings.getChild("prefix").getChild("value"));
+        assertNotNull(settings.getChild("format").getChild("template"));
 
         CommandNode<CommandSourceStack> rule = root.getChild("rule");
         assertNotNull(rule.getChild("follower").getChild(ENABLED_ARGUMENT));
@@ -96,6 +98,16 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setChatEmotesEnabled(boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setChatPrefix(String prefix) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setChatFormat(String format) {
             return unsupported();
         }
 

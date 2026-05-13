@@ -22,6 +22,7 @@ class ReinodoceConfigRepositoryTest {
 
         assertEquals("", loaded.getLastUsername());
         assertEquals("[LIVE]", loaded.getChatPrefix());
+        assertEquals("{prefix}  <{username}> {message}", loaded.getChatFormat());
         assertEquals(5, loaded.getReconnectSeconds());
         assertEquals(0, loaded.getRuleMinMemberLevel());
         assertEquals(1, loaded.getSynteticGiftMinValue());
@@ -43,6 +44,7 @@ class ReinodoceConfigRepositoryTest {
         config.setSynteticGiftMinValue(-3);
         config.setSynteticGiftComboMode("unknown");
         config.setChatPrefix("   ");
+        config.setChatFormat("{username}: {message}");
 
         assertEquals("streamer", config.getLastUsername());
         assertEquals(0, config.getReconnectSeconds());
@@ -50,6 +52,16 @@ class ReinodoceConfigRepositoryTest {
         assertEquals(0, config.getSynteticGiftMinValue());
         assertEquals("bulk", config.getSynteticGiftComboMode());
         assertEquals("[LIVE]", config.getChatPrefix());
+        assertEquals("{prefix}  <{username}> {message}", config.getChatFormat());
+    }
+
+    @Test
+    void chatFormatRejectsUnknownTokens() {
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+
+        config.setChatFormat("{prefix} <{username}> {message} {bad}");
+
+        assertEquals("{prefix}  <{username}> {message}", config.getChatFormat());
     }
 
     @Test
@@ -67,6 +79,7 @@ class ReinodoceConfigRepositoryTest {
         config.setSynteticJoinEnabled(true);
         config.setSynteticMemberLevelEnabled(true);
         config.setChatPrefix("[RD]");
+        config.setChatFormat("{prefix} {username}: {message}");
         config.setChatEmotesEnabled(false);
 
         repository.save(config);
@@ -82,6 +95,7 @@ class ReinodoceConfigRepositoryTest {
         assertTrue(loaded.isSynteticJoinEnabled());
         assertTrue(loaded.isSynteticMemberLevelEnabled());
         assertEquals("[RD]", loaded.getChatPrefix());
+        assertEquals("{prefix} {username}: {message}", loaded.getChatFormat());
         assertFalse(loaded.isChatEmotesEnabled());
     }
 }

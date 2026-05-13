@@ -27,10 +27,19 @@ through `/reinodoce …`. You can also edit it by hand and run
 | `synteticJoinEnabled` | boolean | `false` | Surface viewer-join events. |
 | `synteticMemberLevelEnabled` | boolean | `false` | Surface member-level-up events. |
 | `chatPrefix` | string | `"[LIVE]"` | Prefix prepended to every mirrored line. Empty / blank values revert to the default. |
+| `chatFormat` | string | current layout | Template used to arrange mirrored lines. Must include `{prefix}`, `{username}`, and `{message}`; unknown tokens or blank values revert to the default. |
 | `chatEmotesEnabled` | boolean | `true` | Render TikTok chat emotes inline in Minecraft chat. |
 
 All commands that change a field validate and clamp the same way the
 config loader does, so editing the file by hand and editing through
 `/reinodoce …` produce identical state.
+
+`chatFormat` supports exactly these tokens:
+
+- `{prefix}` — configured LIVE prefix.
+- `{username}` — TikTok display username, including avatar / emoji media
+  when inline rendering is enabled.
+- `{message}` — chat body or synthetic event body, including inline
+  emotes and gift icons when enabled.
 
 See [commands.md](commands.md) for the command that drives each field.

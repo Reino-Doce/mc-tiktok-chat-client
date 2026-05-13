@@ -37,6 +37,8 @@
   "reinodoce.command.set.syntetic_join": "Syntetic join = %s.",
   "reinodoce.command.set.syntetic_member_level": "Syntetic member-level = %s.",
   "reinodoce.command.set.chat_emotes": "Inline media = %s.",
+  "reinodoce.command.set.chat_prefix": "بادئة الدردشة = %s.",
+  "reinodoce.command.set.chat_format": "تنسيق الدردشة = %s.",
   "reinodoce.command.reload.ok": "تم إعادة تحميل الإعدادات.",
 
   "reinodoce.status.state": "الحالة: %s",
@@ -52,6 +54,8 @@
   "reinodoce.status.syntetic_follow": "Syntetic follow: %s",
   "reinodoce.status.syntetic_join": "Syntetic join: %s",
   "reinodoce.status.syntetic_member_level": "Syntetic member-level: %s",
+  "reinodoce.status.chat_prefix": "بادئة الدردشة: %s",
+  "reinodoce.status.chat_format": "تنسيق الدردشة: %s",
   "reinodoce.status.chat_emotes": "Chat emotes: %s",
   "reinodoce.status.next_reconnect": "إعادة الاتصال التالية: %s"
 }

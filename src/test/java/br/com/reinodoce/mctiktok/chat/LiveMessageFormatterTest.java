@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class LiveMessageFormatterTest {
     private final InlineMediaTokenRegistry tokenRegistry = new InlineMediaTokenRegistry(new InlineMediaCache());
     private final LiveMessageFormatter formatter = new LiveMessageFormatter(tokenRegistry);
+    private final ChatMessageStyle liveStyle = new ChatMessageStyle("[LIVE]", "{prefix}  <{username}> {message}");
 
     @Test
     void richMessagesInsertInlineTokens() {
@@ -33,7 +34,7 @@ class LiveMessageFormatterTest {
                 )
         );
 
-        FormattedLiveComment formatted = formatter.formatLiveComment("[LIVE]", message);
+        FormattedLiveComment formatted = formatter.formatLiveComment(liveStyle, message);
         String avatarToken = tokenRegistry.tokenFor(avatar);
         String authorToken = tokenRegistry.tokenFor(authorEmoji);
         String bodyToken = tokenRegistry.tokenFor(bodyEmote);
@@ -62,7 +63,7 @@ class LiveMessageFormatterTest {
                 )
         );
 
-        FormattedLiveComment formatted = formatter.formatSyntheticGift("[LIVE]", message);
+        FormattedLiveComment formatted = formatter.formatSyntheticGift(liveStyle, message);
 
         assertEquals(
                 "[LIVE]  <" + tokenRegistry.tokenFor(avatar) + " alice> enviou " + tokenRegistry.tokenFor(giftIcon) + " Rosa x3",
@@ -78,7 +79,7 @@ class LiveMessageFormatterTest {
                 List.of(new RichLiveMessage.TextSegment("texto puro"))
         );
 
-        FormattedLiveComment formatted = formatter.formatLiveComment("[LIVE]", message);
+        FormattedLiveComment formatted = formatter.formatLiveComment(liveStyle, message);
 
         assertEquals("[LIVE]  <alice> texto puro", formatted.component().getString());
         assertEquals(message, formatted.richMessage());
@@ -92,9 +93,40 @@ class LiveMessageFormatterTest {
                 List.of(new RichLiveMessage.TextSegment("comentario destacado"))
         );
 
-        FormattedLiveComment formatted = formatter.formatStarComment("[LIVE]", message);
+        FormattedLiveComment formatted = formatter.formatStarComment(liveStyle, message);
 
         assertEquals("[LIVE] \u2b50 STAR <alice> comentario destacado", formatted.component().getString());
         assertEquals(message, formatted.richMessage());
+    }
+
+    @Test
+    void customTemplateCanReorderPlainMessages() {
+        ChatMessageStyle style = new ChatMessageStyle("[TikTok]", "{username}: {message} {prefix}");
+
+        assertEquals(
+                "alice: oi [TikTok]",
+                formatter.formatLiveComment(style, "alice", "oi").getString()
+        );
+    }
+
+    @Test
+    void customTemplatePreservesRichInlineTokens() {
+        RichLiveMessage.AvatarSegment avatar = new RichLiveMessage.AvatarSegment(
+                "resource://reinodoce_mctiktok/textures/gui/no_user_image.png", "");
+        RichLiveMessage.RemoteEmoteSegment bodyEmote = new RichLiveMessage.RemoteEmoteSegment(
+                "wave", "https://cdn.example/wave.png", "[emote]");
+        RichLiveMessage message = new RichLiveMessage(
+                12L,
+                List.of(avatar, new RichLiveMessage.TextSegment("alice")),
+                List.of(new RichLiveMessage.TextSegment("oi "), bodyEmote)
+        );
+        ChatMessageStyle style = new ChatMessageStyle("[TikTok]", "{prefix} {message} - {username}");
+
+        FormattedLiveComment formatted = formatter.formatLiveComment(style, message);
+
+        assertEquals(
+                "[TikTok] oi " + tokenRegistry.tokenFor(bodyEmote) + " - " + tokenRegistry.tokenFor(avatar) + "alice",
+                formatted.component().getString()
+        );
     }
 }

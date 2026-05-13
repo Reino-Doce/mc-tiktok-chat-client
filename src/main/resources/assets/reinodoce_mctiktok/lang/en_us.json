@@ -37,6 +37,8 @@
   "reinodoce.command.set.syntetic_join": "Syntetic join = %s.",
   "reinodoce.command.set.syntetic_member_level": "Syntetic member-level = %s.",
   "reinodoce.command.set.chat_emotes": "Inline media = %s.",
+  "reinodoce.command.set.chat_prefix": "Chat prefix = %s.",
+  "reinodoce.command.set.chat_format": "Chat format = %s.",
   "reinodoce.command.reload.ok": "Configuration reloaded.",
 
   "reinodoce.status.state": "State: %s",
@@ -52,6 +54,8 @@
   "reinodoce.status.syntetic_follow": "Syntetic follow: %s",
   "reinodoce.status.syntetic_join": "Syntetic join: %s",
   "reinodoce.status.syntetic_member_level": "Syntetic member-level: %s",
+  "reinodoce.status.chat_prefix": "Chat prefix: %s",
+  "reinodoce.status.chat_format": "Chat format: %s",
   "reinodoce.status.chat_emotes": "Chat emotes: %s",
   "reinodoce.status.next_reconnect": "Next reconnect: %s"
 }

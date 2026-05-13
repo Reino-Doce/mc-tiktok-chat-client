@@ -23,6 +23,8 @@ import java.util.Objects;
  */
 public final class ReinodoceCommandTree {
     private static final String ARG_ENABLED = "enabled";
+    private static final String ARG_TEMPLATE = "template";
+    private static final String ARG_VALUE = "value";
 
     private ReinodoceCommandTree() {
     }
@@ -78,7 +80,19 @@ public final class ReinodoceCommandTree {
                                 .executes(ctx -> SettingsCommandHandler.chatEmotes(
                                         service,
                                         ctx.getSource(),
-                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))));
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal("prefix")
+                        .then(Commands.argument(ARG_VALUE, StringArgumentType.greedyString())
+                                .executes(ctx -> SettingsCommandHandler.prefix(
+                                        service,
+                                        ctx.getSource(),
+                                        StringArgumentType.getString(ctx, ARG_VALUE)))))
+                .then(Commands.literal("format")
+                        .then(Commands.argument(ARG_TEMPLATE, StringArgumentType.greedyString())
+                                .executes(ctx -> SettingsCommandHandler.format(
+                                        service,
+                                        ctx.getSource(),
+                                        StringArgumentType.getString(ctx, ARG_TEMPLATE)))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> ruleBranch(ReinodoceCommandService service) {
@@ -100,11 +114,11 @@ public final class ReinodoceCommandTree {
     private static LiteralArgumentBuilder<CommandSourceStack> synteticBranch(ReinodoceCommandService service) {
         return Commands.literal("syntetic")
                 .then(Commands.literal("gift")
-                        .then(Commands.argument("value", IntegerArgumentType.integer(0))
+                        .then(Commands.argument(ARG_VALUE, IntegerArgumentType.integer(0))
                                 .executes(ctx -> SynteticCommandHandler.gift(
                                         service,
                                         ctx.getSource(),
-                                        IntegerArgumentType.getInteger(ctx, "value")))))
+                                        IntegerArgumentType.getInteger(ctx, ARG_VALUE)))))
                 .then(Commands.literal("gift-combo")
                         .then(Commands.argument("mode", StringArgumentType.string())
                                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(

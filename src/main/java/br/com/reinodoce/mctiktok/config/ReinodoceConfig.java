@@ -9,6 +9,8 @@ import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 public class ReinodoceConfig {
     /** Default prefix used before rendered LIVE chat lines. */
     public static final String DEFAULT_CHAT_PREFIX = "[LIVE]";
+    /** Default template preserving the existing LIVE chat line layout. */
+    public static final String DEFAULT_CHAT_FORMAT = "{prefix}  <{username}> {message}";
     private static final int DEFAULT_RECONNECT_SECONDS = 5;
     private static final int DEFAULT_SYNTHETIC_GIFT_MIN_VALUE = 1;
 
@@ -22,6 +24,7 @@ public class ReinodoceConfig {
     private boolean synteticJoinEnabled = false;
     private boolean synteticMemberLevelEnabled = false;
     private String chatPrefix = DEFAULT_CHAT_PREFIX;
+    private String chatFormat = DEFAULT_CHAT_FORMAT;
     private boolean chatEmotesEnabled = true;
 
     /**
@@ -50,6 +53,7 @@ public class ReinodoceConfig {
         copy.setSynteticJoinEnabled(synteticJoinEnabled);
         copy.setSynteticMemberLevelEnabled(synteticMemberLevelEnabled);
         copy.setChatPrefix(chatPrefix);
+        copy.setChatFormat(chatFormat);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
         return copy;
     }
@@ -236,6 +240,24 @@ public class ReinodoceConfig {
             return;
         }
         this.chatPrefix = chatPrefix.trim();
+    }
+
+    /**
+     * Returns the chat message template.
+     *
+     * @return configured chat template
+     */
+    public String getChatFormat() {
+        return chatFormat;
+    }
+
+    /**
+     * Sets the chat message template, falling back to the default when invalid.
+     *
+     * @param chatFormat chat template to store
+     */
+    public void setChatFormat(String chatFormat) {
+        this.chatFormat = ChatFormatTemplate.sanitize(chatFormat);
     }
 
     /**

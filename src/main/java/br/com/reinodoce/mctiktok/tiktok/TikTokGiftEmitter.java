@@ -82,11 +82,11 @@ final class TikTokGiftEmitter {
             int count = Math.max(1, emission.count());
             if (config.isChatEmotesEnabled()) {
                 chatGateway.sendSyntheticGift(
-                        config.getChatPrefix(),
+                        config,
                         messageFactory.richGiftMessage(
                                 username, emission.avatarUrl(), giftName, emission.giftIconUrl(), count));
             } else {
-                chatGateway.sendSyntheticGift(config.getChatPrefix(), username, giftName, count);
+                chatGateway.sendSyntheticGift(config, username, giftName, count);
             }
         }
     }

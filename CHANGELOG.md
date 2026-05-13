@@ -16,6 +16,15 @@ automatically.
 
 ## [Unreleased]
 
+## [0.1.1]
+
+### Added
+
+- Add configurable LIVE chat prefix and format commands for mirrored TikTok
+  messages.
+- Publish tagged release jars to Modrinth automatically, with an early
+  credential check for `MODRINTH_TOKEN`.
+
 ### Changed
 
 - Keep inline media cache maintenance off the download queue and retry disk
