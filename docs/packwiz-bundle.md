@@ -1,19 +1,26 @@
-# Packwiz bundle (client-only distribution)
+# Packwiz and Modrinth pack bundles
 
-This project produces a [Packwiz](https://packwiz.infra.link/) bundle in
-addition to the bare mod jar. Packwiz is a format / CLI for packaging
-Minecraft modpacks, consumed natively by Prism Launcher and other
-Packwiz-aware tools. The format itself is not tied to any launcher.
+This project publishes three install artifacts:
 
-## Why the bundle exists
+- A bare Forge `.jar` for existing instances and manual installs.
+- A `-packwiz.zip` helper layout with Prism / Packwiz metadata.
+- A `.mrpack` Modrinth pack for importing a new client instance.
 
-When a `.jar` is dropped into an instance's `mods/` folder, some
-launchers (Prism Launcher included) mark the mod as `Side = both` for
-lack of metadata, even though it is client-only. The Packwiz bundle
-ships a companion `.pw.toml` with `side = "client"` so the launcher
-displays the Side column correctly and treats the mod as client-only.
+The mod itself is client-side. It runs in the local Minecraft client and
+does not require the multiplayer server to install this mod.
 
-## Bundle structure
+## Why the Packwiz bundle exists
+
+When a `.jar` is dropped into an instance's `mods/` folder, Prism has no
+launcher metadata for it and can display `Side = both`. The companion
+`mods/.index/*.pw.toml` file records the jar as `side = "client"` so the
+Prism mod list presents the client-only side correctly.
+
+The Forge mod behavior does not depend on this metadata. Minecraft loads
+the `.jar`; Prism reads the `.index` file only for launcher-side display
+and provider metadata.
+
+## Packwiz bundle structure
 
 ```
 mods/
@@ -24,73 +31,134 @@ mods/
 
 Relevant fields in `.pw.toml`:
 
-- `side = "client"` — restricts the mod to the client side.
-- `x-prismlauncher-loaders = ["forge"]` — target mod loader.
-- `x-prismlauncher-mc-versions = ["<mc_version>"]` — Minecraft versions.
-- `hash-format = "sha512"` and `hash = "<sha512>"` — integrity check for
-  the jar referenced by `filename` in the same bundle.
+- `side = "client"`: marks the mod as client-side in Prism.
+- `filename = "<jar>"`: points Prism at the jar in the same `mods/`
+  folder.
+- `x-prismlauncher-loaders = ["forge"]`: target mod loader.
+- `x-prismlauncher-mc-versions = ["<mc_version>"]`: compatible
+  Minecraft versions.
+- `hash-format = "sha512"` and `hash = "<sha512>"`: integrity data for
+  the jar referenced by `filename`.
+- `download.url`: the GitHub release URL for the same jar.
 
-The `x-prismlauncher-*` prefixes are Packwiz extensions recognised by
-Prism Launcher; other Packwiz consumers simply ignore them.
+The Modrinth project ID is `OrIKDIK6`. The `.pw.toml` only includes
+`[update.modrinth]` when the build is given a real
+`-Pmodrinth_version_id=<version ID>`, because Packwiz's `version` field
+is Modrinth's unique version ID, not this project's `mod_version`.
+The side metadata is local and does not depend on an update provider
+block.
+
+## Modrinth `.mrpack` structure
+
+The `.mrpack` is a Modrinth pack archive with:
+
+```
+modrinth.index.json
+```
+
+`modrinth.index.json` declares:
+
+- `formatVersion = 1`
+- `game = "minecraft"`
+- `dependencies.minecraft = "<mc_version>"`
+- `dependencies.forge = "<forge_version>"`
+- one file at `mods/reinodoce-mc-tiktok-<mc_version>-<mod_version>.jar`
+- `files[0].env.client = "required"`
+- `files[0].env.server = "unsupported"`
+- SHA-1 / SHA-512 hashes, file size, and the GitHub release download URL
+  for the jar
+
+The jar is installed as a normal Forge mod under `mods/`. The
+client-only behavior is declared in the `.mrpack` file metadata, not by
+placing the jar in `client-overrides/`.
 
 ## Gradle tasks
-
-The task names carry the `prism` prefix for historical reasons, but
-what they emit is the standard Packwiz format. Renaming to `packwiz*`
-is planned as a follow-up.
 
 | Task                  | What it does                                                  |
 | --------------------- | ------------------------------------------------------------- |
 | `prismMetadata`       | Generates `build/prism-index/reinodoce-mc-tiktok.pw.toml`.    |
 | `prismBundle`         | Stages `build/prism-bundle/` with `mods/` and `mods/.index/`. |
 | `verifyPrismMetadata` | Confirms `side=client`, `hash-format=sha512`, SHA-512 of jar. |
+| `modrinthPack`        | Generates `build/distributions/<artifact>.mrpack`.            |
+| `verifyModrinthPack`  | Confirms the `.mrpack` manifest, hashes, and client-only env. |
 
-Recommended command to generate the bundle locally:
+Recommended command to generate all release-style artifacts locally:
 
 ```powershell
-.\gradlew.bat clean build prismBundle verifyPrismMetadata
+.\gradlew.bat clean build prismBundle verifyPrismMetadata modrinthPack verifyModrinthPack
 ```
 
 ```bash
-./gradlew clean build prismBundle verifyPrismMetadata
+./gradlew clean build prismBundle verifyPrismMetadata modrinthPack verifyModrinthPack
 ```
 
 Output:
 
+- `build/libs/<jar>`
 - `build/prism-bundle/mods/<jar>`
 - `build/prism-bundle/mods/.index/<mod>.pw.toml`
+- `build/distributions/<artifact>.mrpack`
 
 ## Usage per launcher
 
-**Prism Launcher** (native Packwiz consumption):
+**Prism Launcher, existing instance:**
 
-1. Close the instance in Prism.
-2. Copy everything from `build/prism-bundle/mods/` (including `.index/`)
-   into the instance's `mods/` folder.
-3. Open the instance: the mod's Side column reads `client`.
+1. Open the instance's Mods tab.
+2. Use **Add File** with the bare `.jar`, not `.mrpack` or
+   `-packwiz.zip`.
+3. Start Minecraft.
+
+**Prism Launcher, optional Side column metadata for an existing
+instance:**
+
+1. Close the instance and Prism Launcher.
+2. Extract the `-packwiz.zip` into the instance's Minecraft root, not
+   into the `mods/` folder itself.
+3. Confirm the final layout is:
+
+   ```text
+   <instance minecraft root>/mods/<jar>
+   <instance minecraft root>/mods/.index/<mod>.pw.toml
+   ```
+
+4. Reopen Prism. The mod should show `Side = client`.
+
+If you add `-packwiz.zip` through the Mods tab, Prism copies the zip into
+`mods/` as a file. If you extract the zip inside `mods/`, you will get
+`mods/mods/<jar>`, which Prism will not load as a mod. If Prism is open
+while only the metadata file exists, it can treat that metadata as
+orphaned, so copy the jar and `.index` together while Prism is closed.
+
+**Prism Launcher / Modrinth App, new instance:**
+
+Import the `.mrpack`. This creates an instance with the declared
+Minecraft and Forge versions and installs the jar as a normal mod under
+`mods/`, with `env.client = "required"` and
+`env.server = "unsupported"` in `modrinth.index.json`.
 
 **Other launchers / vanilla Forge** (CurseForge, ATLauncher, manual
 installation, test servers):
 
-1. Copy only the `.jar` from `build/libs/` (or
-   `build/prism-bundle/mods/`) into the Forge profile's `mods/` folder.
-2. The `.pw.toml` file is metadata — Forge ignores it; you can drop it
-   in alongside if the launcher understands Packwiz, or discard it if
-   not.
+Copy only the `.jar` from `build/libs/` or `build/prism-bundle/mods/`
+into the Forge profile's `mods/` folder. The `.pw.toml` file is
+Prism-specific launcher metadata and can be ignored elsewhere.
 
-## Published artifact
+## Published artifacts
 
-The release CI attaches a zipped version of the bundle to each release,
-named `reinodoce-mc-tiktok-<mc_version>-<mod_version>-packwiz.zip`. The
-zip already follows the `mods/...` + `mods/.index/...` layout, so it
-can be extracted directly into the instance.
+GitHub Releases attach:
 
-The bare `.jar` is also attached separately on each release for users
-who just want a manual install.
+- `reinodoce-mc-tiktok-<mc_version>-<mod_version>.jar`
+- `reinodoce-mc-tiktok-<mc_version>-<mod_version>.mrpack`
+- `reinodoce-mc-tiktok-<mc_version>-<mod_version>-packwiz.zip`
+
+The bare `.jar` is the artifact to use with Prism's Mods tab **Add
+File** button. The `.mrpack` is for instance import.
 
 ## References
 
-- Packwiz spec / CLI: <https://packwiz.infra.link/>
-- Prism Launcher documentation: <https://prismlauncher.org/wiki/>
+- Packwiz Modrinth export: <https://packwiz.infra.link/tutorials/hosting/modrinth/>
+- Packwiz metadata file syntax: <https://packwiz.infra.link/tutorials/creating/adding-mods/>
+- Modrinth `.mrpack` format: <https://support.modrinth.com/en/articles/8802351-modrinth-modpack-format-mrpack>
+- Prism Launcher ZIP resource handling: <https://prismlauncher.org/wiki/help-pages/zip-import/>
 - This branch pins `mc_version = 1.20.1` and `forge`, reflected in the
-  `x-prismlauncher-*` fields of the `.pw.toml`.
+  generated metadata.

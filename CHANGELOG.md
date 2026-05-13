@@ -16,6 +16,17 @@ automatically.
 
 ## [Unreleased]
 
+## [0.1.2]
+
+### Changed
+
+- Update `TikTokLiveJava` to `1.11.12-Release`.
+- Add a `.mrpack` release artifact that installs the jar as a normal mod
+  under `mods/` with client-only file metadata, while keeping the
+  existing Packwiz helper zip.
+- Clarify Prism install paths for existing instances, `.mrpack` imports,
+  and Packwiz side metadata with real release download URLs.
+
 ## [0.1.1]
 
 ### Added
@@ -46,6 +57,8 @@ automatically.
 
 - Client-side Forge 1.20.1 mod that mirrors TikTok LIVE chat into the local Minecraft chat.
 - Commands: `/reinodoce connect|disconnect|status|settings|rule|syntetic|reload`.
-- Client-side mod bundle in Packwiz format with `side = "client"` metadata (`prismBundle`, `verifyPrismMetadata`); launcher-agnostic, consumable by Prism Launcher and other Packwiz-aware launchers.
+- Client-side mod bundle in Packwiz format with `side = "client"`
+  metadata (`prismBundle`, `verifyPrismMetadata`) for Prism Launcher
+  display.
 - GitHub Actions release workflow with SHA-256/SHA-512 checksums, TikTokLiveJava jar caching, changelog gate, and SHA-pinned third-party actions.
 - Command-tree and config-contract tests for the public `/reinodoce` and persisted config surfaces.
