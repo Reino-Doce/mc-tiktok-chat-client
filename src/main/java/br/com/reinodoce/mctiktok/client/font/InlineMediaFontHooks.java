@@ -17,6 +17,9 @@ import org.joml.Matrix4f;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+/**
+ * Bridge methods called from the coremod patch that renders inline media tokens inside Minecraft font output.
+ */
 public final class InlineMediaFontHooks {
     private static final String OUTPUT_BUFFER_SOURCE_FIELD = "f_92937_";
     private static final String OUTPUT_DROP_SHADOW_FIELD = "f_92939_";
@@ -83,18 +86,37 @@ public final class InlineMediaFontHooks {
     private InlineMediaFontHooks() {
     }
 
+    /**
+     * Installs the token registry used by subsequent coremod render calls.
+     *
+     * @param registry inline media token registry
+     */
     public static void installRegistry(InlineMediaTokenRegistry registry) {
         tokenRegistry = registry;
     }
 
+    /**
+     * Marks that the coremod patch reached this hook at least once.
+     */
     public static void markCoremodPatched() {
         coremodPatched = true;
     }
 
+    /**
+     * Reports whether the coremod patch has reached one of these hooks.
+     *
+     * @return true after the patch has called this class
+     */
     public static boolean coremodLoaded() {
         return coremodPatched;
     }
 
+    /**
+     * Returns the advance for an inline media token or a sentinel for normal glyph processing.
+     *
+     * @param codePoint code point seen by Minecraft font layout
+     * @return inline advance or a negative sentinel when the code point is not an inline media token
+     */
     public static float inlineAdvanceOrSentinel(int codePoint) {
         coremodPatched = true;
         InlineMediaTokenRegistry registry = tokenRegistry;
@@ -104,6 +126,15 @@ public final class InlineMediaFontHooks {
         return registry.inlineAdvanceOrSentinel(codePoint);
     }
 
+    /**
+     * Attempts to render an inline media token into Minecraft's private string render output.
+     *
+     * @param output Minecraft font render output instance
+     * @param charIndex original character index, reserved for parity with the patched callsite
+     * @param style active text style
+     * @param codePoint code point being rendered
+     * @return true when the token was rendered and normal glyph rendering should be skipped
+     */
     public static boolean tryRenderInline(Object output, int charIndex, Style style, int codePoint) {
         coremodPatched = true;
         InlineMediaTokenRegistry registry = tokenRegistry;

@@ -4,11 +4,21 @@ import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
 import net.minecraft.network.chat.Component;
 
+/**
+ * Chat sink implementation that formats TikTok events and schedules Minecraft chat writes on the client thread.
+ */
 public class MinecraftChatGateway implements ChatEventSink {
     private final MinecraftPlatformBridge platformBridge;
     private final LiveMessageFormatter formatter;
     private final InlineMediaCache inlineMediaCache;
 
+    /**
+     * Creates a gateway.
+     *
+     * @param platformBridge Minecraft client adapter
+     * @param formatter chat formatter
+     * @param inlineMediaCache inline media cache used for rich message prefetching
+     */
     public MinecraftChatGateway(
             MinecraftPlatformBridge platformBridge,
             LiveMessageFormatter formatter,
@@ -84,6 +94,11 @@ public class MinecraftChatGateway implements ChatEventSink {
         send(formatter.formatSystem(message, success));
     }
 
+    /**
+     * Sends a preformatted component to Minecraft chat on the client thread.
+     *
+     * @param component component to add to chat
+     */
     public void send(Component component) {
         platformBridge.runOnClientThread(() -> platformBridge.addChatMessage(component));
     }

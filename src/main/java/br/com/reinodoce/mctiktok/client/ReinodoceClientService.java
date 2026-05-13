@@ -15,11 +15,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Client service that composes core TikTok logic with Minecraft inline media rendering.
+ */
 public class ReinodoceClientService implements ReinodoceCommandService {
     private final ReinodoceCoreService coreService;
     private final InlineMediaCache inlineMediaCache;
     private final InlineMediaTokenRegistry inlineMediaTokenRegistry;
 
+    /**
+     * Creates a client service for the supplied Minecraft platform adapter.
+     *
+     * @param platformBridge Minecraft platform adapter
+     */
     public ReinodoceClientService(MinecraftPlatformBridge platformBridge) {
         this.inlineMediaCache = new InlineMediaCache();
         this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
@@ -34,18 +42,24 @@ public class ReinodoceClientService implements ReinodoceCommandService {
         );
     }
 
+    /**
+     * Initializes core service state.
+     */
     public void initialize() {
         coreService.initialize();
     }
 
+    @Override
     public CommandResult connect(String username) {
         return coreService.connect(username);
     }
 
+    @Override
     public CommandResult disconnect() {
         return coreService.disconnect();
     }
 
+    @Override
     public List<String> statusLines() {
         List<String> lines = new ArrayList<>(coreService.statusLines());
         lines.add("Inline media renderer: font-coremod");
@@ -66,42 +80,52 @@ public class ReinodoceClientService implements ReinodoceCommandService {
         return lines;
     }
 
+    @Override
     public CommandResult setReconnectSeconds(int seconds) {
         return coreService.setReconnectSeconds(seconds);
     }
 
+    @Override
     public CommandResult setFollowerRule(boolean enabled) {
         return coreService.setFollowerRule(enabled);
     }
 
+    @Override
     public CommandResult setMinMemberLevelRule(int level) {
         return coreService.setMinMemberLevelRule(level);
     }
 
+    @Override
     public CommandResult setSynteticGift(int value) {
         return coreService.setSynteticGift(value);
     }
 
+    @Override
     public CommandResult setSynteticGiftComboMode(String mode) {
         return coreService.setSynteticGiftComboMode(mode);
     }
 
+    @Override
     public CommandResult setSynteticFollow(boolean enabled) {
         return coreService.setSynteticFollow(enabled);
     }
 
+    @Override
     public CommandResult setSynteticJoin(boolean enabled) {
         return coreService.setSynteticJoin(enabled);
     }
 
+    @Override
     public CommandResult setSynteticMemberLevel(boolean enabled) {
         return coreService.setSynteticMemberLevel(enabled);
     }
 
+    @Override
     public CommandResult setChatEmotesEnabled(boolean enabled) {
         return coreService.setChatEmotesEnabled(enabled);
     }
 
+    @Override
     public CommandResult reload() {
         return coreService.reload();
     }

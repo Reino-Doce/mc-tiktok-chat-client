@@ -2,6 +2,7 @@ package br.com.reinodoce.mctiktok.core;
 
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.command.CommandResult;
+import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
 import br.com.reinodoce.mctiktok.i18n.Translations;
@@ -22,7 +23,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ReinodoceCoreService {
+/**
+ * Core command service that owns configuration, connection lifecycle, and operator-facing state.
+ */
+public class ReinodoceCoreService implements ReinodoceCommandService {
     private static final int DEDUPLICATION_WINDOW_MINUTES = 3;
 
     private final ReinodoceConfigRepository configRepository;
@@ -30,6 +34,12 @@ public class ReinodoceCoreService {
     private final TikTokClientFacade tikTokClientFacade;
     private final AtomicBoolean initialized;
 
+    /**
+     * Creates the core service.
+     *
+     * @param chatEventSink chat sink used for rendered TikTok events
+     * @param configRepository persisted configuration repository
+     */
     public ReinodoceCoreService(ChatEventSink chatEventSink, ReinodoceConfigRepository configRepository) {
         this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
         this.settingsState = new RuntimeSettingsState();
@@ -46,6 +56,9 @@ public class ReinodoceCoreService {
         this.initialized = new AtomicBoolean(false);
     }
 
+    /**
+     * Loads persisted configuration and applies it to runtime collaborators once.
+     */
     public void initialize() {
         if (!initialized.compareAndSet(false, true)) {
             return;
@@ -55,6 +68,7 @@ public class ReinodoceCoreService {
         tikTokClientFacade.onConfigUpdated();
     }
 
+    @Override
     public CommandResult connect(String username) {
         ensureInitialized();
         String normalized = UsernameValidator.normalize(username);
@@ -67,11 +81,13 @@ public class ReinodoceCoreService {
         return result;
     }
 
+    @Override
     public CommandResult disconnect() {
         ensureInitialized();
         return tikTokClientFacade.disconnect();
     }
 
+    @Override
     public List<String> statusLines() {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -101,6 +117,7 @@ public class ReinodoceCoreService {
         return lines;
     }
 
+    @Override
     public CommandResult setReconnectSeconds(int seconds) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -110,6 +127,7 @@ public class ReinodoceCoreService {
         return CommandResult.ok(Translations.tr("reinodoce.command.set.reconnect", config.getReconnectSeconds()));
     }
 
+    @Override
     public CommandResult setFollowerRule(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -118,6 +136,7 @@ public class ReinodoceCoreService {
         return CommandResult.ok(Translations.tr("reinodoce.command.set.follower", enabled));
     }
 
+    @Override
     public CommandResult setMinMemberLevelRule(int level) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -126,6 +145,7 @@ public class ReinodoceCoreService {
         return CommandResult.ok(Translations.tr("reinodoce.command.set.min_member_level", config.getRuleMinMemberLevel()));
     }
 
+    @Override
     public CommandResult setSynteticGift(int value) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -134,6 +154,7 @@ public class ReinodoceCoreService {
         return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_gift", config.getSynteticGiftMinValue()));
     }
 
+    @Override
     public CommandResult setSynteticGiftComboMode(String mode) {
         ensureInitialized();
         GiftComboMode parsed = GiftComboMode.fromString(mode);
@@ -143,6 +164,7 @@ public class ReinodoceCoreService {
         return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_gift_combo", parsed.id()));
     }
 
+    @Override
     public CommandResult setSynteticFollow(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -151,6 +173,7 @@ public class ReinodoceCoreService {
         return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_follow", enabled));
     }
 
+    @Override
     public CommandResult setSynteticJoin(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -159,6 +182,7 @@ public class ReinodoceCoreService {
         return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_join", enabled));
     }
 
+    @Override
     public CommandResult setSynteticMemberLevel(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -167,6 +191,7 @@ public class ReinodoceCoreService {
         return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_member_level", enabled));
     }
 
+    @Override
     public CommandResult setChatEmotesEnabled(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -175,6 +200,7 @@ public class ReinodoceCoreService {
         return CommandResult.ok(Translations.tr("reinodoce.command.set.chat_emotes", enabled));
     }
 
+    @Override
     public CommandResult reload() {
         ensureInitialized();
         ReinodoceConfig loaded = configRepository.load();

@@ -1,5 +1,8 @@
 package br.com.reinodoce.mctiktok.chat;
 
+/**
+ * Normalizes text received from TikTok before it is rendered into Minecraft chat.
+ */
 public final class MessageSanitizer {
     private static final int MAX_TEXT_LENGTH = 256;
     private static final char NULL_CHAR = '\u0000';
@@ -7,6 +10,12 @@ public final class MessageSanitizer {
     private MessageSanitizer() {
     }
 
+    /**
+     * Removes null/control characters, collapses whitespace, and caps visible message length.
+     *
+     * @param raw source text
+     * @return safe chat text
+     */
     public static String sanitize(String raw) {
         if (raw == null) {
             return "";

@@ -12,12 +12,24 @@ import io.github.jwdeveloper.tiktok.messages.webcast.WebcastMemberMessage;
 
 import java.util.function.Supplier;
 
+/**
+ * Facade over the TikTok LIVE client lifecycle and event dispatch graph.
+ */
 public class TikTokClientFacade {
     private final LiveSessionState sessionState;
     private final TikTokConnectionLifecycle lifecycle;
     private final TikTokEventDispatcher eventDispatcher;
     private final WebsocketMessageDispatcher websocketDispatcher;
 
+    /**
+     * Creates a facade and wires the TikTok event handlers.
+     *
+     * @param configSupplier current configuration supplier
+     * @param chatGateway chat event sink
+     * @param ruleEngine message rule engine
+     * @param memberLevelResolver member-level resolver
+     * @param giftDeduplicator gift deduplicator
+     */
     public TikTokClientFacade(
             Supplier<ReinodoceConfig> configSupplier,
             ChatEventSink chatGateway,
@@ -34,18 +46,37 @@ public class TikTokClientFacade {
         this.websocketDispatcher = wiring.websocketDispatcher();
     }
 
+    /**
+     * Starts a TikTok LIVE connection.
+     *
+     * @param usernameInput normalized username
+     * @return command result
+     */
     public CommandResult connect(String usernameInput) {
         return lifecycle.connect(usernameInput);
     }
 
+    /**
+     * Stops the active TikTok LIVE connection.
+     *
+     * @return command result
+     */
     public CommandResult disconnect() {
         return lifecycle.disconnect();
     }
 
+    /**
+     * Returns current connection status.
+     *
+     * @return session snapshot
+     */
     public LiveSessionState.Snapshot status() {
         return sessionState.snapshot();
     }
 
+    /**
+     * Applies runtime configuration changes to the lifecycle manager.
+     */
     public void onConfigUpdated() {
         lifecycle.onConfigUpdated();
     }

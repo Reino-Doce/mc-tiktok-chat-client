@@ -5,9 +5,15 @@ import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Expands Unicode emoji text into Twemoji-backed inline media segments.
+ */
 public final class UnicodeEmojiParser {
     private final UnicodeEmojiCatalog catalog;
 
+    /**
+     * Creates a parser using the shared emoji catalog.
+     */
     public UnicodeEmojiParser() {
         this(UnicodeEmojiCatalog.getInstance());
     }
@@ -16,6 +22,12 @@ public final class UnicodeEmojiParser {
         this.catalog = catalog;
     }
 
+    /**
+     * Expands text segments inside a rich message.
+     *
+     * @param input rich message to expand
+     * @return expanded rich message, or {@code null} when input is {@code null}
+     */
     public RichLiveMessage expand(RichLiveMessage input) {
         if (input == null) {
             return input;
@@ -28,12 +40,24 @@ public final class UnicodeEmojiParser {
         );
     }
 
+    /**
+     * Parses plain text into text and emoji media segments.
+     *
+     * @param text text to parse
+     * @return immutable segment list
+     */
     public List<RichLiveMessage.Segment> parseText(String text) {
         List<RichLiveMessage.Segment> output = new ArrayList<>();
         appendExpandedText(output, text);
         return List.copyOf(output);
     }
 
+    /**
+     * Expands emoji inside an existing segment list.
+     *
+     * @param segments source segments
+     * @return expanded immutable segment list
+     */
     public List<RichLiveMessage.Segment> expandSegments(List<RichLiveMessage.Segment> segments) {
         if (segments == null || segments.isEmpty()) {
             return List.of();

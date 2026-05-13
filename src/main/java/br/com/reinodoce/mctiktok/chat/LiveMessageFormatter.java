@@ -9,36 +9,88 @@ import net.minecraft.network.chat.MutableComponent;
 
 import java.util.List;
 
+/**
+ * Formats plain and rich TikTok LIVE events into Minecraft chat components.
+ */
 public class LiveMessageFormatter {
     private static final String AUTHOR_OPEN = " <";
     private static final String AUTHOR_CLOSE = "> ";
 
     private final InlineMediaTokenRegistry tokenRegistry;
 
+    /**
+     * Creates a formatter that can allocate inline media tokens while rendering rich messages.
+     *
+     * @param tokenRegistry registry used for inline media token insertion
+     */
     public LiveMessageFormatter(InlineMediaTokenRegistry tokenRegistry) {
         this.tokenRegistry = tokenRegistry;
     }
 
+    /**
+     * Formats a plain live comment.
+     *
+     * @param prefix configured chat prefix
+     * @param username display name to show
+     * @param message sanitized message body
+     * @return rendered component
+     */
     public Component formatLiveComment(String prefix, String username, String message) {
         return formatPlainComment(prefix, username, message, false);
     }
 
+    /**
+     * Formats a rich live comment.
+     *
+     * @param prefix configured chat prefix
+     * @param message rich message to render
+     * @return rendered component plus source message
+     */
     public FormattedLiveComment formatLiveComment(String prefix, RichLiveMessage message) {
         return formatRichComment(prefix, message, false);
     }
 
+    /**
+     * Formats a plain highlighted star comment.
+     *
+     * @param prefix configured chat prefix
+     * @param username display name to show
+     * @param message sanitized message body
+     * @return rendered component
+     */
     public Component formatStarComment(String prefix, String username, String message) {
         return formatPlainComment(prefix, username, message, true);
     }
 
+    /**
+     * Formats a rich highlighted star comment.
+     *
+     * @param prefix configured chat prefix
+     * @param message rich message to render
+     * @return rendered component plus source message
+     */
     public FormattedLiveComment formatStarComment(String prefix, RichLiveMessage message) {
         return formatRichComment(prefix, message, true);
     }
 
+    /**
+     * Formats a rich synthetic gift line.
+     *
+     * @param prefix configured chat prefix
+     * @param message rich gift message
+     * @return rendered component plus source message
+     */
     public FormattedLiveComment formatSyntheticGift(String prefix, RichLiveMessage message) {
         return formatRichLine(prefix, message, ChatFormatting.LIGHT_PURPLE);
     }
 
+    /**
+     * Formats a rich synthetic follow line.
+     *
+     * @param prefix configured chat prefix
+     * @param message rich user message
+     * @return rendered component plus source message
+     */
     public FormattedLiveComment formatSyntheticFollow(String prefix, RichLiveMessage message) {
         return formatRichLine(
                 prefix,
@@ -47,6 +99,13 @@ public class LiveMessageFormatter {
         );
     }
 
+    /**
+     * Formats a rich synthetic join line.
+     *
+     * @param prefix configured chat prefix
+     * @param message rich user message
+     * @return rendered component plus source message
+     */
     public FormattedLiveComment formatSyntheticJoin(String prefix, RichLiveMessage message) {
         return formatRichLine(
                 prefix,
@@ -55,6 +114,14 @@ public class LiveMessageFormatter {
         );
     }
 
+    /**
+     * Formats a rich synthetic member-level line.
+     *
+     * @param prefix configured chat prefix
+     * @param message rich user message
+     * @param memberLevel resolved member level
+     * @return rendered component plus source message
+     */
     public FormattedLiveComment formatSyntheticMemberLevel(String prefix, RichLiveMessage message, int memberLevel) {
         return formatRichLine(
                 prefix,
@@ -63,6 +130,14 @@ public class LiveMessageFormatter {
         );
     }
 
+    /**
+     * Formats a rich line with the supplied body color.
+     *
+     * @param prefix configured chat prefix
+     * @param message rich message to render
+     * @param bodyColor color applied to body segments
+     * @return rendered component plus source message
+     */
     public FormattedLiveComment formatRichLine(String prefix, RichLiveMessage message, ChatFormatting bodyColor) {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
@@ -73,6 +148,15 @@ public class LiveMessageFormatter {
         return new FormattedLiveComment(line, message);
     }
 
+    /**
+     * Formats a plain synthetic gift line.
+     *
+     * @param prefix configured chat prefix
+     * @param username display name to show
+     * @param giftName gift display name
+     * @param count gift count or combo count
+     * @return rendered component
+     */
     public Component formatSyntheticGift(String prefix, String username, String giftName, int count) {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
@@ -85,6 +169,13 @@ public class LiveMessageFormatter {
         return line;
     }
 
+    /**
+     * Formats a plain synthetic follow line.
+     *
+     * @param prefix configured chat prefix
+     * @param username display name to show
+     * @return rendered component
+     */
     public Component formatSyntheticFollow(String prefix, String username) {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
@@ -93,6 +184,13 @@ public class LiveMessageFormatter {
         return line;
     }
 
+    /**
+     * Formats a plain synthetic join line.
+     *
+     * @param prefix configured chat prefix
+     * @param username display name to show
+     * @return rendered component
+     */
     public Component formatSyntheticJoin(String prefix, String username) {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
@@ -101,6 +199,14 @@ public class LiveMessageFormatter {
         return line;
     }
 
+    /**
+     * Formats a plain synthetic member-level line.
+     *
+     * @param prefix configured chat prefix
+     * @param username display name to show
+     * @param memberLevel resolved member level
+     * @return rendered component
+     */
     public Component formatSyntheticMemberLevel(String prefix, String username, int memberLevel) {
         MutableComponent line = Component.empty();
         line.append(prefix(prefix));
@@ -109,6 +215,13 @@ public class LiveMessageFormatter {
         return line;
     }
 
+    /**
+     * Formats an operator-facing system line.
+     *
+     * @param message status or error text
+     * @param success whether the line should use success styling
+     * @return rendered component
+     */
     public Component formatSystem(String message, boolean success) {
         MutableComponent line = Component.empty();
         line.append(Component.literal("[ReinoDoce] ").withStyle(ChatFormatting.DARK_AQUA));

@@ -7,6 +7,9 @@ import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Client-side bootstrap that wires services and registers Forge client commands once.
+ */
 @SuppressWarnings("PMD.AvoidFieldNameMatchingMethodName")
 public final class ReinodoceClientBootstrap {
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
@@ -15,6 +18,9 @@ public final class ReinodoceClientBootstrap {
     private ReinodoceClientBootstrap() {
     }
 
+    /**
+     * Initializes the singleton client service and command registration hook.
+     */
     public static void initialize() {
         if (!INITIALIZED.compareAndSet(false, true)) {
             return;
@@ -24,6 +30,11 @@ public final class ReinodoceClientBootstrap {
                 ReinodoceCommandRegistrar.onRegisterClientCommands(event, SERVICE));
     }
 
+    /**
+     * Returns the singleton client service.
+     *
+     * @return client service singleton
+     */
     public static ReinodoceClientService service() {
         return SERVICE;
     }

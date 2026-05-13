@@ -14,6 +14,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Resolves, caches, and updates TikTok membership levels from badges and member messages.
+ */
 public class MemberLevelResolver {
     private static final Pattern NUMBER_PATTERN = Pattern.compile("(\\d+)");
 
@@ -21,6 +24,12 @@ public class MemberLevelResolver {
     private final Map<Long, String> usernames = new ConcurrentHashMap<>();
     private final Map<Long, String> avatarUrls = new ConcurrentHashMap<>();
 
+    /**
+     * Resolves a user's best-known membership level from cache or badges.
+     *
+     * @param user TikTok user model
+     * @return resolved level, or zero when unknown
+     */
     public int resolveLevel(User user) {
         if (user == null || user.getId() == null) {
             return 0;
@@ -41,6 +50,15 @@ public class MemberLevelResolver {
         return inferred;
     }
 
+    /**
+     * Applies a membership-level update for a user.
+     *
+     * @param userId TikTok user id
+     * @param username display name from the event
+     * @param avatarUrl avatar URL from the event
+     * @param newLevel newly observed level
+     * @return update summary
+     */
     public LevelUpdate updateLevel(long userId, String username, String avatarUrl, int newLevel) {
         if (userId <= 0 || newLevel < 0) {
             return new LevelUpdate(userId, chooseUserName(userId, username), chooseAvatarUrl(userId, avatarUrl), 0, 0);
@@ -57,20 +75,43 @@ public class MemberLevelResolver {
         return new LevelUpdate(userId, display, displayAvatar, previous, effective);
     }
 
+    /**
+     * Returns the best-known display name for a user.
+     *
+     * @param userId TikTok user id
+     * @param fallback fallback display name
+     * @return cached or fallback display name
+     */
     public String getKnownUsername(long userId, String fallback) {
         return chooseUserName(userId, fallback);
     }
 
+    /**
+     * Returns the best-known avatar URL for a user.
+     *
+     * @param userId TikTok user id
+     * @param fallback fallback avatar URL
+     * @return cached or fallback avatar URL
+     */
     public String getKnownAvatarUrl(long userId, String fallback) {
         return chooseAvatarUrl(userId, fallback);
     }
 
+    /**
+     * Clears cached levels and identity hints.
+     */
     public void clear() {
         levels.clear();
         usernames.clear();
         avatarUrls.clear();
     }
 
+    /**
+     * Extracts the first integer member level from TikTok badge text.
+     *
+     * @param text badge text
+     * @return parsed level, or zero when no level is present
+     */
     public static int extractLevelFromText(String text) {
         if (text == null || text.isBlank()) {
             return 0;
@@ -139,7 +180,21 @@ public class MemberLevelResolver {
         return avatarUrls.getOrDefault(userId, InlineMediaUrls.defaultAvatarUrl());
     }
 
+    /**
+     * Summary of a membership-level update.
+     *
+     * @param userId TikTok user id
+     * @param username display name
+     * @param avatarUrl avatar URL
+     * @param previousLevel previous known level
+     * @param newLevel effective stored level
+     */
     public record LevelUpdate(long userId, String username, String avatarUrl, int previousLevel, int newLevel) {
+        /**
+         * Reports whether this update increased an already-known member level.
+         *
+         * @return true when the new level is greater than a positive previous level
+         */
         public boolean isUpgrade() {
             return previousLevel > 0 && newLevel > previousLevel;
         }

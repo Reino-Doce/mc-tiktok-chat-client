@@ -18,12 +18,21 @@ import net.minecraft.commands.SharedSuggestionProvider;
 
 import java.util.Objects;
 
+/**
+ * Builds the public `/reinodoce` Brigadier command tree.
+ */
 public final class ReinodoceCommandTree {
     private static final String ARG_ENABLED = "enabled";
 
     private ReinodoceCommandTree() {
     }
 
+    /**
+     * Builds the root command and all subcommands.
+     *
+     * @param service command service invoked by handlers
+     * @return Brigadier root literal
+     */
     public static LiteralArgumentBuilder<CommandSourceStack> build(ReinodoceCommandService service) {
         ReinodoceCommandService commandService = Objects.requireNonNull(service, "service");
         return Commands.literal("reinodoce")

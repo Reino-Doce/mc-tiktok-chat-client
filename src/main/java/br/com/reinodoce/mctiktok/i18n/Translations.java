@@ -2,10 +2,20 @@ package br.com.reinodoce.mctiktok.i18n;
 
 import net.minecraft.network.chat.Component;
 
+/**
+ * Translation helper with a plain-text fallback for test and early-client contexts.
+ */
 public final class Translations {
     private Translations() {
     }
 
+    /**
+     * Resolves a translation key to display text.
+     *
+     * @param key translation key
+     * @param args translation arguments
+     * @return translated text or a key-plus-arguments fallback
+     */
     public static String tr(String key, Object... args) {
         try {
             return Component.translatable(key, args).getString();
