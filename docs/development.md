@@ -25,7 +25,7 @@ The shared / multi-version layout is described in
 - ForgeGradle `net.minecraftforge.gradle` `[6.0,6.2)`
 - Gradle wrapper `8.8`
 - Java target for 1.20.1: `17`
-- `TikTokLiveJava` `1.11.11-Release` (jar provisioned from a GitHub release)
+- `TikTokLiveJava` `1.11.12-Release` (jar provisioned from a GitHub release)
 
 ## Gradle wrapper integrity
 
@@ -58,7 +58,7 @@ fail the build when the digest does not match.
 To point at a local jar instead of the auto-provisioned one:
 
 ```bash
-./gradlew build -Ptiktoklive_jar_path=/absolute/path/to/Client-1.11.11-Release-all.jar
+./gradlew build -Ptiktoklive_jar_path=/absolute/path/to/Client-1.11.12-Release-all.jar
 ```
 
 When using a local jar override, also pass the matching

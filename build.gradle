@@ -19,7 +19,7 @@ ext {
     targetMappingChannel = 'official'
     targetMappingVersion = '1.20.1'
     targetJavaVersion = 17
-    tiktokLiveVersion = (project.findProperty('tiktoklive_version') ?: '1.11.11-Release').toString()
+    tiktokLiveVersion = (project.findProperty('tiktoklive_version') ?: '1.11.12-Release').toString()
     tiktokLiveJarPath = (project.findProperty('tiktoklive_jar_path') ?: "libs/Client-${tiktokLiveVersion}-all.jar").toString()
     tiktokLiveSha512 = (project.findProperty('tiktoklive_sha512') ?: '').toString().toLowerCase(Locale.ROOT)
 }
