@@ -106,11 +106,11 @@ final class TikTokEventDispatcher {
     private void sendComment(ReinodoceConfig config, String username, User user, String message) {
         if (config.isChatEmotesEnabled()) {
             chatGateway.sendLiveComment(
-                    config.getChatPrefix(),
+                    config,
                     messageFactory.richTextMessage(
                             0L, username, TikTokMediaResolver.resolveUserAvatarUrl(user), message));
         } else {
-            chatGateway.sendLiveComment(config.getChatPrefix(), username, message);
+            chatGateway.sendLiveComment(config, username, message);
         }
     }
 
@@ -119,38 +119,38 @@ final class TikTokEventDispatcher {
         if (config.isChatEmotesEnabled()) {
             RichLiveMessage rich = messageFactory.richAuthorOnlyMessage(
                     username, TikTokMediaResolver.resolveUserAvatarUrl(user));
-            kind.sendRich(chatGateway, config.getChatPrefix(), rich);
+            kind.sendRich(chatGateway, config, rich);
         } else {
-            kind.sendPlain(chatGateway, config.getChatPrefix(), username);
+            kind.sendPlain(chatGateway, config, username);
         }
     }
 
     private enum SyntheticAuthorKind {
         FOLLOW {
             @Override
-            void sendRich(ChatEventSink sink, String prefix, RichLiveMessage rich) {
-                sink.sendSyntheticFollow(prefix, rich);
+            void sendRich(ChatEventSink sink, ReinodoceConfig config, RichLiveMessage rich) {
+                sink.sendSyntheticFollow(config, rich);
             }
 
             @Override
-            void sendPlain(ChatEventSink sink, String prefix, String username) {
-                sink.sendSyntheticFollow(prefix, username);
+            void sendPlain(ChatEventSink sink, ReinodoceConfig config, String username) {
+                sink.sendSyntheticFollow(config, username);
             }
         },
         JOIN {
             @Override
-            void sendRich(ChatEventSink sink, String prefix, RichLiveMessage rich) {
-                sink.sendSyntheticJoin(prefix, rich);
+            void sendRich(ChatEventSink sink, ReinodoceConfig config, RichLiveMessage rich) {
+                sink.sendSyntheticJoin(config, rich);
             }
 
             @Override
-            void sendPlain(ChatEventSink sink, String prefix, String username) {
-                sink.sendSyntheticJoin(prefix, username);
+            void sendPlain(ChatEventSink sink, ReinodoceConfig config, String username) {
+                sink.sendSyntheticJoin(config, username);
             }
         };
 
-        abstract void sendRich(ChatEventSink sink, String prefix, RichLiveMessage rich);
+        abstract void sendRich(ChatEventSink sink, ReinodoceConfig config, RichLiveMessage rich);
 
-        abstract void sendPlain(ChatEventSink sink, String prefix, String username);
+        abstract void sendPlain(ChatEventSink sink, ReinodoceConfig config, String username);
     }
 }

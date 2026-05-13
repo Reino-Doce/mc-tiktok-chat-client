@@ -1,7 +1,6 @@
 package br.com.reinodoce.mctiktok.chat;
 
 import br.com.reinodoce.mctiktok.client.font.InlineMediaTokenRegistry;
-import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.i18n.Translations;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -13,10 +12,7 @@ import java.util.List;
  * Formats plain and rich TikTok LIVE events into Minecraft chat components.
  */
 public class LiveMessageFormatter {
-    private static final String AUTHOR_OPEN = " <";
-    private static final String AUTHOR_CLOSE = "> ";
-
-    private final InlineMediaTokenRegistry tokenRegistry;
+    private final LiveMessageTemplateRenderer templateRenderer;
 
     /**
      * Creates a formatter that can allocate inline media tokens while rendering rich messages.
@@ -24,76 +20,76 @@ public class LiveMessageFormatter {
      * @param tokenRegistry registry used for inline media token insertion
      */
     public LiveMessageFormatter(InlineMediaTokenRegistry tokenRegistry) {
-        this.tokenRegistry = tokenRegistry;
+        this.templateRenderer = new LiveMessageTemplateRenderer(tokenRegistry);
     }
 
     /**
      * Formats a plain live comment.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param username display name to show
      * @param message sanitized message body
      * @return rendered component
      */
-    public Component formatLiveComment(String prefix, String username, String message) {
-        return formatPlainComment(prefix, username, message, false);
+    public Component formatLiveComment(ChatMessageStyle style, String username, String message) {
+        return formatPlainComment(style, username, message, false);
     }
 
     /**
      * Formats a rich live comment.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param message rich message to render
      * @return rendered component plus source message
      */
-    public FormattedLiveComment formatLiveComment(String prefix, RichLiveMessage message) {
-        return formatRichComment(prefix, message, false);
+    public FormattedLiveComment formatLiveComment(ChatMessageStyle style, RichLiveMessage message) {
+        return formatRichComment(style, message, false);
     }
 
     /**
      * Formats a plain highlighted star comment.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param username display name to show
      * @param message sanitized message body
      * @return rendered component
      */
-    public Component formatStarComment(String prefix, String username, String message) {
-        return formatPlainComment(prefix, username, message, true);
+    public Component formatStarComment(ChatMessageStyle style, String username, String message) {
+        return formatPlainComment(style, username, message, true);
     }
 
     /**
      * Formats a rich highlighted star comment.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param message rich message to render
      * @return rendered component plus source message
      */
-    public FormattedLiveComment formatStarComment(String prefix, RichLiveMessage message) {
-        return formatRichComment(prefix, message, true);
+    public FormattedLiveComment formatStarComment(ChatMessageStyle style, RichLiveMessage message) {
+        return formatRichComment(style, message, true);
     }
 
     /**
      * Formats a rich synthetic gift line.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param message rich gift message
      * @return rendered component plus source message
      */
-    public FormattedLiveComment formatSyntheticGift(String prefix, RichLiveMessage message) {
-        return formatRichLine(prefix, message, ChatFormatting.LIGHT_PURPLE);
+    public FormattedLiveComment formatSyntheticGift(ChatMessageStyle style, RichLiveMessage message) {
+        return formatRichLine(style, message, ChatFormatting.LIGHT_PURPLE);
     }
 
     /**
      * Formats a rich synthetic follow line.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param message rich user message
      * @return rendered component plus source message
      */
-    public FormattedLiveComment formatSyntheticFollow(String prefix, RichLiveMessage message) {
+    public FormattedLiveComment formatSyntheticFollow(ChatMessageStyle style, RichLiveMessage message) {
         return formatRichLine(
-                prefix,
+                style,
                 message.withBodySegments(List.of(new RichLiveMessage.TextSegment(translate("reinodoce.chat.follow")))),
                 ChatFormatting.GREEN
         );
@@ -102,13 +98,13 @@ public class LiveMessageFormatter {
     /**
      * Formats a rich synthetic join line.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param message rich user message
      * @return rendered component plus source message
      */
-    public FormattedLiveComment formatSyntheticJoin(String prefix, RichLiveMessage message) {
+    public FormattedLiveComment formatSyntheticJoin(ChatMessageStyle style, RichLiveMessage message) {
         return formatRichLine(
-                prefix,
+                style,
                 message.withBodySegments(List.of(new RichLiveMessage.TextSegment(translate("reinodoce.chat.join")))),
                 ChatFormatting.AQUA
         );
@@ -117,14 +113,14 @@ public class LiveMessageFormatter {
     /**
      * Formats a rich synthetic member-level line.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param message rich user message
      * @param memberLevel resolved member level
      * @return rendered component plus source message
      */
-    public FormattedLiveComment formatSyntheticMemberLevel(String prefix, RichLiveMessage message, int memberLevel) {
+    public FormattedLiveComment formatSyntheticMemberLevel(ChatMessageStyle style, RichLiveMessage message, int memberLevel) {
         return formatRichLine(
-                prefix,
+                style,
                 message.withBodySegments(List.of(new RichLiveMessage.TextSegment(translate("reinodoce.chat.member_level", memberLevel)))),
                 ChatFormatting.GOLD
         );
@@ -133,86 +129,69 @@ public class LiveMessageFormatter {
     /**
      * Formats a rich line with the supplied body color.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param message rich message to render
      * @param bodyColor color applied to body segments
      * @return rendered component plus source message
      */
-    public FormattedLiveComment formatRichLine(String prefix, RichLiveMessage message, ChatFormatting bodyColor) {
+    public FormattedLiveComment formatRichLine(ChatMessageStyle style, RichLiveMessage message, ChatFormatting bodyColor) {
         MutableComponent line = Component.empty();
-        line.append(prefix(prefix));
-        line.append(Component.literal(AUTHOR_OPEN).withStyle(ChatFormatting.WHITE));
-        appendSegments(line, message.authorSegments(), ChatFormatting.WHITE);
-        line.append(Component.literal(AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
-        appendSegments(line, message.bodySegments(), bodyColor);
+        templateRenderer.appendTemplate(line, style, message, bodyColor, false);
         return new FormattedLiveComment(line, message);
     }
 
     /**
      * Formats a plain synthetic gift line.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param username display name to show
      * @param giftName gift display name
      * @param count gift count or combo count
      * @return rendered component
      */
-    public Component formatSyntheticGift(String prefix, String username, String giftName, int count) {
-        MutableComponent line = Component.empty();
-        line.append(prefix(prefix));
-        line.append(Component.literal(AUTHOR_OPEN + username + AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
-        line.append(Component.literal(
+    public Component formatSyntheticGift(ChatMessageStyle style, String username, String giftName, int count) {
+        return formatPlainLine(
+                style,
+                username,
                 translate("reinodoce.chat.gift_sent_prefix")
                         + giftName
-                        + translate("reinodoce.chat.gift_count_suffix", count)
-        ).withStyle(ChatFormatting.LIGHT_PURPLE));
-        return line;
+                        + translate("reinodoce.chat.gift_count_suffix", count),
+                ChatFormatting.LIGHT_PURPLE,
+                false);
     }
 
     /**
      * Formats a plain synthetic follow line.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param username display name to show
      * @return rendered component
      */
-    public Component formatSyntheticFollow(String prefix, String username) {
-        MutableComponent line = Component.empty();
-        line.append(prefix(prefix));
-        line.append(Component.literal(AUTHOR_OPEN + username + AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
-        line.append(Component.literal(translate("reinodoce.chat.follow")).withStyle(ChatFormatting.GREEN));
-        return line;
+    public Component formatSyntheticFollow(ChatMessageStyle style, String username) {
+        return formatPlainLine(style, username, translate("reinodoce.chat.follow"), ChatFormatting.GREEN, false);
     }
 
     /**
      * Formats a plain synthetic join line.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param username display name to show
      * @return rendered component
      */
-    public Component formatSyntheticJoin(String prefix, String username) {
-        MutableComponent line = Component.empty();
-        line.append(prefix(prefix));
-        line.append(Component.literal(AUTHOR_OPEN + username + AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
-        line.append(Component.literal(translate("reinodoce.chat.join")).withStyle(ChatFormatting.AQUA));
-        return line;
+    public Component formatSyntheticJoin(ChatMessageStyle style, String username) {
+        return formatPlainLine(style, username, translate("reinodoce.chat.join"), ChatFormatting.AQUA, false);
     }
 
     /**
      * Formats a plain synthetic member-level line.
      *
-     * @param prefix configured chat prefix
+     * @param style configured chat style
      * @param username display name to show
      * @param memberLevel resolved member level
      * @return rendered component
      */
-    public Component formatSyntheticMemberLevel(String prefix, String username, int memberLevel) {
-        MutableComponent line = Component.empty();
-        line.append(prefix(prefix));
-        line.append(Component.literal(AUTHOR_OPEN + username + AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
-        line.append(Component.literal(translate("reinodoce.chat.member_level", memberLevel)).withStyle(ChatFormatting.GOLD));
-        return line;
+    public Component formatSyntheticMemberLevel(ChatMessageStyle style, String username, int memberLevel) {
+        return formatPlainLine(style, username, translate("reinodoce.chat.member_level", memberLevel), ChatFormatting.GOLD, false);
     }
 
     /**
@@ -229,47 +208,27 @@ public class LiveMessageFormatter {
         return line;
     }
 
-    private Component formatPlainComment(String prefix, String username, String message, boolean starComment) {
-        MutableComponent line = Component.empty();
-        line.append(prefix(prefix));
-        appendStarMarker(line, starComment);
-        line.append(Component.literal(AUTHOR_OPEN + username + AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
-        line.append(Component.literal(message).withStyle(ChatFormatting.GRAY));
-        return line;
+    private Component formatPlainComment(ChatMessageStyle style, String username, String message, boolean starComment) {
+        return formatPlainLine(style, username, message, ChatFormatting.GRAY, starComment);
     }
 
-    private FormattedLiveComment formatRichComment(String prefix, RichLiveMessage message, boolean starComment) {
+    private FormattedLiveComment formatRichComment(ChatMessageStyle style, RichLiveMessage message, boolean starComment) {
         MutableComponent line = Component.empty();
-        line.append(prefix(prefix));
-        appendStarMarker(line, starComment);
-        line.append(Component.literal(AUTHOR_OPEN).withStyle(ChatFormatting.WHITE));
-        appendSegments(line, message.authorSegments(), ChatFormatting.WHITE);
-        line.append(Component.literal(AUTHOR_CLOSE).withStyle(ChatFormatting.WHITE));
-        appendSegments(line, message.bodySegments(), ChatFormatting.GRAY);
+        templateRenderer.appendTemplate(line, style, message, ChatFormatting.GRAY, starComment);
         return new FormattedLiveComment(line, message);
     }
 
-    private void appendSegments(MutableComponent line, List<RichLiveMessage.Segment> segments, ChatFormatting color) {
-        for (RichLiveMessage.Segment segment : segments) {
-            if (segment instanceof RichLiveMessage.TextSegment textSegment) {
-                line.append(Component.literal(textSegment.text()).withStyle(color));
-                continue;
-            }
-            if (segment instanceof RichLiveMessage.InlineMediaSegment inlineMediaSegment) {
-                line.append(Component.literal(tokenRegistry.tokenFor(inlineMediaSegment)).withStyle(color));
-            }
-        }
-    }
-
-    private Component prefix(String prefix) {
-        String value = prefix == null || prefix.isBlank() ? ReinodoceConfig.DEFAULT_CHAT_PREFIX : prefix;
-        return Component.literal(value + " ").withStyle(ChatFormatting.YELLOW);
-    }
-
-    private void appendStarMarker(MutableComponent line, boolean starComment) {
-        if (starComment) {
-            line.append(Component.literal("\u2b50 STAR").withStyle(ChatFormatting.GOLD));
-        }
+    private Component formatPlainLine(
+            ChatMessageStyle style,
+            String username,
+            String message,
+            ChatFormatting bodyColor,
+            boolean starComment
+    ) {
+        MutableComponent line = Component.empty();
+        RichLiveMessage richMessage = new RichLiveMessage(0L, username, List.of(new RichLiveMessage.TextSegment(message)));
+        templateRenderer.appendTemplate(line, style, richMessage, bodyColor, starComment);
+        return line;
     }
 
     private String translate(String key, Object... args) {

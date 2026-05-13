@@ -71,17 +71,17 @@ final class LiveCommentEmitter {
         RichLiveMessage enriched = messageFactory.enrichCommentMessage(
                 context.username(), context.avatarUrl(), context.richMessage());
         if (context.starComment()) {
-            chatGateway.sendStarComment(config.getChatPrefix(), enriched);
+            chatGateway.sendStarComment(config, enriched);
         } else {
-            chatGateway.sendLiveComment(config.getChatPrefix(), enriched);
+            chatGateway.sendLiveComment(config, enriched);
         }
     }
 
     private void sendPlainComment(ReinodoceConfig config, EmissionContext context, String plainText) {
         if (context.starComment()) {
-            chatGateway.sendStarComment(config.getChatPrefix(), context.username(), plainText);
+            chatGateway.sendStarComment(config, context.username(), plainText);
         } else {
-            chatGateway.sendLiveComment(config.getChatPrefix(), context.username(), plainText);
+            chatGateway.sendLiveComment(config, context.username(), plainText);
         }
     }
 

@@ -11,8 +11,8 @@ Two workflows live in `.github/workflows/`:
 - **`release.yml`** — the publishing pipeline. Runs only on
   `mc*-v*` tag pushes (and `workflow_dispatch`) and attaches the same
   artifacts to a real GitHub Release. Tagged releases also publish the
-  release jar to Modrinth through MC-Publish when the repository secret is
-  configured.
+  release jar to Modrinth through MC-Publish and require the repository
+  secret `MODRINTH_TOKEN`.
 
 ## When a tagged release fires
 
@@ -37,6 +37,8 @@ publish tags independently without colliding in the same namespace.
   **and** `mod_version` in `gradle.properties`, and that a `## <mod_version>`
   section exists in the branch's `CHANGELOG.md`. The matching section is
   extracted into `release-notes.md` for Modrinth.
+- Fails tagged releases before the build if `MODRINTH_TOKEN` is not
+  configured.
 - Runs `./gradlew clean check build prismBundle verifyPrismMetadata`,
   including the `verifyEmbeddedPackages` and `verifyCoremodResources`
   gates wired into `check`.
@@ -70,9 +72,9 @@ The Modrinth publish step uses MC-Publish and the project id configured
 in `.github/workflows/release.yml`. The workflow checks out the pinned
 MC-Publish commit locally, verifies the resolved commit, updates only the
 runtime declared in `action.yml`, and then invokes that local action.
-Before the first tagged release, create a GitHub Actions repository secret
-named `MODRINTH_TOKEN` with a Modrinth token that can create versions for
-the project.
+Before any tagged release, create a GitHub Actions repository secret named
+`MODRINTH_TOKEN` with a Modrinth token that can create versions for the
+project. Missing credentials stop the tagged release before the build starts.
 
 Version type is derived from `mod_version`:
 
@@ -91,11 +93,11 @@ On the branch for the target Minecraft version (e.g. `1.20.1`):
 ```powershell
 # 1. Adjust mod_version in gradle.properties.
 # 2. Add the matching entry in CHANGELOG.md (## <X.Y.Z>).
-git commit -am "release: v0.1.0 (MC 1.20.1)"
+git commit -am "release: v0.1.1 (MC 1.20.1)"
 
 # 3. Create the mc<minecraftVersion>-v<mod_version> tag and push it.
-git tag mc1.20.1-v0.1.0
-git push github mc1.20.1-v0.1.0
+git tag mc1.20.1-v0.1.1
+git push github mc1.20.1-v0.1.1
 ```
 
 The published artifact is named

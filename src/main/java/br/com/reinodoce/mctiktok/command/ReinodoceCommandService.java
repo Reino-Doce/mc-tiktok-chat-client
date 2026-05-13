@@ -101,6 +101,22 @@ public interface ReinodoceCommandService {
     CommandResult setChatEmotesEnabled(boolean enabled);
 
     /**
+     * Updates the visible LIVE chat prefix.
+     *
+     * @param prefix prefix text
+     * @return command result
+     */
+    CommandResult setChatPrefix(String prefix);
+
+    /**
+     * Updates the LIVE chat message format template.
+     *
+     * @param format format template
+     * @return command result
+     */
+    CommandResult setChatFormat(String format);
+
+    /**
      * Reloads persisted configuration.
      *
      * @return command result

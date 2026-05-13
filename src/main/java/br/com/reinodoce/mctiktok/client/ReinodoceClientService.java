@@ -126,6 +126,16 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     }
 
     @Override
+    public CommandResult setChatPrefix(String prefix) {
+        return coreService.setChatPrefix(prefix);
+    }
+
+    @Override
+    public CommandResult setChatFormat(String format) {
+        return coreService.setChatFormat(format);
+    }
+
+    @Override
     public CommandResult reload() {
         return coreService.reload();
     }

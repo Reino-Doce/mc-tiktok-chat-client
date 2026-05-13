@@ -34,4 +34,28 @@ public final class SettingsCommandHandler {
     public static int chatEmotes(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
         return CommandFeedback.sendResult(source, service.setChatEmotesEnabled(enabled));
     }
+
+    /**
+     * Updates the visible LIVE chat prefix.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param prefix prefix text
+     * @return Brigadier command result code
+     */
+    public static int prefix(ReinodoceCommandService service, CommandSourceStack source, String prefix) {
+        return CommandFeedback.sendResult(source, service.setChatPrefix(prefix));
+    }
+
+    /**
+     * Updates the LIVE chat format template.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param format format template
+     * @return Brigadier command result code
+     */
+    public static int format(ReinodoceCommandService service, CommandSourceStack source, String format) {
+        return CommandFeedback.sendResult(source, service.setChatFormat(format));
+    }
 }

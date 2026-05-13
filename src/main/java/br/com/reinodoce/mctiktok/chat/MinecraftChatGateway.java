@@ -1,6 +1,7 @@
 package br.com.reinodoce.mctiktok.chat;
 
 import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
+import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
 import net.minecraft.network.chat.Component;
 
@@ -30,63 +31,63 @@ public class MinecraftChatGateway implements ChatEventSink {
     }
 
     @Override
-    public void sendLiveComment(String prefix, String username, String message) {
-        send(formatter.formatLiveComment(prefix, username, message));
+    public void sendLiveComment(ReinodoceConfig config, String username, String message) {
+        send(formatter.formatLiveComment(ChatMessageStyle.from(config), username, message));
     }
 
     @Override
-    public void sendLiveComment(String prefix, RichLiveMessage message) {
-        sendTracked(formatter.formatLiveComment(prefix, message));
+    public void sendLiveComment(ReinodoceConfig config, RichLiveMessage message) {
+        sendTracked(formatter.formatLiveComment(ChatMessageStyle.from(config), message));
     }
 
     @Override
-    public void sendStarComment(String prefix, String username, String message) {
-        send(formatter.formatStarComment(prefix, username, message));
+    public void sendStarComment(ReinodoceConfig config, String username, String message) {
+        send(formatter.formatStarComment(ChatMessageStyle.from(config), username, message));
     }
 
     @Override
-    public void sendStarComment(String prefix, RichLiveMessage message) {
-        sendTracked(formatter.formatStarComment(prefix, message));
+    public void sendStarComment(ReinodoceConfig config, RichLiveMessage message) {
+        sendTracked(formatter.formatStarComment(ChatMessageStyle.from(config), message));
     }
 
     @Override
-    public void sendSyntheticGift(String prefix, String username, String giftName, int count) {
-        send(formatter.formatSyntheticGift(prefix, username, giftName, count));
+    public void sendSyntheticGift(ReinodoceConfig config, String username, String giftName, int count) {
+        send(formatter.formatSyntheticGift(ChatMessageStyle.from(config), username, giftName, count));
     }
 
     @Override
-    public void sendSyntheticGift(String prefix, RichLiveMessage message) {
-        sendTracked(formatter.formatSyntheticGift(prefix, message));
+    public void sendSyntheticGift(ReinodoceConfig config, RichLiveMessage message) {
+        sendTracked(formatter.formatSyntheticGift(ChatMessageStyle.from(config), message));
     }
 
     @Override
-    public void sendSyntheticFollow(String prefix, String username) {
-        send(formatter.formatSyntheticFollow(prefix, username));
+    public void sendSyntheticFollow(ReinodoceConfig config, String username) {
+        send(formatter.formatSyntheticFollow(ChatMessageStyle.from(config), username));
     }
 
     @Override
-    public void sendSyntheticFollow(String prefix, RichLiveMessage message) {
-        sendTracked(formatter.formatSyntheticFollow(prefix, message));
+    public void sendSyntheticFollow(ReinodoceConfig config, RichLiveMessage message) {
+        sendTracked(formatter.formatSyntheticFollow(ChatMessageStyle.from(config), message));
     }
 
     @Override
-    public void sendSyntheticJoin(String prefix, String username) {
-        send(formatter.formatSyntheticJoin(prefix, username));
+    public void sendSyntheticJoin(ReinodoceConfig config, String username) {
+        send(formatter.formatSyntheticJoin(ChatMessageStyle.from(config), username));
     }
 
     @Override
-    public void sendSyntheticJoin(String prefix, RichLiveMessage message) {
-        sendTracked(formatter.formatSyntheticJoin(prefix, message));
+    public void sendSyntheticJoin(ReinodoceConfig config, RichLiveMessage message) {
+        sendTracked(formatter.formatSyntheticJoin(ChatMessageStyle.from(config), message));
     }
 
     @Override
-    public void sendSyntheticMemberLevel(String prefix, String username, int memberLevel) {
-        send(formatter.formatSyntheticMemberLevel(prefix, username, memberLevel));
+    public void sendSyntheticMemberLevel(ReinodoceConfig config, String username, int memberLevel) {
+        send(formatter.formatSyntheticMemberLevel(ChatMessageStyle.from(config), username, memberLevel));
     }
 
     @Override
-    public void sendSyntheticMemberLevel(String prefix, RichLiveMessage message, int memberLevel) {
-        sendTracked(formatter.formatSyntheticMemberLevel(prefix, message, memberLevel));
+    public void sendSyntheticMemberLevel(ReinodoceConfig config, RichLiveMessage message, int memberLevel) {
+        sendTracked(formatter.formatSyntheticMemberLevel(ChatMessageStyle.from(config), message, memberLevel));
     }
 
     @Override
