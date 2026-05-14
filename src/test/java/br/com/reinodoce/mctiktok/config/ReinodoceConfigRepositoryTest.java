@@ -19,6 +19,8 @@ class ReinodoceConfigRepositoryTest {
     private static final String UNKNOWN = "unknown";
     private static final List<String> BLOCKED_USERS = List.of(ALICE, BOB);
     private static final List<String> BLOCKED_WORDS = List.of("spam", "ads");
+    private static final String DEFAULT_SOUND_ID = "default";
+    private static final String CUSTOM_SOUND_ID = "minecraft:entity.experience_orb.pickup";
 
     @TempDir
     Path tempDir;
@@ -69,6 +71,7 @@ class ReinodoceConfigRepositoryTest {
         config.setRuleDuplicateCooldownSeconds(-5);
         config.setSyntheticGiftMinValue(-3);
         config.setSyntheticGiftComboMode(UNKNOWN);
+        configureInvalidAlertSoundIds(config);
         config.setAlertGiftMinValue(-7);
         config.setOutputMode(UNKNOWN);
         config.setHudPosition(UNKNOWN);
@@ -87,6 +90,7 @@ class ReinodoceConfigRepositoryTest {
         assertEquals(0, config.getRuleDuplicateCooldownSeconds());
         assertEquals(0, config.getSyntheticGiftMinValue());
         assertEquals("bulk", config.getSyntheticGiftComboMode());
+        assertSanitizedAlertSoundIds(config);
         assertEquals(0, config.getAlertGiftMinValue());
         assertEquals("chat", config.getOutputMode());
         assertEquals("top-left", config.getHudPosition());
@@ -155,6 +159,37 @@ class ReinodoceConfigRepositoryTest {
         assertEquals("auto", loaded.getLanguage());
     }
 
+    @Test
+    void invalidAlertSoundIdsLoadAsDefault() throws IOException {
+        Path configFile = tempDir.resolve("invalid-alert-sound-id.json");
+        Files.writeString(configFile, """
+                {
+                  "alertGiftSoundId": "bad sound",
+                  "alertFollowSoundId": "minecraft:entity.experience_orb.pickup",
+                  "alertJoinSoundId": "",
+                  "alertMemberLevelSoundId": null
+                }
+                """);
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+
+        ReinodoceConfig loaded = repository.load();
+
+        assertEquals(DEFAULT_SOUND_ID, loaded.getAlertSoundId(AlertEventType.GIFT));
+        assertEquals(CUSTOM_SOUND_ID, loaded.getAlertSoundId(AlertEventType.FOLLOW));
+        assertEquals(DEFAULT_SOUND_ID, loaded.getAlertSoundId(AlertEventType.JOIN));
+        assertEquals(DEFAULT_SOUND_ID, loaded.getAlertSoundId(AlertEventType.MEMBER_LEVEL));
+    }
+
+    private static void configureInvalidAlertSoundIds(ReinodoceConfig config) {
+        config.setAlertSoundId(AlertEventType.GIFT, " Minecraft:Entity.Experience_Orb.Pickup ");
+        config.setAlertSoundId(AlertEventType.FOLLOW, "bad sound");
+    }
+
+    private static void assertSanitizedAlertSoundIds(ReinodoceConfig config) {
+        assertEquals(CUSTOM_SOUND_ID, config.getAlertSoundId(AlertEventType.GIFT));
+        assertEquals(DEFAULT_SOUND_ID, config.getAlertSoundId(AlertEventType.FOLLOW));
+    }
+
     private void configureRoundTripConfig(ReinodoceConfig config) {
         config.setLastUsername(ALICE);
         config.setAutoConnectOnStart(true);
@@ -171,11 +206,14 @@ class ReinodoceConfigRepositoryTest {
         config.setSyntheticJoinEnabled(true);
         config.setSyntheticMemberLevelEnabled(true);
         config.setAlertSoundEnabled(AlertEventType.GIFT, true);
+        config.setAlertSoundId(AlertEventType.GIFT, CUSTOM_SOUND_ID);
         config.setAlertToastEnabled(AlertEventType.GIFT, true);
         config.setAlertGiftMinValue(100);
         config.setAlertToastEnabled(AlertEventType.FOLLOW, true);
         config.setAlertSoundEnabled(AlertEventType.JOIN, true);
+        config.setAlertSoundId(AlertEventType.JOIN, "minecraft:block.note_block.pling");
         config.setAlertToastEnabled(AlertEventType.MEMBER_LEVEL, true);
+        config.setAlertSoundId(AlertEventType.MEMBER_LEVEL, "reinodoce_mctiktok:member_level");
         config.setOutputMode("hud");
         config.setHudPosition("bottom-right");
         config.setHudLines(4);
@@ -210,25 +248,33 @@ class ReinodoceConfigRepositoryTest {
 
     private void assertRoundTripAlertSettings(ReinodoceConfig loaded) {
         assertTrue(loaded.isAlertSoundEnabled(AlertEventType.GIFT));
+        assertEquals(CUSTOM_SOUND_ID, loaded.getAlertSoundId(AlertEventType.GIFT));
         assertTrue(loaded.isAlertToastEnabled(AlertEventType.GIFT));
         assertEquals(100, loaded.getAlertGiftMinValue());
         assertFalse(loaded.isAlertSoundEnabled(AlertEventType.FOLLOW));
+        assertEquals(DEFAULT_SOUND_ID, loaded.getAlertSoundId(AlertEventType.FOLLOW));
         assertTrue(loaded.isAlertToastEnabled(AlertEventType.FOLLOW));
         assertTrue(loaded.isAlertSoundEnabled(AlertEventType.JOIN));
+        assertEquals("minecraft:block.note_block.pling", loaded.getAlertSoundId(AlertEventType.JOIN));
         assertFalse(loaded.isAlertToastEnabled(AlertEventType.JOIN));
         assertFalse(loaded.isAlertSoundEnabled(AlertEventType.MEMBER_LEVEL));
+        assertEquals("reinodoce_mctiktok:member_level", loaded.getAlertSoundId(AlertEventType.MEMBER_LEVEL));
         assertTrue(loaded.isAlertToastEnabled(AlertEventType.MEMBER_LEVEL));
     }
 
     private void assertDefaultAlerts(ReinodoceConfig loaded) {
         assertFalse(loaded.isAlertSoundEnabled(AlertEventType.GIFT));
+        assertEquals(DEFAULT_SOUND_ID, loaded.getAlertSoundId(AlertEventType.GIFT));
         assertFalse(loaded.isAlertToastEnabled(AlertEventType.GIFT));
         assertEquals(1, loaded.getAlertGiftMinValue());
         assertFalse(loaded.isAlertSoundEnabled(AlertEventType.FOLLOW));
+        assertEquals(DEFAULT_SOUND_ID, loaded.getAlertSoundId(AlertEventType.FOLLOW));
         assertFalse(loaded.isAlertToastEnabled(AlertEventType.FOLLOW));
         assertFalse(loaded.isAlertSoundEnabled(AlertEventType.JOIN));
+        assertEquals(DEFAULT_SOUND_ID, loaded.getAlertSoundId(AlertEventType.JOIN));
         assertFalse(loaded.isAlertToastEnabled(AlertEventType.JOIN));
         assertFalse(loaded.isAlertSoundEnabled(AlertEventType.MEMBER_LEVEL));
+        assertEquals(DEFAULT_SOUND_ID, loaded.getAlertSoundId(AlertEventType.MEMBER_LEVEL));
         assertFalse(loaded.isAlertToastEnabled(AlertEventType.MEMBER_LEVEL));
     }
 
@@ -239,10 +285,14 @@ class ReinodoceConfigRepositoryTest {
         assertTrue(savedJson.contains("\"syntheticJoinEnabled\""));
         assertTrue(savedJson.contains("\"syntheticMemberLevelEnabled\""));
         assertTrue(savedJson.contains("\"alertGiftSoundEnabled\""));
+        assertTrue(savedJson.contains("\"alertGiftSoundId\""));
         assertTrue(savedJson.contains("\"alertGiftToastEnabled\""));
         assertTrue(savedJson.contains("\"alertGiftMinValue\""));
+        assertTrue(savedJson.contains("\"alertFollowSoundId\""));
         assertTrue(savedJson.contains("\"alertFollowToastEnabled\""));
         assertTrue(savedJson.contains("\"alertJoinSoundEnabled\""));
+        assertTrue(savedJson.contains("\"alertJoinSoundId\""));
+        assertTrue(savedJson.contains("\"alertMemberLevelSoundId\""));
         assertTrue(savedJson.contains("\"alertMemberLevelToastEnabled\""));
         assertTrue(savedJson.contains("\"outputMode\""));
         assertTrue(savedJson.contains("\"hudPosition\""));

@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.platform.mc1201;
 
+import br.com.reinodoce.mctiktok.alert.AlertSoundId;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
 import br.com.reinodoce.mctiktok.util.ReinodoceLogger;
 import net.minecraft.client.GuiMessageTag;
@@ -17,6 +18,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Path;
+import java.util.function.Predicate;
 
 /**
  * Forge 1.20.1 implementation of the Minecraft client adapter.
@@ -28,7 +30,6 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
     private static final int REFRESH_PARAMETER_INDEX = 4;
     private static final float ALERT_SOUND_PITCH = 1.0F;
     private static final float ALERT_SOUND_VOLUME = 1.0F;
-    private static final ResourceLocation ALERT_SOUND_LOCATION = ResourceLocation.withDefaultNamespace("ui.toast.in");
     private static final Method SILENT_ADD_MESSAGE = findSilentAddMessageMethod();
 
     @Override
@@ -57,23 +58,39 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
 
     @Override
     public void playAlertSound() {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (!minecraft.isSameThread()) {
-            minecraft.execute(this::playAlertSound);
-            return;
-        }
-        playAlertSound(minecraft);
+        playAlertSound(AlertSoundId.DEFAULT);
     }
 
-    private static void playAlertSound(Minecraft minecraft) {
+    @Override
+    public void playAlertSound(String soundId) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (!minecraft.isSameThread()) {
+            minecraft.execute(() -> playAlertSound(soundId));
+            return;
+        }
+        playAlertSound(minecraft, soundId);
+    }
+
+    private static void playAlertSound(Minecraft minecraft, String soundId) {
         if (minecraft.getSoundManager() != null) {
-            minecraft.getSoundManager().play(createAlertSoundInstance());
+            ResourceLocation location = soundLocation(
+                    soundId,
+                    candidate -> minecraft.getSoundManager().getSoundEvent(candidate) != null);
+            minecraft.getSoundManager().play(createAlertSoundInstance(location));
         }
     }
 
     static SoundInstance createAlertSoundInstance() {
+        return createAlertSoundInstance(AlertSoundId.DEFAULT);
+    }
+
+    static SoundInstance createAlertSoundInstance(String soundId) {
+        return createAlertSoundInstance(soundLocation(soundId));
+    }
+
+    private static SoundInstance createAlertSoundInstance(ResourceLocation location) {
         return new SimpleSoundInstance(
-                ALERT_SOUND_LOCATION,
+                location,
                 SoundSource.MASTER,
                 ALERT_SOUND_VOLUME,
                 ALERT_SOUND_PITCH,
@@ -85,6 +102,19 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
                 0.0D,
                 0.0D,
                 true);
+    }
+
+    private static ResourceLocation soundLocation(String soundId) {
+        ResourceLocation location = ResourceLocation.tryParse(AlertSoundId.soundResource(soundId));
+        return location == null ? ResourceLocation.withDefaultNamespace("ui.toast.in") : location;
+    }
+
+    static ResourceLocation soundLocation(String soundId, Predicate<ResourceLocation> isAvailable) {
+        ResourceLocation location = soundLocation(soundId);
+        if (AlertSoundId.DEFAULT.equals(AlertSoundId.sanitize(soundId)) || isAvailable.test(location)) {
+            return location;
+        }
+        return soundLocation(AlertSoundId.DEFAULT);
     }
 
     @Override

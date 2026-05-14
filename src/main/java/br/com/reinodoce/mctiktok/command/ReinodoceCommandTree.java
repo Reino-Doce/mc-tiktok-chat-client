@@ -1,6 +1,7 @@
 package br.com.reinodoce.mctiktok.command;
 
 import br.com.reinodoce.mctiktok.alert.AlertEventType;
+import br.com.reinodoce.mctiktok.alert.AlertSoundId;
 import br.com.reinodoce.mctiktok.command.handlers.AlertCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.ConnectCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.DisconnectCommandHandler;
@@ -41,6 +42,7 @@ public final class ReinodoceCommandTree {
     private static final String ARG_POSITION = "position";
     private static final String ARG_LINES = "lines";
     private static final String ARG_LOCALE = "locale";
+    private static final String ARG_SOUND_ID = "soundId";
 
     private ReinodoceCommandTree() {
     }
@@ -289,6 +291,15 @@ public final class ReinodoceCommandTree {
                                         ctx.getSource(),
                                         eventType,
                                         BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal("sound-id")
+                        .then(Commands.argument(ARG_SOUND_ID, StringArgumentType.string())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                        new String[] {AlertSoundId.DEFAULT}, builder))
+                                .executes(ctx -> AlertCommandHandler.soundId(
+                                        service,
+                                        ctx.getSource(),
+                                        eventType,
+                                        StringArgumentType.getString(ctx, ARG_SOUND_ID)))))
                 .then(Commands.literal("toast")
                         .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
                                 .executes(ctx -> AlertCommandHandler.toast(

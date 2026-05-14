@@ -1,6 +1,7 @@
 package br.com.reinodoce.mctiktok.config;
 
 import br.com.reinodoce.mctiktok.alert.AlertEventType;
+import br.com.reinodoce.mctiktok.alert.AlertSoundId;
 import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import br.com.reinodoce.mctiktok.util.UsernameValidator;
@@ -54,13 +55,17 @@ public class ReinodoceConfig {
     private boolean syntheticJoinEnabled = false;
     private boolean syntheticMemberLevelEnabled = false;
     private boolean alertGiftSoundEnabled = false;
+    private String alertGiftSoundId = AlertSoundId.DEFAULT;
     private boolean alertGiftToastEnabled = false;
     private int alertGiftMinValue = DEFAULT_ALERT_GIFT_MIN_VALUE;
     private boolean alertFollowSoundEnabled = false;
+    private String alertFollowSoundId = AlertSoundId.DEFAULT;
     private boolean alertFollowToastEnabled = false;
     private boolean alertJoinSoundEnabled = false;
+    private String alertJoinSoundId = AlertSoundId.DEFAULT;
     private boolean alertJoinToastEnabled = false;
     private boolean alertMemberLevelSoundEnabled = false;
+    private String alertMemberLevelSoundId = AlertSoundId.DEFAULT;
     private boolean alertMemberLevelToastEnabled = false;
     private String outputMode = OutputMode.CHAT.id();
     private String hudPosition = HudPosition.TOP_LEFT.id();
@@ -104,13 +109,17 @@ public class ReinodoceConfig {
         copy.setSyntheticJoinEnabled(syntheticJoinEnabled);
         copy.setSyntheticMemberLevelEnabled(syntheticMemberLevelEnabled);
         copy.setAlertSoundEnabled(AlertEventType.GIFT, alertGiftSoundEnabled);
+        copy.setAlertSoundId(AlertEventType.GIFT, alertGiftSoundId);
         copy.setAlertToastEnabled(AlertEventType.GIFT, alertGiftToastEnabled);
         copy.setAlertGiftMinValue(alertGiftMinValue);
         copy.setAlertSoundEnabled(AlertEventType.FOLLOW, alertFollowSoundEnabled);
+        copy.setAlertSoundId(AlertEventType.FOLLOW, alertFollowSoundId);
         copy.setAlertToastEnabled(AlertEventType.FOLLOW, alertFollowToastEnabled);
         copy.setAlertSoundEnabled(AlertEventType.JOIN, alertJoinSoundEnabled);
+        copy.setAlertSoundId(AlertEventType.JOIN, alertJoinSoundId);
         copy.setAlertToastEnabled(AlertEventType.JOIN, alertJoinToastEnabled);
         copy.setAlertSoundEnabled(AlertEventType.MEMBER_LEVEL, alertMemberLevelSoundEnabled);
+        copy.setAlertSoundId(AlertEventType.MEMBER_LEVEL, alertMemberLevelSoundId);
         copy.setAlertToastEnabled(AlertEventType.MEMBER_LEVEL, alertMemberLevelToastEnabled);
         copy.setOutputMode(outputMode);
         copy.setHudPosition(hudPosition);
@@ -445,6 +454,27 @@ public class ReinodoceConfig {
             case FOLLOW -> alertFollowSoundEnabled = enabled;
             case JOIN -> alertJoinSoundEnabled = enabled;
             case MEMBER_LEVEL -> alertMemberLevelSoundEnabled = enabled;
+            default -> throw new IllegalArgumentException(ALERT_EVENT_TYPE_ARGUMENT);
+        }
+    }
+
+    public String getAlertSoundId(AlertEventType eventType) {
+        return switch (requireAlertEventType(eventType)) {
+            case GIFT -> AlertSoundId.sanitize(alertGiftSoundId);
+            case FOLLOW -> AlertSoundId.sanitize(alertFollowSoundId);
+            case JOIN -> AlertSoundId.sanitize(alertJoinSoundId);
+            case MEMBER_LEVEL -> AlertSoundId.sanitize(alertMemberLevelSoundId);
+            default -> AlertSoundId.DEFAULT;
+        };
+    }
+
+    public void setAlertSoundId(AlertEventType eventType, String soundId) {
+        String sanitized = AlertSoundId.sanitize(soundId);
+        switch (requireAlertEventType(eventType)) {
+            case GIFT -> alertGiftSoundId = sanitized;
+            case FOLLOW -> alertFollowSoundId = sanitized;
+            case JOIN -> alertJoinSoundId = sanitized;
+            case MEMBER_LEVEL -> alertMemberLevelSoundId = sanitized;
             default -> throw new IllegalArgumentException(ALERT_EVENT_TYPE_ARGUMENT);
         }
     }

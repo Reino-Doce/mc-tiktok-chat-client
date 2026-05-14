@@ -3,6 +3,7 @@ package br.com.reinodoce.mctiktok.core;
 import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import br.com.reinodoce.mctiktok.alert.AlertService;
 import br.com.reinodoce.mctiktok.alert.AlertSink;
+import br.com.reinodoce.mctiktok.alert.AlertSoundId;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
@@ -248,23 +249,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.synthetic_follow", config.isSyntheticFollowEnabled()));
         lines.add(Translations.tr("reinodoce.status.synthetic_join", config.isSyntheticJoinEnabled()));
         lines.add(Translations.tr("reinodoce.status.synthetic_member_level", config.isSyntheticMemberLevelEnabled()));
-        lines.add(Translations.tr(
-                "reinodoce.status.alert_gift",
-                config.isAlertSoundEnabled(AlertEventType.GIFT),
-                config.isAlertToastEnabled(AlertEventType.GIFT),
-                config.getAlertGiftMinValue()));
-        lines.add(Translations.tr(
-                "reinodoce.status.alert_follow",
-                config.isAlertSoundEnabled(AlertEventType.FOLLOW),
-                config.isAlertToastEnabled(AlertEventType.FOLLOW)));
-        lines.add(Translations.tr(
-                "reinodoce.status.alert_join",
-                config.isAlertSoundEnabled(AlertEventType.JOIN),
-                config.isAlertToastEnabled(AlertEventType.JOIN)));
-        lines.add(Translations.tr(
-                "reinodoce.status.alert_member_level",
-                config.isAlertSoundEnabled(AlertEventType.MEMBER_LEVEL),
-                config.isAlertToastEnabled(AlertEventType.MEMBER_LEVEL)));
+        addAlertStatusLines(lines, config);
         lines.add(Translations.tr("reinodoce.status.chat_prefix", config.getChatPrefix()));
         lines.add(Translations.tr("reinodoce.status.chat_format", config.getChatFormat()));
         lines.add(Translations.tr("reinodoce.status.chat_emotes", config.isChatEmotesEnabled()));
@@ -548,6 +533,22 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     }
 
     @Override
+    public CommandResult setAlertSoundId(AlertEventType eventType, String soundId) {
+        ensureInitialized();
+        String normalized = AlertSoundId.normalize(soundId);
+        if (!AlertSoundId.isValid(normalized)) {
+            return CommandResult.error(Translations.tr(
+                    "reinodoce.command.alert_sound_id.invalid",
+                    soundId == null ? "" : soundId));
+        }
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setAlertSoundId(eventType, normalized);
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.alert_sound_id", eventType.id(), config.getAlertSoundId(eventType)));
+    }
+
+    @Override
     public CommandResult setAlertToast(AlertEventType eventType, boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -721,5 +722,25 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.output_mode", config.getOutputMode()));
         lines.add(Translations.tr("reinodoce.status.hud_position", config.getHudPosition()));
         lines.add(Translations.tr("reinodoce.status.hud_lines", config.getHudLines()));
+    }
+
+    private static void addAlertStatusLines(List<String> lines, ReinodoceConfig config) {
+        lines.add(Translations.tr(
+                "reinodoce.status.alert_gift",
+                config.isAlertSoundEnabled(AlertEventType.GIFT),
+                config.getAlertSoundId(AlertEventType.GIFT),
+                config.isAlertToastEnabled(AlertEventType.GIFT),
+                config.getAlertGiftMinValue()));
+        lines.add(alertStatusLine("reinodoce.status.alert_follow", config, AlertEventType.FOLLOW));
+        lines.add(alertStatusLine("reinodoce.status.alert_join", config, AlertEventType.JOIN));
+        lines.add(alertStatusLine("reinodoce.status.alert_member_level", config, AlertEventType.MEMBER_LEVEL));
+    }
+
+    private static String alertStatusLine(String translationKey, ReinodoceConfig config, AlertEventType eventType) {
+        return Translations.tr(
+                translationKey,
+                config.isAlertSoundEnabled(eventType),
+                config.getAlertSoundId(eventType),
+                config.isAlertToastEnabled(eventType));
     }
 }

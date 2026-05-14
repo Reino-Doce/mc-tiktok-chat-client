@@ -19,6 +19,15 @@ public interface AlertSink {
     void playAlertSound();
 
     /**
+     * Plays the configured local alert sound.
+     *
+     * @param soundId persisted alert sound identifier
+     */
+    default void playAlertSound(String soundId) {
+        playAlertSound();
+    }
+
+    /**
      * Shows a local toast alert.
      *
      * @param title toast title
@@ -37,6 +46,10 @@ public interface AlertSink {
 
         @Override
         public void playAlertSound() {
+        }
+
+        @Override
+        public void playAlertSound(String soundId) {
         }
 
         @Override

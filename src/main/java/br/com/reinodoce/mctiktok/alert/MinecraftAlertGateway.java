@@ -26,6 +26,11 @@ public class MinecraftAlertGateway implements AlertSink {
     }
 
     @Override
+    public void playAlertSound(String soundId) {
+        platformBridge.runOnClientThread(() -> platformBridge.playAlertSound(soundId));
+    }
+
+    @Override
     public void showAlertToast(String title, String message) {
         Component titleComponent = Component.literal(title);
         Component messageComponent = Component.literal(message);

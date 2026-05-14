@@ -30,6 +30,7 @@ class ReinodoceCoreServiceTest {
     private static final String PT_BR = "pt_br";
     private static final String DE_DE = "de_de";
     private static final String HUD_MODE = "hud";
+    private static final String CUSTOM_SOUND_ID = "minecraft:entity.experience_orb.pickup";
 
     @TempDir
     Path tempDir;
@@ -67,16 +68,38 @@ class ReinodoceCoreServiceTest {
         ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> EN_US);
 
         CommandResult soundResult = service.setAlertSound(AlertEventType.GIFT, true);
+        CommandResult soundIdResult = service.setAlertSoundId(
+                AlertEventType.GIFT,
+                CUSTOM_SOUND_ID);
         CommandResult toastResult = service.setAlertToast(AlertEventType.FOLLOW, true);
         CommandResult minValueResult = service.setAlertGiftMinValue(100);
         ReinodoceConfig loaded = repository.load();
 
         assertTrue(soundResult.success());
+        assertTrue(soundIdResult.success());
         assertTrue(toastResult.success());
         assertTrue(minValueResult.success());
         assertTrue(loaded.isAlertSoundEnabled(AlertEventType.GIFT));
+        assertEquals(CUSTOM_SOUND_ID, loaded.getAlertSoundId(AlertEventType.GIFT));
         assertTrue(loaded.isAlertToastEnabled(AlertEventType.FOLLOW));
         assertEquals(100, loaded.getAlertGiftMinValue());
+    }
+
+    @Test
+    void invalidAlertSoundIdIsRejectedWithoutPersisting() {
+        Path configFile = tempDir.resolve("invalid-alert-sound-id.json");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> EN_US);
+        service.setAlertSoundId(AlertEventType.GIFT, CUSTOM_SOUND_ID);
+
+        CommandResult result = service.setAlertSoundId(AlertEventType.GIFT, "bad sound");
+        ReinodoceConfig loaded = repository.load();
+
+        assertFalse(result.success());
+        assertEquals(
+                Translations.tr("reinodoce.command.alert_sound_id.invalid", "bad sound"),
+                result.message());
+        assertEquals(CUSTOM_SOUND_ID, loaded.getAlertSoundId(AlertEventType.GIFT));
     }
 
     @Test

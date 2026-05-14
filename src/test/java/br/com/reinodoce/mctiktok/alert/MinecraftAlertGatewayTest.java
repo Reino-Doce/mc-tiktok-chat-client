@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 class MinecraftAlertGatewayTest {
     private static final String TITLE = "Alert";
     private static final String MESSAGE = "alice sent a gift";
+    private static final String CUSTOM_SOUND = "minecraft:entity.experience_orb.pickup";
 
     @Test
     void soundPlaybackIsScheduledOnClientThread() {
@@ -27,6 +28,23 @@ class MinecraftAlertGatewayTest {
         bridge.runNextClientTask();
 
         assertEquals(1, bridge.sounds());
+        assertFalse(bridge.soundRanOffClientThread());
+    }
+
+    @Test
+    void customSoundPlaybackIsScheduledOnClientThread() {
+        RecordingPlatformBridge bridge = new RecordingPlatformBridge();
+        MinecraftAlertGateway gateway = new MinecraftAlertGateway(bridge);
+
+        gateway.playAlertSound(CUSTOM_SOUND);
+
+        assertEquals(1, bridge.pendingTasks());
+        assertEquals("", bridge.soundId());
+
+        bridge.runNextClientTask();
+
+        assertEquals(1, bridge.sounds());
+        assertEquals(CUSTOM_SOUND, bridge.soundId());
         assertFalse(bridge.soundRanOffClientThread());
     }
 
@@ -53,6 +71,7 @@ class MinecraftAlertGatewayTest {
         private boolean onClientThread;
         private boolean recordedSoundRanOffClientThread;
         private boolean recordedToastRanOffClientThread;
+        private String recordedSoundId = "";
         private Component recordedToastTitle = Component.literal("");
         private Component recordedToastMessage = Component.literal("");
 
@@ -79,6 +98,13 @@ class MinecraftAlertGatewayTest {
         }
 
         @Override
+        public void playAlertSound(String soundId) {
+            recordedSoundRanOffClientThread = !onClientThread;
+            recordedSounds++;
+            recordedSoundId = soundId;
+        }
+
+        @Override
         public void showAlertToast(Component title, Component message) {
             recordedToastRanOffClientThread = !onClientThread;
             recordedToastTitle = title;
@@ -100,6 +126,10 @@ class MinecraftAlertGatewayTest {
 
         private boolean soundRanOffClientThread() {
             return recordedSoundRanOffClientThread;
+        }
+
+        private String soundId() {
+            return recordedSoundId;
         }
 
         private boolean toastRanOffClientThread() {

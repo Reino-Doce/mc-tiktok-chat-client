@@ -15,8 +15,14 @@ class ReinodoceCommandTreeTest {
     private static final String SECONDS_ARGUMENT = "seconds";
     private static final String USERNAME_ARGUMENT = "username";
     private static final String VALUE_ARGUMENT = "value";
+    private static final String SOUND_ID_ARGUMENT = "soundId";
     private static final String SOUND_LITERAL = "sound";
+    private static final String SOUND_ID_LITERAL = "sound-id";
     private static final String TOAST_LITERAL = "toast";
+    private static final String GIFT_LITERAL = "gift";
+    private static final String FOLLOW_LITERAL = "follow";
+    private static final String JOIN_LITERAL = "join";
+    private static final String MEMBER_LEVEL_LITERAL = "member-level";
     private static final String MODE_ARGUMENT = "mode";
     private static final String POSITION_ARGUMENT = "position";
     private static final String LINES_ARGUMENT = "lines";
@@ -49,11 +55,11 @@ class ReinodoceCommandTreeTest {
         assertNotNull(rule.getChild("duplicate-cooldown").getChild(SECONDS_ARGUMENT));
 
         CommandNode<CommandSourceStack> synthetic = root.getChild("synthetic");
-        assertNotNull(synthetic.getChild("gift").getChild(VALUE_ARGUMENT));
+        assertNotNull(synthetic.getChild(GIFT_LITERAL).getChild(VALUE_ARGUMENT));
         assertNotNull(synthetic.getChild("gift-combo").getChild("mode"));
-        assertNotNull(synthetic.getChild("follow").getChild(ENABLED_ARGUMENT));
-        assertNotNull(synthetic.getChild("join").getChild(ENABLED_ARGUMENT));
-        assertNotNull(synthetic.getChild("member-level").getChild(ENABLED_ARGUMENT));
+        assertNotNull(synthetic.getChild(FOLLOW_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(synthetic.getChild(JOIN_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(synthetic.getChild(MEMBER_LEVEL_LITERAL).getChild(ENABLED_ARGUMENT));
 
         CommandNode<CommandSourceStack> logging = root.getChild("logging");
         assertNotNull(logging.getChild("enabled").getChild(ENABLED_ARGUMENT));
@@ -64,15 +70,19 @@ class ReinodoceCommandTreeTest {
     void commandTreeExposesAlertSurface() {
         CommandNode<CommandSourceStack> alert = root().getChild("alert");
 
-        assertNotNull(alert.getChild("gift").getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
-        assertNotNull(alert.getChild("gift").getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(GIFT_LITERAL).getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(GIFT_LITERAL).getChild(SOUND_ID_LITERAL).getChild(SOUND_ID_ARGUMENT));
+        assertNotNull(alert.getChild(GIFT_LITERAL).getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
         assertNotNull(alert.getChild("gift-min-value").getChild(VALUE_ARGUMENT));
-        assertNotNull(alert.getChild("follow").getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
-        assertNotNull(alert.getChild("follow").getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
-        assertNotNull(alert.getChild("join").getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
-        assertNotNull(alert.getChild("join").getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
-        assertNotNull(alert.getChild("member-level").getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
-        assertNotNull(alert.getChild("member-level").getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(FOLLOW_LITERAL).getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(FOLLOW_LITERAL).getChild(SOUND_ID_LITERAL).getChild(SOUND_ID_ARGUMENT));
+        assertNotNull(alert.getChild(FOLLOW_LITERAL).getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(JOIN_LITERAL).getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(JOIN_LITERAL).getChild(SOUND_ID_LITERAL).getChild(SOUND_ID_ARGUMENT));
+        assertNotNull(alert.getChild(JOIN_LITERAL).getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(MEMBER_LEVEL_LITERAL).getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(MEMBER_LEVEL_LITERAL).getChild(SOUND_ID_LITERAL).getChild(SOUND_ID_ARGUMENT));
+        assertNotNull(alert.getChild(MEMBER_LEVEL_LITERAL).getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
     }
 
     private static CommandNode<CommandSourceStack> root() {
@@ -244,6 +254,11 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setAlertSound(AlertEventType eventType, boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setAlertSoundId(AlertEventType eventType, String soundId) {
             return unsupported();
         }
 

@@ -31,6 +31,24 @@ public final class AlertCommandHandler {
     }
 
     /**
+     * Updates a local alert sound identifier.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param eventType alert event type
+     * @param soundId persisted sound identifier
+     * @return Brigadier command result code
+     */
+    public static int soundId(
+            ReinodoceCommandService service,
+            CommandSourceStack source,
+            AlertEventType eventType,
+            String soundId
+    ) {
+        return CommandFeedback.sendResult(source, service.setAlertSoundId(eventType, soundId));
+    }
+
+    /**
      * Updates a local alert toast toggle.
      *
      * @param service command service boundary
