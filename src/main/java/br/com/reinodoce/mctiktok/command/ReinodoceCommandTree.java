@@ -50,6 +50,9 @@ public final class ReinodoceCommandTree {
 
     private static LiteralArgumentBuilder<CommandSourceStack> connectBranch(ReinodoceCommandService service) {
         return Commands.literal("connect")
+                .executes(ctx -> ConnectCommandHandler.executeLast(
+                        service,
+                        ctx.getSource()))
                 .then(Commands.argument("username", StringArgumentType.word())
                         .executes(ctx -> ConnectCommandHandler.execute(
                                 service,
@@ -75,6 +78,12 @@ public final class ReinodoceCommandTree {
                                         service,
                                         ctx.getSource(),
                                         IntegerArgumentType.getInteger(ctx, "seconds")))))
+                .then(Commands.literal("auto-connect")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> SettingsCommandHandler.autoConnect(
+                                        service,
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
                 .then(Commands.literal("chat-emotes")
                         .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
                                 .executes(ctx -> SettingsCommandHandler.chatEmotes(

@@ -23,6 +23,7 @@ class ReinodoceConfigRepositoryTest {
         ReinodoceConfig loaded = repository.load();
 
         assertEquals("", loaded.getLastUsername());
+        assertFalse(loaded.isAutoConnectOnStart());
         assertEquals("[LIVE]", loaded.getChatPrefix());
         assertEquals("{prefix}  <{username}> {message}", loaded.getChatFormat());
         assertEquals(5, loaded.getReconnectSeconds());
@@ -73,6 +74,7 @@ class ReinodoceConfigRepositoryTest {
         ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
         ReinodoceConfig config = ReinodoceConfig.defaults();
         config.setLastUsername("alice");
+        config.setAutoConnectOnStart(true);
         config.setReconnectSeconds(9);
         config.setRuleFollowerOnly(true);
         config.setRuleMinMemberLevel(3);
@@ -92,6 +94,7 @@ class ReinodoceConfigRepositoryTest {
 
         assertCorrectedSyntheticFieldNames(savedJson);
         assertEquals("alice", loaded.getLastUsername());
+        assertTrue(loaded.isAutoConnectOnStart());
         assertEquals(9, loaded.getReconnectSeconds());
         assertTrue(loaded.isRuleFollowerOnly());
         assertEquals(3, loaded.getRuleMinMemberLevel());

@@ -16,6 +16,7 @@ public class ReinodoceConfig {
     private static final int DEFAULT_SYNTHETIC_GIFT_MIN_VALUE = 1;
 
     private String lastUsername = "";
+    private boolean autoConnectOnStart = false;
     private int reconnectSeconds = DEFAULT_RECONNECT_SECONDS;
     private boolean ruleFollowerOnly = false;
     private int ruleMinMemberLevel = 0;
@@ -46,6 +47,7 @@ public class ReinodoceConfig {
     public ReinodoceConfig copy() {
         ReinodoceConfig copy = new ReinodoceConfig();
         copy.setLastUsername(lastUsername);
+        copy.setAutoConnectOnStart(autoConnectOnStart);
         copy.setReconnectSeconds(reconnectSeconds);
         copy.setRuleFollowerOnly(ruleFollowerOnly);
         copy.setRuleMinMemberLevel(ruleMinMemberLevel);
@@ -77,6 +79,24 @@ public class ReinodoceConfig {
      */
     public void setLastUsername(String lastUsername) {
         this.lastUsername = lastUsername == null ? "" : lastUsername.trim();
+    }
+
+    /**
+     * Returns whether the client should connect to the saved username on startup.
+     *
+     * @return auto-connect setting
+     */
+    public boolean isAutoConnectOnStart() {
+        return autoConnectOnStart;
+    }
+
+    /**
+     * Sets whether the client should connect to the saved username on startup.
+     *
+     * @param autoConnectOnStart auto-connect setting
+     */
+    public void setAutoConnectOnStart(boolean autoConnectOnStart) {
+        this.autoConnectOnStart = autoConnectOnStart;
     }
 
     /**

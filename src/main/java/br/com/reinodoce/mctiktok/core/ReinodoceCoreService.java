@@ -84,6 +84,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         ReinodoceConfig loaded = configRepository.load();
         settingsState.set(loaded);
         tikTokClientFacade.onConfigUpdated();
+        autoConnectIfConfigured(loaded);
     }
 
     @Override
@@ -97,6 +98,19 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
             persist(updated);
         }
         return result;
+    }
+
+    @Override
+    public CommandResult connectLast() {
+        ensureInitialized();
+        String username = UsernameValidator.normalize(settingsState.getSnapshot().getLastUsername());
+        if (username.isBlank()) {
+            return CommandResult.error(Translations.tr("reinodoce.command.connect.missing_saved"));
+        }
+        if (!UsernameValidator.isValid(username)) {
+            return CommandResult.error(Translations.tr("reinodoce.error.username_invalid"));
+        }
+        return connect(username);
     }
 
     @Override
@@ -120,6 +134,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.last_error",
                 snapshot.lastError().isBlank() ? emptyValue : snapshot.lastError()));
         lines.add(Translations.tr("reinodoce.status.reconnect_seconds", config.getReconnectSeconds()));
+        lines.add(Translations.tr("reinodoce.status.auto_connect", config.isAutoConnectOnStart()));
         lines.add(Translations.tr("reinodoce.status.reconnect_attempts", snapshot.reconnectAttempts()));
         lines.add(Translations.tr("reinodoce.status.rule_follower", config.isRuleFollowerOnly()));
         lines.add(Translations.tr("reinodoce.status.rule_min_member_level", config.getRuleMinMemberLevel()));
@@ -146,6 +161,15 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         persist(config);
         tikTokClientFacade.onConfigUpdated();
         return CommandResult.ok(Translations.tr("reinodoce.command.set.reconnect", config.getReconnectSeconds()));
+    }
+
+    @Override
+    public CommandResult setAutoConnectOnStart(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setAutoConnectOnStart(enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.auto_connect", enabled));
     }
 
     @Override
@@ -266,5 +290,26 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     private void persist(ReinodoceConfig config) {
         settingsState.set(config);
         configRepository.save(config);
+    }
+
+    private void autoConnectIfConfigured(ReinodoceConfig config) {
+        if (config.isAutoConnectOnStart()) {
+            autoConnectSavedUsername(UsernameValidator.normalize(config.getLastUsername()));
+        }
+    }
+
+    private void autoConnectSavedUsername(String username) {
+        if (username.isBlank()) {
+            return;
+        }
+        if (!UsernameValidator.isValid(username)) {
+            tikTokClientFacade.recordLocalError(Translations.tr(
+                    "reinodoce.command.connect.auto_skipped_invalid", username));
+            return;
+        }
+        CommandResult result = connect(username);
+        if (!result.success()) {
+            tikTokClientFacade.recordLocalError(result.message());
+        }
     }
 }

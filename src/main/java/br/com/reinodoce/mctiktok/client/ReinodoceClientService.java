@@ -56,6 +56,11 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     }
 
     @Override
+    public CommandResult connectLast() {
+        return coreService.connectLast();
+    }
+
+    @Override
     public CommandResult disconnect() {
         return coreService.disconnect();
     }
@@ -84,6 +89,11 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     @Override
     public CommandResult setReconnectSeconds(int seconds) {
         return coreService.setReconnectSeconds(seconds);
+    }
+
+    @Override
+    public CommandResult setAutoConnectOnStart(boolean enabled) {
+        return coreService.setAutoConnectOnStart(enabled);
     }
 
     @Override
