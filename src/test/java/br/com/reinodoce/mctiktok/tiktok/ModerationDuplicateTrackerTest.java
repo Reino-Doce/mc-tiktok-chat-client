@@ -12,6 +12,7 @@ class ModerationDuplicateTrackerTest {
         ModerationDuplicateTracker tracker = new ModerationDuplicateTracker();
 
         assertFalse(tracker.isDuplicate("Same message", 3));
+        tracker.remember("Same message", 3);
         assertTrue(tracker.isDuplicate(" same MESSAGE ", 3));
         assertFalse(tracker.isDuplicate("Same message", 0));
     }

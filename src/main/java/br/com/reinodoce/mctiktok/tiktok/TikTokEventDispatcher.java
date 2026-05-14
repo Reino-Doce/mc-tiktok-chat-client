@@ -50,13 +50,14 @@ final class TikTokEventDispatcher {
         String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user));
         if (!dependencies.ruleEngine().shouldDisplayComment(
                 config, user, dependencies.memberLevelResolver().resolveLevel(user), username, message)
+                || dependencies.renderedTracker().wasRecentlyRendered(username, message)
                 || dependencies.moderationDuplicateTracker().isDuplicate(
-                        message, config.getRuleDuplicateCooldownSeconds())
-                || dependencies.renderedTracker().wasRecentlyRendered(username, message)) {
+                        message, config.getRuleDuplicateCooldownSeconds())) {
             return;
         }
         dependencies.renderedTracker().remember(username, message);
         sendComment(config, username, user, message);
+        dependencies.moderationDuplicateTracker().remember(message, config.getRuleDuplicateCooldownSeconds());
         dependencies.statsTracker().recordComment(TikTokUserNames.resolveUserId(user), username);
     }
 

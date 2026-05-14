@@ -1,7 +1,7 @@
 package br.com.reinodoce.mctiktok.rules;
 
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
-import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
+import br.com.reinodoce.mctiktok.util.UsernameValidator;
 import io.github.jwdeveloper.tiktok.data.models.gifts.Gift;
 import io.github.jwdeveloper.tiktok.data.models.users.User;
 
@@ -45,7 +45,7 @@ public class MessageRuleEngine {
         }
 
         return passesMemberLevel(config, memberLevel)
-                && passesBlockedUser(config, username)
+                && passesBlockedUser(config, user, username)
                 && passesBlockedWords(config, message)
                 && passesMaxLength(config, message);
     }
@@ -73,9 +73,17 @@ public class MessageRuleEngine {
         return config.getRuleMinMemberLevel() <= 0 || memberLevel >= config.getRuleMinMemberLevel();
     }
 
-    private static boolean passesBlockedUser(ReinodoceConfig config, String username) {
-        String normalized = MessageSanitizer.sanitize(username).toLowerCase(Locale.ROOT);
+    private static boolean passesBlockedUser(ReinodoceConfig config, User user, String username) {
+        String normalized = canonicalUsername(user, username);
         return !config.getRuleBlockedUsers().contains(normalized);
+    }
+
+    private static String canonicalUsername(User user, String username) {
+        String handle = user == null ? "" : UsernameValidator.normalize(user.getName());
+        if (!UsernameValidator.isValid(handle)) {
+            handle = UsernameValidator.normalize(username);
+        }
+        return UsernameValidator.isValid(handle) ? handle.toLowerCase(Locale.ROOT) : "";
     }
 
     private static boolean passesBlockedWords(ReinodoceConfig config, String message) {

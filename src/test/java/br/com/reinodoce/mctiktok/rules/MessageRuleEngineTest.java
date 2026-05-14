@@ -39,10 +39,11 @@ class MessageRuleEngineTest {
         config.setRuleMaxMessageLength(10);
 
         User user = new User(10L, ALICE);
+        User blockedUser = new User(11L, "bad_user");
 
         assertTrue(engine.shouldDisplayComment(config, user, 0, ALICE, "hello"));
         assertFalse(engine.shouldDisplayComment(config, user, 0, ALICE, "buy spam now"));
-        assertFalse(engine.shouldDisplayComment(config, user, 0, "bad_user", "hello"));
+        assertFalse(engine.shouldDisplayComment(config, blockedUser, 0, "Display Name", "hello"));
         assertFalse(engine.shouldDisplayComment(config, user, 0, ALICE, "this message is too long"));
     }
 

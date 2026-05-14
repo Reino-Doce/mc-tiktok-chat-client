@@ -23,8 +23,21 @@ final class ModerationDuplicateTracker {
         long now = System.currentTimeMillis();
         long ttlMillis = Duration.ofSeconds(cooldownSeconds).toMillis();
         cleanup(now, ttlMillis);
-        Long previous = messages.put(key, now);
+        Long previous = messages.get(key);
         return previous != null && now - previous <= ttlMillis;
+    }
+
+    void remember(String message, int cooldownSeconds) {
+        if (cooldownSeconds <= 0) {
+            return;
+        }
+        String key = MessageSanitizer.sanitize(message).toLowerCase(Locale.ROOT);
+        if (!key.isBlank()) {
+            long now = System.currentTimeMillis();
+            long ttlMillis = Duration.ofSeconds(cooldownSeconds).toMillis();
+            cleanup(now, ttlMillis);
+            messages.put(key, now);
+        }
     }
 
     void clear() {

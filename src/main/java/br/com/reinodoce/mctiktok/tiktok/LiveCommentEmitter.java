@@ -42,6 +42,7 @@ final class LiveCommentEmitter {
         }
         renderedTracker.remember(context.username(), plainText);
         sendComment(config, context, plainText);
+        moderationDuplicateTracker.remember(plainText, config.getRuleDuplicateCooldownSeconds());
         statsTracker.recordComment(TikTokUserNames.resolveUserId(context.user()), context.username());
     }
 
@@ -53,8 +54,8 @@ final class LiveCommentEmitter {
         if (plainText.isBlank() && !context.richMessage().hasInlineMedia()) {
             return false;
         }
-        return !moderationDuplicateTracker.isDuplicate(plainText, config.getRuleDuplicateCooldownSeconds())
-                && !commentDeduplicator.isDuplicate(context.richMessage().messageId(), 1);
+        return !commentDeduplicator.isDuplicate(context.richMessage().messageId(), 1)
+                && !moderationDuplicateTracker.isDuplicate(plainText, config.getRuleDuplicateCooldownSeconds());
     }
 
     private void sendComment(ReinodoceConfig config, EmissionContext context, String plainText) {
