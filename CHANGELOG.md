@@ -16,6 +16,14 @@ automatically.
 
 ## [Unreleased]
 
+## [0.2.1]
+
+### Fixed
+
+- Clear HUD output immediately when disabled or switched away.
+- Play local sound alerts when enabled.
+- Use `FansLevelUpgrade` barrage events for member-level-up output.
+
 ## [0.2.0]
 
 ### Added
