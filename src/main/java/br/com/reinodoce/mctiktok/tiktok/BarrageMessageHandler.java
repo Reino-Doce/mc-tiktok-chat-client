@@ -7,6 +7,7 @@ import br.com.reinodoce.mctiktok.util.ReinodoceLogger;
 import io.github.jwdeveloper.tiktok.data.models.users.User;
 import io.github.jwdeveloper.tiktok.messages.data.CommonMessageData;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastBarrageMessage;
+import io.github.jwdeveloper.tiktok.messages.webcast.WebcastBarrageMessage.BarrageTypeFansLevelParam;
 
 final class BarrageMessageHandler {
     private final TikTokRichMessageParser richMessageParser;
@@ -32,8 +33,7 @@ final class BarrageMessageHandler {
         }
         switch (barrageMessage.getMsgType()) {
             case COMMONBARRAGE -> handleStarBarrageComment(barrageMessage);
-            case USERUPGRADE, GRADEUSERENTRANCENOTIFICATION -> handleUserGradeBarrage(barrageMessage);
-            case FANSLEVELUPGRADE, FANSLEVELENTRANCE -> handleFansLevelBarrage(barrageMessage);
+            case FANSLEVELUPGRADE -> handleFansLevelUpgradeBarrage(barrageMessage);
             default -> { /* unrelated barrage payloads are not rendered. */ }
         }
     }
@@ -57,35 +57,19 @@ final class BarrageMessageHandler {
                 user, username, avatarUrl, memberLevel, richMessage, true));
     }
 
-    private void handleUserGradeBarrage(WebcastBarrageMessage barrageMessage) {
-        if (!barrageMessage.hasUserGradeParam()) {
-            logNotRendered(barrageMessage, "");
-            return;
-        }
-        io.github.jwdeveloper.tiktok.messages.data.User rawUser = barrageMessage.getUserGradeParam().getUser();
-        MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(
-                rawUser.getId(),
-                TikTokUserNames.sanitizeUserName(
-                        TikTokUserNames.chooseRawUserName(rawUser.getNickname(), rawUser.getUsername())),
-                TikTokMediaResolver.resolveUserAvatarUrl(rawUser),
-                barrageMessage.getUserGradeParam().getCurrentGrade());
-        if (!memberLevelEmitter.emit(update)) {
-            logNotRendered(barrageMessage, "");
-        }
-    }
-
-    private void handleFansLevelBarrage(WebcastBarrageMessage barrageMessage) {
+    private void handleFansLevelUpgradeBarrage(WebcastBarrageMessage barrageMessage) {
         if (!barrageMessage.hasFansLevelParam()) {
             logNotRendered(barrageMessage, "");
             return;
         }
-        io.github.jwdeveloper.tiktok.messages.data.User rawUser = barrageMessage.getFansLevelParam().getUser();
+        BarrageTypeFansLevelParam fansLevelParam = barrageMessage.getFansLevelParam();
+        io.github.jwdeveloper.tiktok.messages.data.User rawUser = fansLevelParam.getUser();
         MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(
                 rawUser.getId(),
                 TikTokUserNames.sanitizeUserName(
                         TikTokUserNames.chooseRawUserName(rawUser.getNickname(), rawUser.getUsername())),
                 TikTokMediaResolver.resolveUserAvatarUrl(rawUser),
-                barrageMessage.getFansLevelParam().getCurrentGrade());
+                Math.max(0, fansLevelParam.getCurrentGrade()));
         if (!memberLevelEmitter.emit(update)) {
             logNotRendered(barrageMessage, "");
         }
