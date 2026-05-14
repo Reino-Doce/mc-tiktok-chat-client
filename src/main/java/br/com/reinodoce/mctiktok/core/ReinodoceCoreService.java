@@ -29,6 +29,8 @@ import java.util.function.Supplier;
 /**
  * Core command service that owns configuration, connection lifecycle, and operator-facing state.
  */
+// Command facade intentionally exposes one method per public command action.
+@SuppressWarnings("PMD.TooManyMethods")
 public class ReinodoceCoreService implements ReinodoceCommandService {
     private static final int DEDUPLICATION_WINDOW_MINUTES = 3;
 
@@ -139,6 +141,11 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.reconnect_attempts", snapshot.reconnectAttempts()));
         lines.add(Translations.tr("reinodoce.status.rule_follower", config.isRuleFollowerOnly()));
         lines.add(Translations.tr("reinodoce.status.rule_min_member_level", config.getRuleMinMemberLevel()));
+        lines.add(Translations.tr("reinodoce.status.rule_blocked_words", config.getRuleBlockedWords().size()));
+        lines.add(Translations.tr("reinodoce.status.rule_blocked_users", config.getRuleBlockedUsers().size()));
+        lines.add(Translations.tr("reinodoce.status.rule_max_message_length", config.getRuleMaxMessageLength()));
+        lines.add(Translations.tr("reinodoce.status.rule_duplicate_cooldown",
+                config.getRuleDuplicateCooldownSeconds()));
         lines.add(Translations.tr("reinodoce.status.synthetic_gift", config.getSyntheticGiftMinValue()));
         lines.add(Translations.tr("reinodoce.status.synthetic_gift_combo", config.getSyntheticGiftComboMode()));
         lines.add(Translations.tr("reinodoce.status.synthetic_follow", config.isSyntheticFollowEnabled()));
@@ -222,6 +229,91 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         config.setRuleMinMemberLevel(level);
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.set.min_member_level", config.getRuleMinMemberLevel()));
+    }
+
+    @Override
+    public CommandResult addBlockedWord(String word) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        String normalized = config.addRuleBlockedWord(word);
+        if (normalized.isBlank()) {
+            return CommandResult.error(Translations.tr("reinodoce.command.rule.block_word.invalid"));
+        }
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.rule.block_word.add", normalized));
+    }
+
+    @Override
+    public CommandResult removeBlockedWord(String word) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        String normalized = config.removeRuleBlockedWord(word);
+        if (normalized.isBlank()) {
+            return CommandResult.error(Translations.tr("reinodoce.command.rule.block_word.invalid"));
+        }
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.rule.block_word.remove", normalized));
+    }
+
+    @Override
+    public List<String> blockedWordLines() {
+        ensureInitialized();
+        return listLines(
+                Translations.tr("reinodoce.command.rule.block_word.list"),
+                settingsState.getSnapshot().getRuleBlockedWords());
+    }
+
+    @Override
+    public CommandResult addBlockedUser(String username) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        String normalized = config.addRuleBlockedUser(username);
+        if (normalized.isBlank()) {
+            return CommandResult.error(Translations.tr("reinodoce.error.username_invalid"));
+        }
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.rule.block_user.add", normalized));
+    }
+
+    @Override
+    public CommandResult removeBlockedUser(String username) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        String normalized = config.removeRuleBlockedUser(username);
+        if (normalized.isBlank()) {
+            return CommandResult.error(Translations.tr("reinodoce.error.username_invalid"));
+        }
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.rule.block_user.remove", normalized));
+    }
+
+    @Override
+    public List<String> blockedUserLines() {
+        ensureInitialized();
+        return listLines(
+                Translations.tr("reinodoce.command.rule.block_user.list"),
+                settingsState.getSnapshot().getRuleBlockedUsers());
+    }
+
+    @Override
+    public CommandResult setMaxMessageLengthRule(int length) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setRuleMaxMessageLength(length);
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.max_message_length", config.getRuleMaxMessageLength()));
+    }
+
+    @Override
+    public CommandResult setDuplicateCooldownRule(int seconds) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setRuleDuplicateCooldownSeconds(seconds);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.duplicate_cooldown", config.getRuleDuplicateCooldownSeconds()));
     }
 
     @Override
@@ -345,5 +437,16 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         if (!result.success()) {
             tikTokClientFacade.recordLocalError(result.message());
         }
+    }
+
+    private static List<String> listLines(String title, List<String> values) {
+        List<String> lines = new ArrayList<>();
+        lines.add(title);
+        if (values.isEmpty()) {
+            lines.add(Translations.tr("reinodoce.status.empty_value"));
+        } else {
+            lines.addAll(values);
+        }
+        return lines;
     }
 }

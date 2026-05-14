@@ -52,8 +52,16 @@ Rules decide which TikTok chat comments are mirrored into Minecraft.
 | ------- | -------- | ------- | ------ |
 | `/reinodoce rule follower <true\|false>` | boolean | `false` | When `true`, only comments from accounts that follow the streamer are mirrored. |
 | `/reinodoce rule min-member-level <level>` | integer ≥ 0 | `0` | Minimum LIVE member level required to mirror a comment. `0` disables this filter. |
+| `/reinodoce rule block-word add <word>` | text | — | Adds a case-insensitive blocked word fragment. Messages containing the fragment are hidden. |
+| `/reinodoce rule block-word remove <word>` | text | — | Removes a blocked word fragment. |
+| `/reinodoce rule block-word list` | — | — | Prints the current blocked word fragments. |
+| `/reinodoce rule block-user add <username>` | TikTok handle | — | Adds an exact case-insensitive blocked username. |
+| `/reinodoce rule block-user remove <username>` | TikTok handle | — | Removes a blocked username. |
+| `/reinodoce rule block-user list` | — | — | Prints the current blocked usernames. |
+| `/reinodoce rule max-length <length>` | integer ≥ 0 | `0` | Hides messages longer than `<length>`. `0` disables this filter. |
+| `/reinodoce rule duplicate-cooldown <seconds>` | integer ≥ 0 | `0` | Hides repeated duplicate message text for the selected cooldown window. `0` disables this filter. |
 
-Both rules apply together — a comment is mirrored only if it passes every
+All rules apply together — a comment is mirrored only if it passes every
 active filter.
 
 ## Synthetic events (non-chat → chat lines)

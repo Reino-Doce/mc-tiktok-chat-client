@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MessageRuleEngineTest {
+    private static final String ALICE = "alice";
 
     private final MessageRuleEngine engine = new MessageRuleEngine();
 
@@ -19,7 +20,7 @@ class MessageRuleEngineTest {
         config.setRuleFollowerOnly(true);
         config.setRuleMinMemberLevel(2);
 
-        User follower = new User(10L, "alice");
+        User follower = new User(10L, ALICE);
         follower.addAttribute(UserAttribute.Follower);
 
         User nonFollower = new User(11L, "bob");
@@ -28,6 +29,21 @@ class MessageRuleEngineTest {
         assertFalse(engine.shouldDisplayComment(config, follower, 1));
         assertFalse(engine.shouldDisplayComment(config, nonFollower, 3));
         assertFalse(engine.shouldDisplayComment(config, null, 3));
+    }
+
+    @Test
+    void commentRulesApplyModerationFilters() {
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.addRuleBlockedWord("spam");
+        config.addRuleBlockedUser("@bad_user");
+        config.setRuleMaxMessageLength(10);
+
+        User user = new User(10L, ALICE);
+
+        assertTrue(engine.shouldDisplayComment(config, user, 0, ALICE, "hello"));
+        assertFalse(engine.shouldDisplayComment(config, user, 0, ALICE, "buy spam now"));
+        assertFalse(engine.shouldDisplayComment(config, user, 0, "bad_user", "hello"));
+        assertFalse(engine.shouldDisplayComment(config, user, 0, ALICE, "this message is too long"));
     }
 
     @Test

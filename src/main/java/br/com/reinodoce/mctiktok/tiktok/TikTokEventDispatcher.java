@@ -35,7 +35,8 @@ final class TikTokEventDispatcher {
             RichLiveMessageFactory messageFactory,
             TikTokGiftEmitter giftEmitter,
             GiftComboAggregator giftComboAggregator,
-            SessionStatsTracker statsTracker
+            SessionStatsTracker statsTracker,
+            ModerationDuplicateTracker moderationDuplicateTracker
     ) {
     }
 
@@ -48,7 +49,9 @@ final class TikTokEventDispatcher {
         User user = event.getUser();
         String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user));
         if (!dependencies.ruleEngine().shouldDisplayComment(
-                config, user, dependencies.memberLevelResolver().resolveLevel(user))
+                config, user, dependencies.memberLevelResolver().resolveLevel(user), username, message)
+                || dependencies.moderationDuplicateTracker().isDuplicate(
+                        message, config.getRuleDuplicateCooldownSeconds())
                 || dependencies.renderedTracker().wasRecentlyRendered(username, message)) {
             return;
         }

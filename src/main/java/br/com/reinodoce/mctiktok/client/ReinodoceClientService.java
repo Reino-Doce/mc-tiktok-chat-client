@@ -117,6 +117,46 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     }
 
     @Override
+    public CommandResult addBlockedWord(String word) {
+        return coreService.addBlockedWord(word);
+    }
+
+    @Override
+    public CommandResult removeBlockedWord(String word) {
+        return coreService.removeBlockedWord(word);
+    }
+
+    @Override
+    public List<String> blockedWordLines() {
+        return coreService.blockedWordLines();
+    }
+
+    @Override
+    public CommandResult addBlockedUser(String username) {
+        return coreService.addBlockedUser(username);
+    }
+
+    @Override
+    public CommandResult removeBlockedUser(String username) {
+        return coreService.removeBlockedUser(username);
+    }
+
+    @Override
+    public List<String> blockedUserLines() {
+        return coreService.blockedUserLines();
+    }
+
+    @Override
+    public CommandResult setMaxMessageLengthRule(int length) {
+        return coreService.setMaxMessageLengthRule(length);
+    }
+
+    @Override
+    public CommandResult setDuplicateCooldownRule(int seconds) {
+        return coreService.setDuplicateCooldownRule(seconds);
+    }
+
+    @Override
     public CommandResult setSyntheticGift(int value) {
         return coreService.setSyntheticGift(value);
     }

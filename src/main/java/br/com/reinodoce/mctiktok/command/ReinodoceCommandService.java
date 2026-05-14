@@ -82,6 +82,68 @@ public interface ReinodoceCommandService {
     CommandResult setMinMemberLevelRule(int level);
 
     /**
+     * Adds a blocked word filter.
+     *
+     * @param word blocked word fragment
+     * @return command result
+     */
+    CommandResult addBlockedWord(String word);
+
+    /**
+     * Removes a blocked word filter.
+     *
+     * @param word blocked word fragment
+     * @return command result
+     */
+    CommandResult removeBlockedWord(String word);
+
+    /**
+     * Returns blocked word filter lines.
+     *
+     * @return blocked word lines
+     */
+    List<String> blockedWordLines();
+
+    /**
+     * Adds a blocked user filter.
+     *
+     * @param username TikTok username
+     * @return command result
+     */
+    CommandResult addBlockedUser(String username);
+
+    /**
+     * Removes a blocked user filter.
+     *
+     * @param username TikTok username
+     * @return command result
+     */
+    CommandResult removeBlockedUser(String username);
+
+    /**
+     * Returns blocked user filter lines.
+     *
+     * @return blocked user lines
+     */
+    List<String> blockedUserLines();
+
+    /**
+     * Updates maximum accepted message length.
+     *
+     * @param length maximum length, or zero to disable
+     * @return command result
+     */
+    CommandResult setMaxMessageLengthRule(int length);
+
+    /**
+     * Updates duplicate message cooldown.
+     *
+     * @param seconds cooldown seconds, or zero to disable
+     * @return command result
+     */
+    CommandResult setDuplicateCooldownRule(int seconds);
+
+    /**
      * Updates minimum gift value for synthetic gift output.
      *
      * @param value minimum gift value
