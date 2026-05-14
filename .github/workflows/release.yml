@@ -9,10 +9,16 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
+    env:
+      CURSEFORGE_BASE_URL: https://minecraft.curseforge.com
 
     steps:
       - name: Checkout
@@ -52,12 +58,15 @@ jobs:
           done
           prerelease=false
           modrinth_version_type=release
+          curseforge_release_type=release
           if echo "$mod_version" | grep -iqE -- '-alpha(\.[0-9]+)?$|-snapshot$'; then
             prerelease=true
             modrinth_version_type=alpha
+            curseforge_release_type=alpha
           elif echo "$mod_version" | grep -iqE -- '-(beta|rc)(\.[0-9]+)?$|-pre$'; then
             prerelease=true
             modrinth_version_type=beta
+            curseforge_release_type=beta
           fi
           {
             echo "mod_version=${mod_version}"
@@ -70,8 +79,9 @@ jobs:
             echo "mod_jar=${artifact_base}-${mc_version}-${mod_version}.jar"
             echo "prerelease=${prerelease}"
             echo "modrinth_version_type=${modrinth_version_type}"
+            echo "curseforge_release_type=${curseforge_release_type}"
           } >> "$GITHUB_OUTPUT"
-          echo "Resolved: artifact_base=${artifact_base} mod_version=${mod_version} mc_version=${mc_version} tiktoklive=${tiktoklive_version} modrinth=${modrinth_project_id} prerelease=${prerelease} modrinth_type=${modrinth_version_type}"
+          echo "Resolved: artifact_base=${artifact_base} mod_version=${mod_version} mc_version=${mc_version} tiktoklive=${tiktoklive_version} modrinth=${modrinth_project_id} prerelease=${prerelease} modrinth_type=${modrinth_version_type} curseforge_type=${curseforge_release_type}"
 
       - name: Verify tag matches branch metadata
         if: startsWith(github.ref, 'refs/tags/mc')
@@ -95,6 +105,57 @@ jobs:
             echo "::error::MODRINTH_TOKEN is not configured. Add the repository secret before publishing tagged releases."
             exit 1
           fi
+
+      - name: Verify CurseForge publishing configuration
+        if: startsWith(github.ref, 'refs/tags/mc')
+        shell: bash
+        env:
+          CURSEFORGE_API_TOKEN: ${{ secrets.CURSEFORGE_API_TOKEN }}
+          CURSEFORGE_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          CURSEFORGE_GAME_VERSIONS: ${{ vars.CURSEFORGE_GAME_VERSIONS }}
+          CURSEFORGE_MANUAL_RELEASE: ${{ vars.CURSEFORGE_MANUAL_RELEASE }}
+        run: |
+          if [ -z "${CURSEFORGE_API_TOKEN}" ]; then
+            echo "::error::CURSEFORGE_API_TOKEN is not configured. Add the repository secret before publishing tagged releases."
+            exit 1
+          fi
+
+          if [ -z "${CURSEFORGE_PROJECT_ID}" ]; then
+            echo "::error::CURSEFORGE_PROJECT_ID is not configured. Add the repository variable before publishing tagged releases."
+            exit 1
+          fi
+
+          if ! [[ "${CURSEFORGE_PROJECT_ID}" =~ ^[0-9]+$ ]]; then
+            echo "::error::CURSEFORGE_PROJECT_ID must be a numeric project id."
+            exit 1
+          fi
+
+          if [ -z "${CURSEFORGE_GAME_VERSIONS}" ]; then
+            echo "::error::CURSEFORGE_GAME_VERSIONS is not configured. Add a comma-separated list of numeric game version ids."
+            exit 1
+          fi
+
+          IFS=',' read -ra version_ids <<< "${CURSEFORGE_GAME_VERSIONS}"
+          valid_count=0
+          for raw_id in "${version_ids[@]}"; do
+            id="$(echo "${raw_id}" | tr -d '[:space:]')"
+            if [ -z "${id}" ]; then
+              continue
+            fi
+            if ! [[ "${id}" =~ ^[0-9]+$ ]]; then
+              echo "::error::CURSEFORGE_GAME_VERSIONS must be a comma-separated list of numeric ids. Invalid value: '${raw_id}'."
+              exit 1
+            fi
+            valid_count=$((valid_count + 1))
+          done
+
+          if [ "${valid_count}" -eq 0 ]; then
+            echo "::error::CURSEFORGE_GAME_VERSIONS resolved to zero usable ids."
+            exit 1
+          fi
+
+          manual_release="${CURSEFORGE_MANUAL_RELEASE:-false}"
+          echo "Resolved CurseForge config: project=${CURSEFORGE_PROJECT_ID}, game_versions=${CURSEFORGE_GAME_VERSIONS}, manual_release=${manual_release}"
 
       - name: Verify CHANGELOG entry for release
         if: startsWith(github.ref, 'refs/tags/mc')
@@ -178,7 +239,7 @@ jobs:
         shell: bash
         working-directory: release-assets
         run: |
-          files=$(find . -maxdepth 1 -type f ! -name 'SHA*SUMS.txt' -printf '%f\n' | sort)
+          files=$(find . -maxdepth 1 -type f ! -name 'SHA*SUMS.txt' ! -name 'curseforge-publish.json' -printf '%f\n' | sort)
           if [ -z "$files" ]; then
             echo "::error::No assets staged for checksum generation."
             exit 1
@@ -186,6 +247,226 @@ jobs:
           echo "$files" | xargs -d '\n' sha256sum > SHA256SUMS.txt
           echo "$files" | xargs -d '\n' sha512sum > SHA512SUMS.txt
           cat SHA256SUMS.txt
+
+      - name: Compute primary artifact digest
+        id: digests
+        shell: bash
+        run: |
+          jar_path="build/libs/${{ steps.vars.outputs.mod_jar }}"
+          if [ ! -f "${jar_path}" ]; then
+            echo "::error::Expected built jar '${jar_path}' was not found."
+            exit 1
+          fi
+
+          jar_sha256=$(sha256sum "${jar_path}" | cut -d' ' -f1)
+          {
+            echo "jar_path=${jar_path}"
+            echo "jar_sha256=${jar_sha256}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Detect existing CurseForge publish marker
+        id: cf_marker
+        if: startsWith(github.ref, 'refs/tags/mc')
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURSEFORGE_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          EXPECTED_SHA256: ${{ steps.digests.outputs.jar_sha256 }}
+        run: |
+          set -euo pipefail
+
+          api_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}"
+          http_code=$(curl --silent --show-error \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -o gh-release.json \
+            -w '%{http_code}' \
+            "${api_url}")
+
+          export GH_RELEASE_HTTP_CODE="${http_code}"
+
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.request
+
+          out = os.environ["GITHUB_OUTPUT"]
+          status = os.environ["GH_RELEASE_HTTP_CODE"]
+          tag = os.environ["GITHUB_REF_NAME"]
+          token = os.environ["GITHUB_TOKEN"]
+          expected_project = str(os.environ["CURSEFORGE_PROJECT_ID"])
+          expected_sha = os.environ["EXPECTED_SHA256"]
+
+          def write_output(key, value):
+              with open(out, "a", encoding="utf-8") as fh:
+                  fh.write(f"{key}={value}\n")
+
+          if status == "404":
+              write_output("skip", "false")
+              write_output("existing_file_id", "")
+              sys.exit(0)
+
+          if status != "200":
+              print(f"::error::Failed to query GitHub release for tag '{tag}' (HTTP {status}).")
+              try:
+                  print(open("gh-release.json", "r", encoding="utf-8").read())
+              except FileNotFoundError:
+                  pass
+              sys.exit(1)
+
+          with open("gh-release.json", "r", encoding="utf-8") as fh:
+              release = json.load(fh)
+
+          assets = release.get("assets", [])
+          marker = next((asset for asset in assets if asset.get("name") == "curseforge-publish.json"), None)
+
+          if marker is None:
+              print("::error::A GitHub release already exists for this tag, but it has no curseforge-publish.json marker.")
+              print("::error::Refusing to upload to CurseForge because the previous publish state is ambiguous.")
+              sys.exit(1)
+
+          marker_url = marker.get("url")
+          if not marker_url:
+              print("::error::CurseForge marker asset exists but has no API URL.")
+              sys.exit(1)
+
+          request = urllib.request.Request(
+              marker_url,
+              headers={
+                  "Authorization": f"Bearer {token}",
+                  "Accept": "application/octet-stream",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          os.makedirs("release-assets", exist_ok=True)
+          with urllib.request.urlopen(request) as response:
+              payload = response.read()
+
+          marker_path = os.path.join("release-assets", "curseforge-publish.json")
+          with open(marker_path, "wb") as fh:
+              fh.write(payload)
+
+          marker_data = json.loads(payload.decode("utf-8"))
+          marker_project = str(marker_data.get("project_id", ""))
+          marker_sha = str(marker_data.get("artifact_sha256", ""))
+          marker_tag = str(marker_data.get("tag", ""))
+
+          if marker_tag != tag or marker_project != expected_project or marker_sha != expected_sha:
+              print("::error::CurseForge marker does not match the current tag/project/hash tuple.")
+              print(json.dumps(marker_data, indent=2))
+              sys.exit(1)
+
+          write_output("skip", "true")
+          write_output("existing_file_id", str(marker_data.get("file_id", "")))
+          PY
+
+      - name: Publish to CurseForge
+        id: curseforge
+        if: startsWith(github.ref, 'refs/tags/mc') && steps.cf_marker.outputs.skip != 'true'
+        shell: bash
+        env:
+          CURSEFORGE_API_TOKEN: ${{ secrets.CURSEFORGE_API_TOKEN }}
+          CURSEFORGE_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          CURSEFORGE_GAME_VERSIONS: ${{ vars.CURSEFORGE_GAME_VERSIONS }}
+          CURSEFORGE_MANUAL_RELEASE: ${{ vars.CURSEFORGE_MANUAL_RELEASE }}
+          CURSEFORGE_RELEASE_TYPE: ${{ steps.vars.outputs.curseforge_release_type }}
+          MOD_NAME: ${{ steps.vars.outputs.mod_name }}
+          MOD_VERSION: ${{ steps.vars.outputs.mod_version }}
+          MC_VERSION: ${{ steps.vars.outputs.mc_version }}
+          MOD_JAR: ${{ steps.vars.outputs.mod_jar }}
+          ARTIFACT_SHA256: ${{ steps.digests.outputs.jar_sha256 }}
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          import json
+          import os
+
+          versions = [int(value.strip()) for value in os.environ["CURSEFORGE_GAME_VERSIONS"].split(",") if value.strip()]
+          metadata = {
+              "changelog": open("release-notes.md", "r", encoding="utf-8").read().strip(),
+              "changelogType": "markdown",
+              "displayName": f"{os.environ['MOD_NAME']} v{os.environ['MOD_VERSION']} (MC {os.environ['MC_VERSION']})",
+              "gameVersions": versions,
+              "releaseType": os.environ["CURSEFORGE_RELEASE_TYPE"],
+          }
+
+          manual_release = os.environ.get("CURSEFORGE_MANUAL_RELEASE", "").strip().lower()
+          if manual_release in {"1", "true", "yes", "on"}:
+              metadata["isMarkedForManualRelease"] = True
+
+          with open("cf-metadata.json", "w", encoding="utf-8") as fh:
+              json.dump(metadata, fh, ensure_ascii=False)
+          PY
+
+          upload_url="${CURSEFORGE_BASE_URL}/api/projects/${CURSEFORGE_PROJECT_ID}/upload-file"
+          curl_exit=0
+          http_code=$(curl --silent --show-error \
+            --retry 3 --retry-all-errors --retry-delay 2 \
+            -H "X-Api-Token: ${CURSEFORGE_API_TOKEN}" \
+            -F "metadata=<cf-metadata.json;type=application/json" \
+            -F "file=@build/libs/${MOD_JAR};type=application/java-archive" \
+            -o cf-response.json \
+            -w '%{http_code}' \
+            "${upload_url}") || curl_exit=$?
+
+          if [ "${curl_exit}" -ne 0 ]; then
+            echo "::error::Network or transport failure while uploading to CurseForge."
+            test -f cf-response.json && cat cf-response.json
+            exit "${curl_exit}"
+          fi
+
+          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 300 ]; then
+            echo "::error::CurseForge upload failed with HTTP ${http_code}."
+            cat cf-response.json
+            exit 1
+          fi
+
+          python - <<'PY'
+          import datetime
+          import json
+          import os
+          import sys
+
+          with open("cf-response.json", "r", encoding="utf-8") as fh:
+              response = json.load(fh)
+
+          file_id = response.get("id")
+          if not isinstance(file_id, int):
+              print("::error::CurseForge response did not contain an integer file id.")
+              print(json.dumps(response, indent=2))
+              sys.exit(1)
+
+          manual_release = os.environ.get("CURSEFORGE_MANUAL_RELEASE", "").strip().lower() in {"1", "true", "yes", "on"}
+          marker = {
+              "tag": os.environ["GITHUB_REF_NAME"],
+              "project_id": os.environ["CURSEFORGE_PROJECT_ID"],
+              "file_id": file_id,
+              "artifact_name": os.environ["MOD_JAR"],
+              "artifact_sha256": os.environ["ARTIFACT_SHA256"],
+              "display_name": f"{os.environ['MOD_NAME']} v{os.environ['MOD_VERSION']} (MC {os.environ['MC_VERSION']})",
+              "release_type": os.environ["CURSEFORGE_RELEASE_TYPE"],
+              "manual_release": manual_release,
+              "uploaded_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+          }
+
+          os.makedirs("release-assets", exist_ok=True)
+          with open("release-assets/curseforge-publish.json", "w", encoding="utf-8") as fh:
+              json.dump(marker, fh, indent=2, ensure_ascii=False)
+              fh.write("\n")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"file_id={file_id}\n")
+          PY
+
+      - name: Reuse existing CurseForge marker
+        if: startsWith(github.ref, 'refs/tags/mc') && steps.cf_marker.outputs.skip == 'true'
+        shell: bash
+        run: |
+          test -f release-assets/curseforge-publish.json
+          echo "CurseForge upload skipped; existing file id: ${{ steps.cf_marker.outputs.existing_file_id }}"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -204,6 +485,7 @@ jobs:
           files: release-assets/*
           draft: false
           prerelease: ${{ steps.vars.outputs.prerelease == 'true' }}
+          overwrite_files: true
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
