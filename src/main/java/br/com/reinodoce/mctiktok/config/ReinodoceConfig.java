@@ -36,6 +36,14 @@ public class ReinodoceConfig {
     public static final int DEFAULT_HUD_LINES = 6;
     /** Maximum retained HUD line count. */
     public static final int MAX_HUD_LINES = 12;
+    /** Default pinned-message overlay visibility. */
+    public static final boolean DEFAULT_PINNED_OVERLAY_ENABLED = true;
+    /** Default pinned-message overlay position. */
+    public static final String DEFAULT_PINNED_OVERLAY_POSITION = "top-right";
+    /** Default number of visible pinned messages. */
+    public static final int DEFAULT_PINNED_OVERLAY_MESSAGES = 3;
+    /** Maximum number of visible pinned messages. */
+    public static final int MAX_PINNED_OVERLAY_MESSAGES = 6;
     /** Default language setting that follows the Minecraft client language. */
     public static final String DEFAULT_LANGUAGE = LanguageSetting.AUTO;
     /** Default alert toast template, meaning built-in localized toast text. */
@@ -89,6 +97,10 @@ public class ReinodoceConfig {
     private String outputMode = OutputMode.CHAT.id();
     private String hudPosition = HudPosition.TOP_LEFT.id();
     private int hudLines = DEFAULT_HUD_LINES;
+    private boolean pinnedOverlayEnabled = DEFAULT_PINNED_OVERLAY_ENABLED;
+    private String pinnedOverlayPosition = DEFAULT_PINNED_OVERLAY_POSITION;
+    private boolean pinnedMessagesInOutput = false;
+    private int pinnedOverlayMessages = DEFAULT_PINNED_OVERLAY_MESSAGES;
     private String chatPrefix = DEFAULT_CHAT_PREFIX;
     private String chatFormat = DEFAULT_CHAT_FORMAT;
     private boolean chatEmotesEnabled = true;
@@ -155,6 +167,10 @@ public class ReinodoceConfig {
         copy.setOutputMode(outputMode);
         copy.setHudPosition(hudPosition);
         copy.setHudLines(hudLines);
+        copy.setPinnedOverlayEnabled(pinnedOverlayEnabled);
+        copy.setPinnedOverlayPosition(pinnedOverlayPosition);
+        copy.setPinnedMessagesInOutput(pinnedMessagesInOutput);
+        copy.setPinnedOverlayMessages(pinnedOverlayMessages);
         copy.setChatPrefix(chatPrefix);
         copy.setChatFormat(chatFormat);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
@@ -690,6 +706,78 @@ public class ReinodoceConfig {
      */
     public void setHudLines(int hudLines) {
         this.hudLines = Math.max(1, Math.min(MAX_HUD_LINES, hudLines));
+    }
+
+    /**
+     * Returns whether TikTok pinned messages render in the local overlay.
+     *
+     * @return pinned overlay visibility
+     */
+    public boolean isPinnedOverlayEnabled() {
+        return pinnedOverlayEnabled;
+    }
+
+    /**
+     * Sets whether TikTok pinned messages render in the local overlay.
+     *
+     * @param pinnedOverlayEnabled pinned overlay visibility
+     */
+    public void setPinnedOverlayEnabled(boolean pinnedOverlayEnabled) {
+        this.pinnedOverlayEnabled = pinnedOverlayEnabled;
+    }
+
+    /**
+     * Returns the local pinned-message overlay anchor identifier.
+     *
+     * @return pinned overlay position id
+     */
+    public String getPinnedOverlayPosition() {
+        return pinnedOverlayPosition;
+    }
+
+    /**
+     * Sets the local pinned-message overlay anchor.
+     *
+     * @param pinnedOverlayPosition pinned overlay position identifier
+     */
+    public void setPinnedOverlayPosition(String pinnedOverlayPosition) {
+        this.pinnedOverlayPosition = HudPosition.fromString(pinnedOverlayPosition).id();
+    }
+
+    /**
+     * Returns whether pinned messages are also sent through the configured mirrored output mode.
+     *
+     * @return pinned mirrored output state
+     */
+    public boolean isPinnedMessagesInOutput() {
+        return pinnedMessagesInOutput;
+    }
+
+    /**
+     * Sets whether pinned messages are also sent through the configured mirrored output mode.
+     *
+     * @param pinnedMessagesInOutput pinned mirrored output state
+     */
+    public void setPinnedMessagesInOutput(boolean pinnedMessagesInOutput) {
+        this.pinnedMessagesInOutput = pinnedMessagesInOutput;
+    }
+
+    /**
+     * Returns the visible pinned-message overlay item count.
+     *
+     * @return pinned overlay item count
+     */
+    public int getPinnedOverlayMessages() {
+        return pinnedOverlayMessages;
+    }
+
+    /**
+     * Sets the visible pinned-message overlay item count.
+     *
+     * @param pinnedOverlayMessages item count, clamped to supported bounds
+     */
+    public void setPinnedOverlayMessages(int pinnedOverlayMessages) {
+        this.pinnedOverlayMessages = Math.max(1, Math.min(MAX_PINNED_OVERLAY_MESSAGES, pinnedOverlayMessages));
     }
 
     /**

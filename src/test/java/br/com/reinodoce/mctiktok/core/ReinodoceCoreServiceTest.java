@@ -30,6 +30,8 @@ class ReinodoceCoreServiceTest {
     private static final String PT_BR = "pt_br";
     private static final String DE_DE = "de_de";
     private static final String HUD_MODE = "hud";
+    private static final String BOTTOM_LEFT = "bottom-left";
+    private static final String BOTTOM_RIGHT = "bottom-right";
     private static final String CUSTOM_SOUND_ID = "minecraft:entity.experience_orb.pickup";
     private static final String CUSTOM_TEMPLATE = "{username} -> {giftName} ({count}/{diamonds})";
     private static final String CUSTOM_IMAGE = "https://cdn.example/alert.png";
@@ -138,16 +140,28 @@ class ReinodoceCoreServiceTest {
         ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> EN_US);
 
         CommandResult modeResult = service.setOutputMode(HUD_MODE);
-        CommandResult positionResult = service.setHudPosition("bottom-right");
+        CommandResult positionResult = service.setHudPosition(BOTTOM_RIGHT);
         CommandResult linesResult = service.setHudLines(4);
+        CommandResult pinnedEnabledResult = service.setPinnedOverlayEnabled(false);
+        CommandResult pinnedPositionResult = service.setPinnedOverlayPosition(BOTTOM_LEFT);
+        CommandResult pinnedOutputResult = service.setPinnedMessagesInOutput(true);
+        CommandResult pinnedMessagesResult = service.setPinnedOverlayMessages(2);
         ReinodoceConfig loaded = repository.load();
 
         assertTrue(modeResult.success());
         assertTrue(positionResult.success());
         assertTrue(linesResult.success());
+        assertTrue(pinnedEnabledResult.success());
+        assertTrue(pinnedPositionResult.success());
+        assertTrue(pinnedOutputResult.success());
+        assertTrue(pinnedMessagesResult.success());
         assertEquals(HUD_MODE, loaded.getOutputMode());
-        assertEquals("bottom-right", loaded.getHudPosition());
+        assertEquals(BOTTOM_RIGHT, loaded.getHudPosition());
         assertEquals(4, loaded.getHudLines());
+        assertFalse(loaded.isPinnedOverlayEnabled());
+        assertEquals(BOTTOM_LEFT, loaded.getPinnedOverlayPosition());
+        assertTrue(loaded.isPinnedMessagesInOutput());
+        assertEquals(2, loaded.getPinnedOverlayMessages());
     }
 
     @Test
@@ -284,11 +298,25 @@ class ReinodoceCoreServiceTest {
         ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
         ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> EN_US);
         ReinodoceConfig draft = ReinodoceConfig.defaults();
+        configureGuiDraft(draft);
+
+        CommandResult result = service.replaceConfig(draft);
+        ReinodoceConfig loaded = repository.load();
+
+        assertTrue(result.success());
+        assertGuiDraftSettings(loaded);
+    }
+
+    private static void configureGuiDraft(ReinodoceConfig draft) {
         draft.setLastUsername("  Reino_Doce  ");
         draft.setReconnectSeconds(0);
         draft.setOutputMode(HUD_MODE);
-        draft.setHudPosition("bottom-left");
+        draft.setHudPosition(BOTTOM_LEFT);
         draft.setHudLines(ReinodoceConfig.MAX_HUD_LINES + 1);
+        draft.setPinnedOverlayEnabled(false);
+        draft.setPinnedOverlayPosition(BOTTOM_RIGHT);
+        draft.setPinnedMessagesInOutput(true);
+        draft.setPinnedOverlayMessages(ReinodoceConfig.MAX_PINNED_OVERLAY_MESSAGES + 1);
         draft.setChatPrefix("TikTok");
         draft.setChatFormat("{prefix} {username}: {message}");
         draft.setChatEmotesEnabled(false);
@@ -300,16 +328,18 @@ class ReinodoceCoreServiceTest {
         draft.setSyntheticMemberLevelEnabled(true);
         draft.setRuleFollowerOnly(true);
         draft.setRuleMinMemberLevel(2);
+    }
 
-        CommandResult result = service.replaceConfig(draft);
-        ReinodoceConfig loaded = repository.load();
-
-        assertTrue(result.success());
+    private static void assertGuiDraftSettings(ReinodoceConfig loaded) {
         assertEquals("Reino_Doce", loaded.getLastUsername());
         assertEquals(0, loaded.getReconnectSeconds());
         assertEquals(HUD_MODE, loaded.getOutputMode());
-        assertEquals("bottom-left", loaded.getHudPosition());
+        assertEquals(BOTTOM_LEFT, loaded.getHudPosition());
         assertEquals(ReinodoceConfig.MAX_HUD_LINES, loaded.getHudLines());
+        assertFalse(loaded.isPinnedOverlayEnabled());
+        assertEquals(BOTTOM_RIGHT, loaded.getPinnedOverlayPosition());
+        assertTrue(loaded.isPinnedMessagesInOutput());
+        assertEquals(ReinodoceConfig.MAX_PINNED_OVERLAY_MESSAGES, loaded.getPinnedOverlayMessages());
         assertEquals("TikTok", loaded.getChatPrefix());
         assertEquals("{prefix} {username}: {message}", loaded.getChatFormat());
         assertFalse(loaded.isChatEmotesEnabled());

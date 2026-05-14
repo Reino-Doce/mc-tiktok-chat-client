@@ -29,6 +29,7 @@ class ReinodoceCommandTreeTest {
     private static final String MODE_ARGUMENT = "mode";
     private static final String POSITION_ARGUMENT = "position";
     private static final String LINES_ARGUMENT = "lines";
+    private static final String MESSAGES_ARGUMENT = "messages";
     private static final String LOCALE_ARGUMENT = "locale";
     private static final String CUSTOM_IMAGE_ARGUMENT = "customImage";
 
@@ -116,6 +117,11 @@ class ReinodoceCommandTreeTest {
         assertNotNull(settings.getChild("output").getChild(MODE_ARGUMENT));
         assertNotNull(settings.getChild("hud-position").getChild(POSITION_ARGUMENT));
         assertNotNull(settings.getChild("hud-lines").getChild(LINES_ARGUMENT));
+        CommandNode<CommandSourceStack> pinnedOverlay = settings.getChild("pinned-overlay");
+        assertNotNull(pinnedOverlay.getChild("enabled").getChild(ENABLED_ARGUMENT));
+        assertNotNull(pinnedOverlay.getChild("position").getChild(POSITION_ARGUMENT));
+        assertNotNull(pinnedOverlay.getChild("mirror-output").getChild(ENABLED_ARGUMENT));
+        assertNotNull(pinnedOverlay.getChild("messages").getChild(MESSAGES_ARGUMENT));
         assertNotNull(settings.getChild("gui").getCommand());
         assertNotNull(settings.getChild("chat-emotes").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("chat-log").getChild(ENABLED_ARGUMENT));
@@ -123,6 +129,8 @@ class ReinodoceCommandTreeTest {
         assertNotNull(settings.getChild("format").getChild("template"));
     }
 
+    // Stub mirrors the command service surface so the tree can be registered without behavior.
+    @SuppressWarnings("PMD.ExcessivePublicCount")
     private static final class StubCommandService implements ReinodoceCommandService {
         @Override
         public CommandResult connect(String username) {
@@ -176,6 +184,26 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setHudLines(int lines) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setPinnedOverlayEnabled(boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setPinnedOverlayPosition(String position) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setPinnedMessagesInOutput(boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setPinnedOverlayMessages(int messages) {
             return unsupported();
         }
 

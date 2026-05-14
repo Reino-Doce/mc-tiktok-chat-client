@@ -9,31 +9,36 @@ import io.github.jwdeveloper.tiktok.messages.webcast.WebcastBarrageMessage;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastChatMessage;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastEmoteChatMessage;
 import io.github.jwdeveloper.tiktok.messages.webcast.WebcastMemberMessage;
+import io.github.jwdeveloper.tiktok.messages.webcast.WebcastRoomPinMessage;
 
 final class WebsocketMessageDispatcher {
     private static final String CHAT_METHOD = "WebcastChatMessage";
     private static final String EMOTE_METHOD = "WebcastEmoteChatMessage";
     private static final String BARRAGE_METHOD = "WebcastBarrageMessage";
     private static final String MEMBER_METHOD = "WebcastMemberMessage";
+    private static final String ROOM_PIN_METHOD = "WebcastRoomPinMessage";
 
     private final TikTokRichMessageParser richMessageParser;
     private final MemberLevelResolver memberLevelResolver;
     private final LiveCommentEmitter liveCommentEmitter;
     private final BarrageMessageHandler barrageHandler;
     private final MemberMessageHandler memberHandler;
+    private final PinnedMessageEmitter pinnedMessageEmitter;
 
     WebsocketMessageDispatcher(
             TikTokRichMessageParser richMessageParser,
             MemberLevelResolver memberLevelResolver,
             LiveCommentEmitter liveCommentEmitter,
             BarrageMessageHandler barrageHandler,
-            MemberMessageHandler memberHandler
+            MemberMessageHandler memberHandler,
+            PinnedMessageEmitter pinnedMessageEmitter
     ) {
         this.richMessageParser = richMessageParser;
         this.memberLevelResolver = memberLevelResolver;
         this.liveCommentEmitter = liveCommentEmitter;
         this.barrageHandler = barrageHandler;
         this.memberHandler = memberHandler;
+        this.pinnedMessageEmitter = pinnedMessageEmitter;
     }
 
     void dispatch(TikTokWebsocketMessageEvent event) {
@@ -58,6 +63,7 @@ final class WebsocketMessageDispatcher {
             case EMOTE_METHOD -> handleEmote(WebcastEmoteChatMessage.parseFrom(payload));
             case BARRAGE_METHOD -> barrageHandler.dispatch(WebcastBarrageMessage.parseFrom(payload));
             case MEMBER_METHOD -> memberHandler.handle(WebcastMemberMessage.parseFrom(payload));
+            case ROOM_PIN_METHOD -> pinnedMessageEmitter.emit(WebcastRoomPinMessage.parseFrom(payload));
             default -> { /* unrecognized websocket method; ignored. */ }
         }
     }

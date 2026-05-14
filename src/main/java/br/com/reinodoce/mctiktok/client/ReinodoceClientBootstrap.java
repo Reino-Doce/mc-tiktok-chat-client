@@ -38,7 +38,7 @@ public final class ReinodoceClientBootstrap {
                 (RegisterGuiOverlaysEvent event) -> event.registerAboveAll(
                         "reinodoce_live_output",
                         (gui, graphics, partialTick, screenWidth, screenHeight) ->
-                                SERVICE.renderHud(graphics, screenWidth, screenHeight)));
+                                SERVICE.renderOverlays(graphics, screenWidth, screenHeight)));
         MinecraftForge.EVENT_BUS.addListener((RegisterClientCommandsEvent event) ->
                 ReinodoceCommandRegistrar.onRegisterClientCommands(event, SERVICE));
     }

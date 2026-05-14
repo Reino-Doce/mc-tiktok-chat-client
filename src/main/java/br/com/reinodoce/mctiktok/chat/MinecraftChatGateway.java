@@ -5,8 +5,13 @@ import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
 import br.com.reinodoce.mctiktok.config.LanguageSetting;
 import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
+import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Chat sink implementation that formats TikTok events and schedules Minecraft chat writes on the client thread.
@@ -55,6 +60,22 @@ public class MinecraftChatGateway implements ChatEventSink {
     @Override
     public void sendStarComment(ReinodoceConfig config, RichLiveMessage message) {
         sendTracked(config, formatter.formatStarComment(ChatMessageStyle.from(config), message));
+    }
+
+    @Override
+    public void sendPinnedComment(ReinodoceConfig config, String username, String message) {
+        ChatMessageStyle style = ChatMessageStyle.from(config);
+        RichLiveMessage pinnedMessage = new RichLiveMessage(
+                0L,
+                username,
+                List.of(new RichLiveMessage.TextSegment(pinnedPrefix(config) + message)));
+        send(config, formatter.formatRichLine(style, pinnedMessage, ChatFormatting.GOLD).component());
+    }
+
+    @Override
+    public void sendPinnedComment(ReinodoceConfig config, RichLiveMessage message) {
+        ChatMessageStyle style = ChatMessageStyle.from(config);
+        sendTracked(config, formatter.formatRichLine(style, withPinnedPrefix(config, message), ChatFormatting.GOLD));
     }
 
     @Override
@@ -165,5 +186,19 @@ public class MinecraftChatGateway implements ChatEventSink {
                 || LanguageSetting.normalizeLocale(platformBridge.selectedLanguageCode())
                 .filter(configuredLanguage::equals)
                 .isPresent();
+    }
+
+    private RichLiveMessage withPinnedPrefix(ReinodoceConfig config, RichLiveMessage message) {
+        List<RichLiveMessage.Segment> bodySegments = new ArrayList<>();
+        bodySegments.add(new RichLiveMessage.TextSegment(pinnedPrefix(config)));
+        bodySegments.addAll(message.bodySegments());
+        return message.withBodySegments(bodySegments);
+    }
+
+    private String pinnedPrefix(ReinodoceConfig config) {
+        return Translations.trForLanguage(
+                FixedTextLanguage.locale(fixedTextLanguage(config)),
+                FixedTextLanguage.usesRuntime(fixedTextLanguage(config)),
+                "reinodoce.chat.pinned_prefix");
     }
 }

@@ -69,6 +69,15 @@ final class ReinodoceSettingsPages {
                 HUD_POSITIONS);
         screen.addNumberField(row++, "HUD lines", screen.configDraft()::getHudLines,
                 screen.configDraft()::setHudLines);
+        screen.addToggle(row++, "Pinned overlay", screen.configDraft()::isPinnedOverlayEnabled,
+                screen.configDraft()::setPinnedOverlayEnabled);
+        screen.addCycle(row++, "Pinned position", screen.configDraft()::getPinnedOverlayPosition,
+                screen.configDraft()::setPinnedOverlayPosition,
+                HUD_POSITIONS);
+        screen.addNumberField(row++, "Pinned messages", screen.configDraft()::getPinnedOverlayMessages,
+                screen.configDraft()::setPinnedOverlayMessages);
+        screen.addToggle(row++, "Pinned to output", screen.configDraft()::isPinnedMessagesInOutput,
+                screen.configDraft()::setPinnedMessagesInOutput);
         screen.addToggle(row, "Chat log", screen.configDraft()::isChatLogEnabled,
                 screen.configDraft()::setChatLogEnabled);
         screen.addBackButton();
@@ -177,7 +186,7 @@ final class ReinodoceSettingsPages {
                 "Settings index", ReinodoceSettingsPages::initRoot),
         CONNECTION("Connection", "Connection defaults and reconnect behavior.", "Connection",
                 ReinodoceSettingsPages::initConnection),
-        OUTPUT("Output / HUD", "Visible output destination, HUD placement, and chat logging.", "Output / HUD",
+        OUTPUT("Output / HUD", "Visible output destination, overlays, HUD placement, and chat logging.", "Output / HUD",
                 ReinodoceSettingsPages::initOutput),
         CHAT("Chat formatting", "LIVE prefix, rendered chat template, and inline emotes.", "Chat formatting",
                 ReinodoceSettingsPages::initChat),
