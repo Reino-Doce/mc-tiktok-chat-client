@@ -241,6 +241,15 @@ public interface ReinodoceCommandService {
     CommandResult setAlertSound(AlertEventType eventType, boolean enabled);
 
     /**
+     * Updates the local sound identifier for an event type.
+     *
+     * @param eventType alert event type
+     * @param soundId {@code default} or a Minecraft sound resource id
+     * @return command result
+     */
+    CommandResult setAlertSoundId(AlertEventType eventType, String soundId);
+
+    /**
      * Updates local toast alerts for an event type.
      *
      * @param eventType alert event type

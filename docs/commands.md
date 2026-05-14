@@ -108,13 +108,17 @@ above. They never send packets or chat messages to the server.
 | Command | Argument | Default | Effect |
 | ------- | -------- | ------- | ------ |
 | `/reinodoce alert gift sound <true\|false>` | boolean | `false` | Play a local sound for surfaced gifts that pass `alertGiftMinValue`. |
+| `/reinodoce alert gift sound-id <soundId\|default>` | namespaced Minecraft sound resource id, or `default` | `default` | Sets the sound used when gift sound alerts are enabled. `default` plays `minecraft:ui.toast.in`; custom ids use resources such as `minecraft:entity.experience_orb.pickup`. Malformed ids are rejected. If a well-formed id is unavailable at playback, the default sound is used. |
 | `/reinodoce alert gift toast <true\|false>` | boolean | `false` | Show a local toast for surfaced gifts that pass `alertGiftMinValue`. |
 | `/reinodoce alert gift-min-value <value>` | integer >= 0 | `1` | Minimum single-gift diamond value required for gift alerts. |
 | `/reinodoce alert follow sound <true\|false>` | boolean | `false` | Play a local sound for surfaced follow events. |
+| `/reinodoce alert follow sound-id <soundId\|default>` | namespaced Minecraft sound resource id, or `default` | `default` | Sets the sound used when follow sound alerts are enabled. |
 | `/reinodoce alert follow toast <true\|false>` | boolean | `false` | Show a local toast for surfaced follow events. |
 | `/reinodoce alert join sound <true\|false>` | boolean | `false` | Play a local sound for surfaced join events. Join alerts use a global cooldown to avoid noise. |
+| `/reinodoce alert join sound-id <soundId\|default>` | namespaced Minecraft sound resource id, or `default` | `default` | Sets the sound used when join sound alerts are enabled. |
 | `/reinodoce alert join toast <true\|false>` | boolean | `false` | Show a local toast for surfaced join events. Join alerts use a global cooldown to avoid noise. |
 | `/reinodoce alert member-level sound <true\|false>` | boolean | `false` | Play a local sound for surfaced member-level-up events. |
+| `/reinodoce alert member-level sound-id <soundId\|default>` | namespaced Minecraft sound resource id, or `default` | `default` | Sets the sound used when member-level sound alerts are enabled. |
 | `/reinodoce alert member-level toast <true\|false>` | boolean | `false` | Show a local toast for surfaced member-level-up events. |
 
 ## Quick example

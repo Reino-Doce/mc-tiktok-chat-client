@@ -138,7 +138,7 @@ public class AlertService {
             return;
         }
         if (config.isAlertSoundEnabled(eventType)) {
-            alertSink.playAlertSound();
+            alertSink.playAlertSound(config.getAlertSoundId(eventType));
         }
         if (config.isAlertToastEnabled(eventType)) {
             alertSink.showAlertToast(title, message);

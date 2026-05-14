@@ -7,6 +7,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,13 +16,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AlertServiceTest {
     private static final Instant START = Instant.parse("2026-05-14T00:00:00Z");
     private static final String ALICE = "alice";
+    private static final String ROSE = "Rose";
+    private static final String CUSTOM_SOUND_ID = "minecraft:entity.experience_orb.pickup";
 
     @Test
     void defaultsDoNotEmitAlerts() {
         RecordingAlertSink sink = new RecordingAlertSink();
         AlertService service = new AlertService(sink, new MutableClock(START));
 
-        service.gift(ReinodoceConfig.defaults(), ALICE, "Rose", 1, 1);
+        service.gift(ReinodoceConfig.defaults(), ALICE, ROSE, 1, 1);
         service.follow(ReinodoceConfig.defaults(), ALICE);
         service.join(ReinodoceConfig.defaults(), ALICE);
         service.memberLevel(ReinodoceConfig.defaults(), ALICE, 2);
@@ -38,7 +42,7 @@ class AlertServiceTest {
         config.setAlertToastEnabled(AlertEventType.GIFT, true);
         config.setAlertGiftMinValue(100);
 
-        service.gift(config, ALICE, "Rose", 1, 1);
+        service.gift(config, ALICE, ROSE, 1, 1);
         service.gift(config, ALICE, "Galaxy", 2, 100);
 
         assertEquals(1, sink.sounds());
@@ -52,6 +56,22 @@ class AlertServiceTest {
         assertSoundOnlyAlert(AlertEventType.FOLLOW);
         assertSoundOnlyAlert(AlertEventType.JOIN);
         assertSoundOnlyAlert(AlertEventType.MEMBER_LEVEL);
+    }
+
+    @Test
+    void soundAlertsPassEventSpecificSoundIdOnlyWhenSurfaced() {
+        RecordingAlertSink sink = new RecordingAlertSink();
+        AlertService service = new AlertService(sink, new MutableClock(START));
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.setAlertSoundEnabled(AlertEventType.GIFT, true);
+        config.setAlertSoundId(AlertEventType.GIFT, CUSTOM_SOUND_ID);
+        config.setAlertGiftMinValue(100);
+
+        service.gift(config, ALICE, ROSE, 1, 1);
+        service.gift(config, ALICE, "Galaxy", 1, 100);
+
+        assertEquals(List.of(CUSTOM_SOUND_ID), sink.soundIds());
+        assertEquals(0, sink.toasts());
     }
 
     @Test
@@ -85,7 +105,7 @@ class AlertServiceTest {
 
     private static void emit(AlertService service, ReinodoceConfig config, AlertEventType eventType) {
         switch (eventType) {
-            case GIFT -> service.gift(config, ALICE, "Rose", 1, 1);
+            case GIFT -> service.gift(config, ALICE, ROSE, 1, 1);
             case FOLLOW -> service.follow(config, ALICE);
             case JOIN -> service.join(config, ALICE);
             case MEMBER_LEVEL -> service.memberLevel(config, ALICE, 2);
@@ -109,10 +129,17 @@ class AlertServiceTest {
         private int recordedSounds;
         private int recordedToasts;
         private String recordedMessage = "";
+        private final List<String> recordedSoundIds = new ArrayList<>();
 
         @Override
         public void playAlertSound() {
             recordedSounds++;
+        }
+
+        @Override
+        public void playAlertSound(String soundId) {
+            recordedSounds++;
+            recordedSoundIds.add(soundId);
         }
 
         @Override
@@ -131,6 +158,10 @@ class AlertServiceTest {
 
         String message() {
             return recordedMessage;
+        }
+
+        List<String> soundIds() {
+            return List.copyOf(recordedSoundIds);
         }
     }
 

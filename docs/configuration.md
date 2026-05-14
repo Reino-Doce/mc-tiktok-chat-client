@@ -33,13 +33,17 @@ through `/reinodoce …` or the client settings screen opened with
 | `syntheticJoinEnabled` | boolean | `false` | Surface viewer-join events. |
 | `syntheticMemberLevelEnabled` | boolean | `false` | Surface member-level-up events. |
 | `alertGiftSoundEnabled` | boolean | `false` | Play a local client-only sound for surfaced gifts that pass `alertGiftMinValue`. |
+| `alertGiftSoundId` | string | `"default"` | Sound used for enabled gift sound alerts. `"default"` maps to `minecraft:ui.toast.in`; custom values must be namespaced Minecraft resource ids such as `minecraft:entity.experience_orb.pickup`. Malformed values fall back to `"default"` on load; unavailable sounds fall back to the default at playback. |
 | `alertGiftToastEnabled` | boolean | `false` | Show a local client-only toast for surfaced gifts that pass `alertGiftMinValue`. |
 | `alertGiftMinValue` | integer | `1` | Minimum single-gift diamond value for gift alerts. Clamped to >= 0. |
 | `alertFollowSoundEnabled` | boolean | `false` | Play a local sound for surfaced follow events. |
+| `alertFollowSoundId` | string | `"default"` | Sound used for enabled follow sound alerts. Malformed values fall back to `"default"` on load; unavailable sounds fall back to the default at playback. |
 | `alertFollowToastEnabled` | boolean | `false` | Show a local toast for surfaced follow events. |
 | `alertJoinSoundEnabled` | boolean | `false` | Play a local sound for surfaced join events. Join alerts are throttled. |
+| `alertJoinSoundId` | string | `"default"` | Sound used for enabled join sound alerts. Malformed values fall back to `"default"` on load; unavailable sounds fall back to the default at playback. |
 | `alertJoinToastEnabled` | boolean | `false` | Show a local toast for surfaced join events. Join alerts are throttled. |
 | `alertMemberLevelSoundEnabled` | boolean | `false` | Play a local sound for surfaced member-level-up events. |
+| `alertMemberLevelSoundId` | string | `"default"` | Sound used for enabled member-level sound alerts. Malformed values fall back to `"default"` on load; unavailable sounds fall back to the default at playback. |
 | `alertMemberLevelToastEnabled` | boolean | `false` | Show a local toast for surfaced member-level-up events. |
 | `outputMode` | string | `"chat"` | One of `"chat"`, `"actionbar"`, `"hud"`, or `"off"`. Unknown values fall back to `"chat"`. |
 | `hudPosition` | string | `"top-left"` | One of `"top-left"`, `"top-right"`, `"bottom-left"`, or `"bottom-right"`. Unknown values fall back to `"top-left"`. |
@@ -52,9 +56,9 @@ through `/reinodoce …` or the client settings screen opened with
 | `sessionLoggingEnabled` | boolean | `false` | Write accepted mirrored LIVE events to local session files under `logs/reinodoce/`. Opt-in because files may contain TikTok usernames and chat content. |
 | `sessionLoggingFormat` | string | `"jsonl"` | One of `"jsonl"` or `"text"`. Unknown values fall back to `"jsonl"`. |
 
-All commands that change a field validate and clamp the same way the
-config loader does, so editing the file by hand and editing through
-`/reinodoce …` produce identical state.
+Commands reject malformed values before saving. When the file is edited
+by hand, the config loader sanitizes malformed values to defaults so the
+client can keep starting safely.
 
 `chatFormat` supports exactly these tokens:
 

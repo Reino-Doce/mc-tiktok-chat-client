@@ -29,6 +29,8 @@ import java.util.Objects;
 /**
  * Client service that composes core TikTok logic with Minecraft inline media rendering.
  */
+// Command-service facade intentionally mirrors the public command contract.
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public class ReinodoceClientService implements ReinodoceCommandService {
     private final ReinodoceCoreService coreService;
     private final InlineMediaCache inlineMediaCache;
@@ -299,6 +301,11 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     @Override
     public CommandResult setAlertSound(AlertEventType eventType, boolean enabled) {
         return coreService.setAlertSound(eventType, enabled);
+    }
+
+    @Override
+    public CommandResult setAlertSoundId(AlertEventType eventType, String soundId) {
+        return coreService.setAlertSoundId(eventType, soundId);
     }
 
     @Override

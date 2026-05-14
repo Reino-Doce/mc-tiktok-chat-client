@@ -38,6 +38,15 @@ public interface MinecraftPlatformBridge {
     }
 
     /**
+     * Plays a local alert sound.
+     *
+     * @param soundId persisted alert sound identifier
+     */
+    default void playAlertSound(String soundId) {
+        playAlertSound();
+    }
+
+    /**
      * Shows a local alert toast.
      *
      * @param title toast title
