@@ -47,6 +47,27 @@ class AlertServiceTest {
     }
 
     @Test
+    void soundOnlyAlertsEmitWithoutToast() {
+        assertSoundOnlyAlert(AlertEventType.GIFT);
+        assertSoundOnlyAlert(AlertEventType.FOLLOW);
+        assertSoundOnlyAlert(AlertEventType.JOIN);
+        assertSoundOnlyAlert(AlertEventType.MEMBER_LEVEL);
+    }
+
+    @Test
+    void toastOnlyAlertsKeepExistingToastPath() {
+        RecordingAlertSink sink = new RecordingAlertSink();
+        AlertService service = new AlertService(sink, new MutableClock(START));
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.setAlertToastEnabled(AlertEventType.FOLLOW, true);
+
+        service.follow(config, ALICE);
+
+        assertEquals(0, sink.sounds());
+        assertEquals(1, sink.toasts());
+    }
+
+    @Test
     void joinAlertsUseGlobalCooldown() {
         RecordingAlertSink sink = new RecordingAlertSink();
         MutableClock clock = new MutableClock(START);
@@ -60,6 +81,28 @@ class AlertServiceTest {
         service.join(config, "carol");
 
         assertEquals(2, sink.toasts());
+    }
+
+    private static void emit(AlertService service, ReinodoceConfig config, AlertEventType eventType) {
+        switch (eventType) {
+            case GIFT -> service.gift(config, ALICE, "Rose", 1, 1);
+            case FOLLOW -> service.follow(config, ALICE);
+            case JOIN -> service.join(config, ALICE);
+            case MEMBER_LEVEL -> service.memberLevel(config, ALICE, 2);
+            default -> throw new IllegalArgumentException(eventType.id());
+        }
+    }
+
+    private static void assertSoundOnlyAlert(AlertEventType eventType) {
+        RecordingAlertSink sink = new RecordingAlertSink();
+        AlertService service = new AlertService(sink, new MutableClock(START));
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.setAlertSoundEnabled(eventType, true);
+
+        emit(service, config, eventType);
+
+        assertEquals(1, sink.sounds(), eventType.id());
+        assertEquals(0, sink.toasts(), eventType.id());
     }
 
     private static final class RecordingAlertSink implements AlertSink {
