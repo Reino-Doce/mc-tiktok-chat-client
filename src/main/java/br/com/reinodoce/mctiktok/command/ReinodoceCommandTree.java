@@ -81,6 +81,12 @@ public final class ReinodoceCommandTree {
                                         service,
                                         ctx.getSource(),
                                         BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal("chat-log")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> SettingsCommandHandler.chatLog(
+                                        service,
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
                 .then(Commands.literal("prefix")
                         .then(Commands.argument(ARG_VALUE, StringArgumentType.greedyString())
                                 .executes(ctx -> SettingsCommandHandler.prefix(

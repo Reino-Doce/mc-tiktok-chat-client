@@ -23,6 +23,7 @@ Settings change runtime behavior and are persisted to the client config.
 | ------- | -------- | ------- | ------ |
 | `/reinodoce settings reconnect <seconds>` | integer ≥ 0 | `5` | Delay between reconnect attempts when the LIVE drops or is offline. `0` disables reconnect. |
 | `/reinodoce settings chat-emotes <true\|false>` | boolean | `true` | When `true`, TikTok chat emotes are rendered inline in the Minecraft chat HUD. |
+| `/reinodoce settings chat-log <true\|false>` | boolean | `false` | When `true`, mirrored TikTok lines are written through Minecraft's chat logger. System/status/error lines remain logged either way. |
 | `/reinodoce settings prefix <value>` | text | `"[LIVE]"` | Prefix rendered on every mirrored TikTok line. Blank values fall back to the default. |
 | `/reinodoce settings format <template>` | text containing `{prefix}`, `{username}`, and `{message}` | current layout | Template used to arrange mirrored TikTok lines. Unknown tokens or templates missing a required token fall back to the default. |
 

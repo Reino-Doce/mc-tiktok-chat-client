@@ -31,6 +31,7 @@ class ReinodoceConfigRepositoryTest {
         assertFalse(loaded.isSynteticJoinEnabled());
         assertFalse(loaded.isSynteticMemberLevelEnabled());
         assertTrue(loaded.isChatEmotesEnabled());
+        assertFalse(loaded.isChatLogEnabled());
         assertFalse(loaded.isRuleFollowerOnly());
     }
 
@@ -81,6 +82,7 @@ class ReinodoceConfigRepositoryTest {
         config.setChatPrefix("[RD]");
         config.setChatFormat("{prefix} {username}: {message}");
         config.setChatEmotesEnabled(false);
+        config.setChatLogEnabled(true);
 
         repository.save(config);
         ReinodoceConfig loaded = repository.load();
@@ -97,5 +99,6 @@ class ReinodoceConfigRepositoryTest {
         assertEquals("[RD]", loaded.getChatPrefix());
         assertEquals("{prefix} {username}: {message}", loaded.getChatFormat());
         assertFalse(loaded.isChatEmotesEnabled());
+        assertTrue(loaded.isChatLogEnabled());
     }
 }

@@ -101,6 +101,14 @@ public interface ReinodoceCommandService {
     CommandResult setChatEmotesEnabled(boolean enabled);
 
     /**
+     * Updates mirrored chat logging.
+     *
+     * @param enabled whether mirrored TikTok lines are written to Minecraft logs
+     * @return command result
+     */
+    CommandResult setChatLogEnabled(boolean enabled);
+
+    /**
      * Updates the visible LIVE chat prefix.
      *
      * @param prefix prefix text

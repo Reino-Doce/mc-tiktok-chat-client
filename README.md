@@ -10,6 +10,9 @@ from a TikTok LIVE inside the local Minecraft chat.
 - Every mirrored line is rendered with a visible `[LIVE]` prefix so the
   external origin stays identifiable. See
   [docs/threading.md](docs/threading.md).
+- Mirrored TikTok lines are hidden from Minecraft's chat log by default
+  to avoid flooding `latest.log`; enable `/reinodoce settings chat-log true`
+  if you want them logged.
 - This branch (`1.20.1`) targets Minecraft `1.20.1`, Forge `47.4.16`,
   Java `17`.
 

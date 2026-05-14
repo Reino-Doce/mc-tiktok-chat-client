@@ -18,6 +18,7 @@ public class ReinodoceConfig {
     private boolean synteticJoinEnabled;
     private boolean synteticMemberLevelEnabled;
     private boolean chatEmotesEnabled = true;
+    private boolean chatLogEnabled = false;
     private String chatPrefix = DEFAULT_CHAT_PREFIX;
 
     public static ReinodoceConfig defaults() {
@@ -36,6 +37,7 @@ public class ReinodoceConfig {
         copy.setSynteticJoinEnabled(synteticJoinEnabled);
         copy.setSynteticMemberLevelEnabled(synteticMemberLevelEnabled);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
+        copy.setChatLogEnabled(chatLogEnabled);
         copy.setChatPrefix(chatPrefix);
         return copy;
     }
@@ -118,6 +120,14 @@ public class ReinodoceConfig {
 
     public void setChatEmotesEnabled(boolean chatEmotesEnabled) {
         this.chatEmotesEnabled = chatEmotesEnabled;
+    }
+
+    public boolean isChatLogEnabled() {
+        return chatLogEnabled;
+    }
+
+    public void setChatLogEnabled(boolean chatLogEnabled) {
+        this.chatLogEnabled = chatLogEnabled;
     }
 
     public String getChatPrefix() {

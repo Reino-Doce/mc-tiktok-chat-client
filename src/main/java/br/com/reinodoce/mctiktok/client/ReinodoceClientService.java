@@ -126,6 +126,11 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     }
 
     @Override
+    public CommandResult setChatLogEnabled(boolean enabled) {
+        return coreService.setChatLogEnabled(enabled);
+    }
+
+    @Override
     public CommandResult setChatPrefix(String prefix) {
         return coreService.setChatPrefix(prefix);
     }

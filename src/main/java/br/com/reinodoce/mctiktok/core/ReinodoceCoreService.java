@@ -113,6 +113,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.chat_prefix", config.getChatPrefix()));
         lines.add(Translations.tr("reinodoce.status.chat_format", config.getChatFormat()));
         lines.add(Translations.tr("reinodoce.status.chat_emotes", config.isChatEmotesEnabled()));
+        lines.add(Translations.tr("reinodoce.status.chat_log", config.isChatLogEnabled()));
         if (snapshot.reconnectAt() != null) {
             lines.add(Translations.tr("reinodoce.status.next_reconnect", formatter.format(snapshot.reconnectAt())));
         }
@@ -200,6 +201,15 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         config.setChatEmotesEnabled(enabled);
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.set.chat_emotes", enabled));
+    }
+
+    @Override
+    public CommandResult setChatLogEnabled(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setChatLogEnabled(enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.chat_log", enabled));
     }
 
     @Override

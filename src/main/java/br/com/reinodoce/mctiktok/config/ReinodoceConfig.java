@@ -26,6 +26,7 @@ public class ReinodoceConfig {
     private String chatPrefix = DEFAULT_CHAT_PREFIX;
     private String chatFormat = DEFAULT_CHAT_FORMAT;
     private boolean chatEmotesEnabled = true;
+    private boolean chatLogEnabled = false;
 
     /**
      * Creates a configuration instance populated with default values.
@@ -55,6 +56,7 @@ public class ReinodoceConfig {
         copy.setChatPrefix(chatPrefix);
         copy.setChatFormat(chatFormat);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
+        copy.setChatLogEnabled(chatLogEnabled);
         return copy;
     }
 
@@ -276,5 +278,23 @@ public class ReinodoceConfig {
      */
     public void setChatEmotesEnabled(boolean chatEmotesEnabled) {
         this.chatEmotesEnabled = chatEmotesEnabled;
+    }
+
+    /**
+     * Returns whether mirrored TikTok lines should be written through Minecraft's chat logger.
+     *
+     * @return chat log state
+     */
+    public boolean isChatLogEnabled() {
+        return chatLogEnabled;
+    }
+
+    /**
+     * Sets whether mirrored TikTok lines should be written through Minecraft's chat logger.
+     *
+     * @param chatLogEnabled chat log state
+     */
+    public void setChatLogEnabled(boolean chatLogEnabled) {
+        this.chatLogEnabled = chatLogEnabled;
     }
 }

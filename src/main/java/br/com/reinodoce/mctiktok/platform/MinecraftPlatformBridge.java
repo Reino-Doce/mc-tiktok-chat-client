@@ -17,8 +17,9 @@ public interface MinecraftPlatformBridge {
      * Adds a component to the local player's chat HUD.
      *
      * @param component chat component to add
+     * @param logToChat whether Minecraft should write the component to its chat log
      */
-    void addChatMessage(Component component);
+    void addChatMessage(Component component, boolean logToChat);
 
     /**
      * Reports whether client GUI state is ready for chat messages.

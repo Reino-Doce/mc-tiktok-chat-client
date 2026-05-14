@@ -31,6 +31,7 @@ class ReinodoceConfigRepositoryTest {
         config.setSynteticFollowEnabled(false);
         config.setSynteticJoinEnabled(false);
         config.setSynteticMemberLevelEnabled(true);
+        config.setChatLogEnabled(true);
         config.setChatPrefix("[LIVE]");
 
         repository.save(config);
@@ -45,6 +46,7 @@ class ReinodoceConfigRepositoryTest {
         assertFalse(loaded.isSynteticFollowEnabled());
         assertFalse(loaded.isSynteticJoinEnabled());
         assertTrue(loaded.isSynteticMemberLevelEnabled());
+        assertTrue(loaded.isChatLogEnabled());
         assertEquals("[LIVE]", loaded.getChatPrefix());
     }
 
@@ -62,6 +64,7 @@ class ReinodoceConfigRepositoryTest {
         assertFalse(loaded.isSynteticFollowEnabled());
         assertFalse(loaded.isSynteticJoinEnabled());
         assertFalse(loaded.isSynteticMemberLevelEnabled());
+        assertFalse(loaded.isChatLogEnabled());
         assertEquals("[LIVE]", loaded.getChatPrefix());
     }
 
@@ -101,6 +104,7 @@ class ReinodoceConfigRepositoryTest {
         assertEquals(1, loaded.getSynteticGiftMinValue());
         assertEquals("bulk", loaded.getSynteticGiftComboMode());
         assertTrue(loaded.isChatEmotesEnabled());
+        assertFalse(loaded.isChatLogEnabled());
         assertEquals("[LIVE]", loaded.getChatPrefix());
     }
 }
