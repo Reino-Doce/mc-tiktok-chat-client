@@ -11,6 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ReinodoceCommandTreeTest {
     private static final String ENABLED_ARGUMENT = "enabled";
+    private static final String SECONDS_ARGUMENT = "seconds";
+    private static final String USERNAME_ARGUMENT = "username";
+    private static final String VALUE_ARGUMENT = "value";
 
     @Test
     void commandTreeExposesDocumentedPublicSurface() {
@@ -19,26 +22,34 @@ class ReinodoceCommandTreeTest {
 
         CommandNode<CommandSourceStack> connect = root.getChild("connect");
         assertNotNull(connect.getCommand());
-        assertNotNull(connect.getChild("username"));
+        assertNotNull(connect.getChild(USERNAME_ARGUMENT));
         assertNotNull(root.getChild("disconnect"));
         assertNotNull(root.getChild("status"));
         assertNotNull(root.getChild("stats").getChild("reset"));
         assertNotNull(root.getChild("reload"));
 
         CommandNode<CommandSourceStack> settings = root.getChild("settings");
-        assertNotNull(settings.getChild("reconnect").getChild("seconds"));
+        assertNotNull(settings.getChild("reconnect").getChild(SECONDS_ARGUMENT));
         assertNotNull(settings.getChild("auto-connect").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("chat-emotes").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("chat-log").getChild(ENABLED_ARGUMENT));
-        assertNotNull(settings.getChild("prefix").getChild("value"));
+        assertNotNull(settings.getChild("prefix").getChild(VALUE_ARGUMENT));
         assertNotNull(settings.getChild("format").getChild("template"));
 
         CommandNode<CommandSourceStack> rule = root.getChild("rule");
         assertNotNull(rule.getChild("follower").getChild(ENABLED_ARGUMENT));
         assertNotNull(rule.getChild("min-member-level").getChild("level"));
+        assertNotNull(rule.getChild("block-word").getChild("add").getChild(VALUE_ARGUMENT));
+        assertNotNull(rule.getChild("block-word").getChild("remove").getChild(VALUE_ARGUMENT));
+        assertNotNull(rule.getChild("block-word").getChild("list"));
+        assertNotNull(rule.getChild("block-user").getChild("add").getChild(USERNAME_ARGUMENT));
+        assertNotNull(rule.getChild("block-user").getChild("remove").getChild(USERNAME_ARGUMENT));
+        assertNotNull(rule.getChild("block-user").getChild("list"));
+        assertNotNull(rule.getChild("max-length").getChild("length"));
+        assertNotNull(rule.getChild("duplicate-cooldown").getChild(SECONDS_ARGUMENT));
 
         CommandNode<CommandSourceStack> synthetic = root.getChild("synthetic");
-        assertNotNull(synthetic.getChild("gift").getChild("value"));
+        assertNotNull(synthetic.getChild("gift").getChild(VALUE_ARGUMENT));
         assertNotNull(synthetic.getChild("gift-combo").getChild("mode"));
         assertNotNull(synthetic.getChild("follow").getChild(ENABLED_ARGUMENT));
         assertNotNull(synthetic.getChild("join").getChild(ENABLED_ARGUMENT));
@@ -93,6 +104,46 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setMinMemberLevelRule(int level) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult addBlockedWord(String word) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult removeBlockedWord(String word) {
+            return unsupported();
+        }
+
+        @Override
+        public List<String> blockedWordLines() {
+            return List.of();
+        }
+
+        @Override
+        public CommandResult addBlockedUser(String username) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult removeBlockedUser(String username) {
+            return unsupported();
+        }
+
+        @Override
+        public List<String> blockedUserLines() {
+            return List.of();
+        }
+
+        @Override
+        public CommandResult setMaxMessageLengthRule(int length) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setDuplicateCooldownRule(int seconds) {
             return unsupported();
         }
 

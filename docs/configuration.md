@@ -22,6 +22,10 @@ through `/reinodoce …`. You can also edit it by hand and run
 | `reconnectSeconds` | integer | `5` | Reconnect delay in seconds. `0` disables reconnect. Clamped to ≥ 0. |
 | `ruleFollowerOnly` | boolean | `false` | Mirror only comments from followers of the streamer. |
 | `ruleMinMemberLevel` | integer | `0` | Minimum LIVE member level required. `0` disables. Clamped to ≥ 0. |
+| `ruleBlockedWords` | string array | `[]` | Case-insensitive blocked word fragments. Comments containing a fragment are hidden. |
+| `ruleBlockedUsers` | string array | `[]` | Case-insensitive exact TikTok usernames to hide. Invalid usernames are discarded on load. |
+| `ruleMaxMessageLength` | integer | `0` | Maximum accepted message length. `0` disables. Clamped to ≥ 0. |
+| `ruleDuplicateCooldownSeconds` | integer | `0` | Duplicate text suppression window in seconds. `0` disables. Clamped to ≥ 0. |
 | `syntheticGiftMinValue` | integer | `1` | Minimum gift diamond cost to surface. `0` disables; `1` surfaces all. Clamped to ≥ 0. |
 | `syntheticGiftComboMode` | string | `"bulk"` | One of `"ignore"`, `"single"`, `"bulk"`. Unknown values fall back to `"bulk"`. |
 | `syntheticFollowEnabled` | boolean | `false` | Surface new-follower events. |

@@ -26,6 +26,8 @@ public final class ReinodoceCommandTree {
     private static final String ARG_ENABLED = "enabled";
     private static final String ARG_TEMPLATE = "template";
     private static final String ARG_VALUE = "value";
+    private static final String ARG_USERNAME = "username";
+    private static final String ARG_SECONDS = "seconds";
 
     private ReinodoceCommandTree() {
     }
@@ -82,11 +84,11 @@ public final class ReinodoceCommandTree {
     private static LiteralArgumentBuilder<CommandSourceStack> settingsBranch(ReinodoceCommandService service) {
         return Commands.literal("settings")
                 .then(Commands.literal("reconnect")
-                        .then(Commands.argument("seconds", IntegerArgumentType.integer(0))
+                        .then(Commands.argument(ARG_SECONDS, IntegerArgumentType.integer(0))
                                 .executes(ctx -> SettingsCommandHandler.reconnect(
                                         service,
                                         ctx.getSource(),
-                                        IntegerArgumentType.getInteger(ctx, "seconds")))))
+                                        IntegerArgumentType.getInteger(ctx, ARG_SECONDS)))))
                 .then(Commands.literal("auto-connect")
                         .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
                                 .executes(ctx -> SettingsCommandHandler.autoConnect(
@@ -132,7 +134,49 @@ public final class ReinodoceCommandTree {
                                 .executes(ctx -> RuleCommandHandler.minMemberLevel(
                                         service,
                                         ctx.getSource(),
-                                        IntegerArgumentType.getInteger(ctx, "level")))));
+                                        IntegerArgumentType.getInteger(ctx, "level")))))
+                .then(Commands.literal("block-word")
+                        .then(Commands.literal("add")
+                                .then(Commands.argument(ARG_VALUE, StringArgumentType.greedyString())
+                                        .executes(ctx -> RuleCommandHandler.addBlockedWord(
+                                                service,
+                                                ctx.getSource(),
+                                                StringArgumentType.getString(ctx, ARG_VALUE)))))
+                        .then(Commands.literal("remove")
+                                .then(Commands.argument(ARG_VALUE, StringArgumentType.greedyString())
+                                        .executes(ctx -> RuleCommandHandler.removeBlockedWord(
+                                                service,
+                                                ctx.getSource(),
+                                                StringArgumentType.getString(ctx, ARG_VALUE)))))
+                        .then(Commands.literal("list")
+                                .executes(ctx -> RuleCommandHandler.listBlockedWords(service, ctx.getSource()))))
+                .then(Commands.literal("block-user")
+                        .then(Commands.literal("add")
+                                .then(Commands.argument(ARG_USERNAME, StringArgumentType.word())
+                                        .executes(ctx -> RuleCommandHandler.addBlockedUser(
+                                                service,
+                                                ctx.getSource(),
+                                                StringArgumentType.getString(ctx, ARG_USERNAME)))))
+                        .then(Commands.literal("remove")
+                                .then(Commands.argument(ARG_USERNAME, StringArgumentType.word())
+                                        .executes(ctx -> RuleCommandHandler.removeBlockedUser(
+                                                service,
+                                                ctx.getSource(),
+                                                StringArgumentType.getString(ctx, ARG_USERNAME)))))
+                        .then(Commands.literal("list")
+                                .executes(ctx -> RuleCommandHandler.listBlockedUsers(service, ctx.getSource()))))
+                .then(Commands.literal("max-length")
+                        .then(Commands.argument("length", IntegerArgumentType.integer(0))
+                                .executes(ctx -> RuleCommandHandler.maxLength(
+                                        service,
+                                        ctx.getSource(),
+                                        IntegerArgumentType.getInteger(ctx, "length")))))
+                .then(Commands.literal("duplicate-cooldown")
+                        .then(Commands.argument(ARG_SECONDS, IntegerArgumentType.integer(0))
+                                .executes(ctx -> RuleCommandHandler.duplicateCooldown(
+                                        service,
+                                        ctx.getSource(),
+                                        IntegerArgumentType.getInteger(ctx, ARG_SECONDS)))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> syntheticBranch(ReinodoceCommandService service) {

@@ -1,12 +1,19 @@
 package br.com.reinodoce.mctiktok.config;
 
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
+import br.com.reinodoce.mctiktok.util.UsernameValidator;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /**
  * Persisted client configuration for the `/reinodoce` command surface.
  */
-// Config intentionally mirrors persisted JSON fields.
-@SuppressWarnings({"PMD.DataClass", "PMD.TooManyFields"})
+// Config intentionally mirrors persisted JSON fields and validation rules.
+@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.DataClass", "PMD.GodClass", "PMD.TooManyFields"})
 public class ReinodoceConfig {
     /** Default prefix used before rendered LIVE chat lines. */
     public static final String DEFAULT_CHAT_PREFIX = "[LIVE]";
@@ -20,6 +27,10 @@ public class ReinodoceConfig {
     private int reconnectSeconds = DEFAULT_RECONNECT_SECONDS;
     private boolean ruleFollowerOnly = false;
     private int ruleMinMemberLevel = 0;
+    private List<String> ruleBlockedWords = new ArrayList<>();
+    private List<String> ruleBlockedUsers = new ArrayList<>();
+    private int ruleMaxMessageLength = 0;
+    private int ruleDuplicateCooldownSeconds = 0;
     private int syntheticGiftMinValue = DEFAULT_SYNTHETIC_GIFT_MIN_VALUE;
     private String syntheticGiftComboMode = GiftComboMode.BULK.id();
     private boolean syntheticFollowEnabled = false;
@@ -51,6 +62,10 @@ public class ReinodoceConfig {
         copy.setReconnectSeconds(reconnectSeconds);
         copy.setRuleFollowerOnly(ruleFollowerOnly);
         copy.setRuleMinMemberLevel(ruleMinMemberLevel);
+        copy.setRuleBlockedWords(ruleBlockedWords);
+        copy.setRuleBlockedUsers(ruleBlockedUsers);
+        copy.setRuleMaxMessageLength(ruleMaxMessageLength);
+        copy.setRuleDuplicateCooldownSeconds(ruleDuplicateCooldownSeconds);
         copy.setSyntheticGiftMinValue(syntheticGiftMinValue);
         copy.setSyntheticGiftComboMode(syntheticGiftComboMode);
         copy.setSyntheticFollowEnabled(syntheticFollowEnabled);
@@ -151,6 +166,130 @@ public class ReinodoceConfig {
      */
     public void setRuleMinMemberLevel(int ruleMinMemberLevel) {
         this.ruleMinMemberLevel = Math.max(0, ruleMinMemberLevel);
+    }
+
+    /**
+     * Returns configured blocked word fragments.
+     *
+     * @return blocked words
+     */
+    public List<String> getRuleBlockedWords() {
+        return List.copyOf(ruleBlockedWords);
+    }
+
+    /**
+     * Replaces configured blocked word fragments.
+     *
+     * @param ruleBlockedWords blocked word fragments
+     */
+    public void setRuleBlockedWords(List<String> ruleBlockedWords) {
+        this.ruleBlockedWords = normalizeTerms(ruleBlockedWords);
+    }
+
+    /**
+     * Adds a blocked word fragment.
+     *
+     * @param word blocked word fragment
+     * @return normalized word, or blank when invalid
+     */
+    public String addRuleBlockedWord(String word) {
+        String normalized = normalizeTerm(word);
+        if (!normalized.isBlank() && !ruleBlockedWords.contains(normalized)) {
+            ruleBlockedWords = append(ruleBlockedWords, normalized);
+        }
+        return normalized;
+    }
+
+    /**
+     * Removes a blocked word fragment.
+     *
+     * @param word blocked word fragment
+     * @return normalized word, or blank when invalid
+     */
+    public String removeRuleBlockedWord(String word) {
+        String normalized = normalizeTerm(word);
+        ruleBlockedWords = remove(ruleBlockedWords, normalized);
+        return normalized;
+    }
+
+    /**
+     * Returns configured blocked usernames.
+     *
+     * @return blocked usernames
+     */
+    public List<String> getRuleBlockedUsers() {
+        return List.copyOf(ruleBlockedUsers);
+    }
+
+    /**
+     * Replaces configured blocked usernames.
+     *
+     * @param ruleBlockedUsers blocked usernames
+     */
+    public void setRuleBlockedUsers(List<String> ruleBlockedUsers) {
+        this.ruleBlockedUsers = normalizeUsernames(ruleBlockedUsers);
+    }
+
+    /**
+     * Adds a blocked username.
+     *
+     * @param username blocked username
+     * @return normalized username, or blank when invalid
+     */
+    public String addRuleBlockedUser(String username) {
+        String normalized = normalizeUsername(username);
+        if (!normalized.isBlank() && !ruleBlockedUsers.contains(normalized)) {
+            ruleBlockedUsers = append(ruleBlockedUsers, normalized);
+        }
+        return normalized;
+    }
+
+    /**
+     * Removes a blocked username.
+     *
+     * @param username blocked username
+     * @return normalized username, or blank when invalid
+     */
+    public String removeRuleBlockedUser(String username) {
+        String normalized = normalizeUsername(username);
+        ruleBlockedUsers = remove(ruleBlockedUsers, normalized);
+        return normalized;
+    }
+
+    /**
+     * Returns the maximum accepted chat message length.
+     *
+     * @return maximum message length, or zero when disabled
+     */
+    public int getRuleMaxMessageLength() {
+        return ruleMaxMessageLength;
+    }
+
+    /**
+     * Sets the maximum accepted chat message length.
+     *
+     * @param ruleMaxMessageLength maximum length, clamped to zero or greater
+     */
+    public void setRuleMaxMessageLength(int ruleMaxMessageLength) {
+        this.ruleMaxMessageLength = Math.max(0, ruleMaxMessageLength);
+    }
+
+    /**
+     * Returns the duplicate message cooldown.
+     *
+     * @return duplicate cooldown in seconds, or zero when disabled
+     */
+    public int getRuleDuplicateCooldownSeconds() {
+        return ruleDuplicateCooldownSeconds;
+    }
+
+    /**
+     * Sets the duplicate message cooldown.
+     *
+     * @param ruleDuplicateCooldownSeconds cooldown seconds, clamped to zero or greater
+     */
+    public void setRuleDuplicateCooldownSeconds(int ruleDuplicateCooldownSeconds) {
+        this.ruleDuplicateCooldownSeconds = Math.max(0, ruleDuplicateCooldownSeconds);
     }
 
     /**
@@ -317,5 +456,52 @@ public class ReinodoceConfig {
      */
     public void setChatLogEnabled(boolean chatLogEnabled) {
         this.chatLogEnabled = chatLogEnabled;
+    }
+
+    private static List<String> normalizeTerms(List<String> values) {
+        Set<String> normalized = new LinkedHashSet<>();
+        if (values != null) {
+            for (String value : values) {
+                String term = normalizeTerm(value);
+                if (!term.isBlank()) {
+                    normalized.add(term);
+                }
+            }
+        }
+        return new ArrayList<>(normalized);
+    }
+
+    private static List<String> normalizeUsernames(List<String> values) {
+        Set<String> normalized = new LinkedHashSet<>();
+        if (values != null) {
+            for (String value : values) {
+                String username = normalizeUsername(value);
+                if (!username.isBlank()) {
+                    normalized.add(username);
+                }
+            }
+        }
+        return new ArrayList<>(normalized);
+    }
+
+    private static String normalizeTerm(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String normalizeUsername(String value) {
+        String normalized = UsernameValidator.normalize(value).toLowerCase(Locale.ROOT);
+        return UsernameValidator.isValid(normalized) ? normalized : "";
+    }
+
+    private static List<String> append(List<String> values, String value) {
+        List<String> updated = new ArrayList<>(values);
+        updated.add(value);
+        return updated;
+    }
+
+    private static List<String> remove(List<String> values, String value) {
+        List<String> updated = new ArrayList<>(values);
+        updated.remove(value);
+        return updated;
     }
 }

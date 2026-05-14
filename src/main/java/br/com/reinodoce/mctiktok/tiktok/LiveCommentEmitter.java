@@ -18,6 +18,7 @@ final class LiveCommentEmitter {
     private final RenderedCommentTracker renderedTracker;
     private final RichLiveMessageFactory messageFactory;
     private final SessionStatsTracker statsTracker;
+    private final ModerationDuplicateTracker moderationDuplicateTracker;
 
     LiveCommentEmitter(Dependencies dependencies) {
         this.configSupplier = dependencies.configSupplier();
@@ -27,6 +28,7 @@ final class LiveCommentEmitter {
         this.renderedTracker = dependencies.renderedTracker();
         this.messageFactory = dependencies.messageFactory();
         this.statsTracker = dependencies.statsTracker();
+        this.moderationDuplicateTracker = dependencies.moderationDuplicateTracker();
     }
 
     void emit(EmissionContext context) {
@@ -40,17 +42,20 @@ final class LiveCommentEmitter {
         }
         renderedTracker.remember(context.username(), plainText);
         sendComment(config, context, plainText);
+        moderationDuplicateTracker.remember(plainText, config.getRuleDuplicateCooldownSeconds());
         statsTracker.recordComment(TikTokUserNames.resolveUserId(context.user()), context.username());
     }
 
     private boolean shouldEmit(ReinodoceConfig config, EmissionContext context, String plainText) {
-        if (!ruleEngine.shouldDisplayComment(config, context.user(), context.memberLevel())) {
+        if (!ruleEngine.shouldDisplayComment(
+                config, context.user(), context.memberLevel(), context.username(), plainText)) {
             return false;
         }
         if (plainText.isBlank() && !context.richMessage().hasInlineMedia()) {
             return false;
         }
-        return !commentDeduplicator.isDuplicate(context.richMessage().messageId(), 1);
+        return !commentDeduplicator.isDuplicate(context.richMessage().messageId(), 1)
+                && !moderationDuplicateTracker.isDuplicate(plainText, config.getRuleDuplicateCooldownSeconds());
     }
 
     private void sendComment(ReinodoceConfig config, EmissionContext context, String plainText) {
@@ -98,7 +103,8 @@ final class LiveCommentEmitter {
             MessageDeduplicator commentDeduplicator,
             RenderedCommentTracker renderedTracker,
             RichLiveMessageFactory messageFactory,
-            SessionStatsTracker statsTracker
+            SessionStatsTracker statsTracker,
+            ModerationDuplicateTracker moderationDuplicateTracker
     ) {
     }
 }
