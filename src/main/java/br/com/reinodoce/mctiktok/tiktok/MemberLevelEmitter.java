@@ -27,7 +27,7 @@ final class MemberLevelEmitter {
             return false;
         }
         ReinodoceConfig config = configSupplier.get();
-        if (!config.isSynteticMemberLevelEnabled()) {
+        if (!config.isSyntheticMemberLevelEnabled()) {
             logSkipped("disabled", update);
             return false;
         }

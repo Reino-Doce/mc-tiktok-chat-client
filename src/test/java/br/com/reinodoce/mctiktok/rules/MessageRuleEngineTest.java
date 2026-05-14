@@ -37,13 +37,13 @@ class MessageRuleEngineTest {
         Gift cheapGift = new Gift(1, "Rose", 1, "");
         Gift expensiveGift = new Gift(2, "Galaxy", 10, "");
 
-        config.setSynteticGiftMinValue(0);
+        config.setSyntheticGiftMinValue(0);
         assertFalse(engine.shouldEmitGift(config, cheapGift));
 
-        config.setSynteticGiftMinValue(1);
+        config.setSyntheticGiftMinValue(1);
         assertTrue(engine.shouldEmitGift(config, cheapGift));
 
-        config.setSynteticGiftMinValue(5);
+        config.setSyntheticGiftMinValue(5);
         assertFalse(engine.shouldEmitGift(config, cheapGift));
         assertTrue(engine.shouldEmitGift(config, expensiveGift));
     }

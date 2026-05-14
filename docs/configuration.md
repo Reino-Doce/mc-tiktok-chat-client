@@ -13,8 +13,9 @@ The file is read on mod startup and rewritten whenever a setting changes
 through `/reinodoce …`. You can also edit it by hand and run
 `/reinodoce reload` to pick up the changes without restarting the client.
 
-The synthetic-event config fields keep the existing `syntetic...` spelling
-for compatibility with saved client config files.
+Legacy config files that still use the old `syntetic...` spelling are
+accepted on load and rewritten with the corrected `synthetic...` names the
+next time the config is saved.
 
 ## Fields
 
@@ -24,11 +25,11 @@ for compatibility with saved client config files.
 | `reconnectSeconds` | integer | `5` | Reconnect delay in seconds. `0` disables reconnect. Clamped to ≥ 0. |
 | `ruleFollowerOnly` | boolean | `false` | Mirror only comments from followers of the streamer. |
 | `ruleMinMemberLevel` | integer | `0` | Minimum LIVE member level required. `0` disables. Clamped to ≥ 0. |
-| `synteticGiftMinValue` | integer | `1` | Minimum gift diamond cost to surface. `0` disables; `1` surfaces all. Clamped to ≥ 0. |
-| `synteticGiftComboMode` | string | `"bulk"` | One of `"ignore"`, `"single"`, `"bulk"`. Unknown values fall back to `"bulk"`. |
-| `synteticFollowEnabled` | boolean | `false` | Surface new-follower events. |
-| `synteticJoinEnabled` | boolean | `false` | Surface viewer-join events. |
-| `synteticMemberLevelEnabled` | boolean | `false` | Surface member-level-up events. |
+| `syntheticGiftMinValue` | integer | `1` | Minimum gift diamond cost to surface. `0` disables; `1` surfaces all. Clamped to ≥ 0. |
+| `syntheticGiftComboMode` | string | `"bulk"` | One of `"ignore"`, `"single"`, `"bulk"`. Unknown values fall back to `"bulk"`. |
+| `syntheticFollowEnabled` | boolean | `false` | Surface new-follower events. |
+| `syntheticJoinEnabled` | boolean | `false` | Surface viewer-join events. |
+| `syntheticMemberLevelEnabled` | boolean | `false` | Surface member-level-up events. |
 | `chatPrefix` | string | `"[LIVE]"` | Prefix prepended to every mirrored line. Empty / blank values revert to the default. |
 | `chatFormat` | string | current layout | Template used to arrange mirrored lines. Must include `{prefix}`, `{username}`, and `{message}`; unknown tokens or blank values revert to the default. |
 | `chatEmotesEnabled` | boolean | `true` | Render TikTok chat emotes inline in Minecraft chat. |

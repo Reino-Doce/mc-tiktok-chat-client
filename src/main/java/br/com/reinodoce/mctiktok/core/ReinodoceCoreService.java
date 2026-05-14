@@ -123,11 +123,11 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.reconnect_attempts", snapshot.reconnectAttempts()));
         lines.add(Translations.tr("reinodoce.status.rule_follower", config.isRuleFollowerOnly()));
         lines.add(Translations.tr("reinodoce.status.rule_min_member_level", config.getRuleMinMemberLevel()));
-        lines.add(Translations.tr("reinodoce.status.syntetic_gift", config.getSynteticGiftMinValue()));
-        lines.add(Translations.tr("reinodoce.status.syntetic_gift_combo", config.getSynteticGiftComboMode()));
-        lines.add(Translations.tr("reinodoce.status.syntetic_follow", config.isSynteticFollowEnabled()));
-        lines.add(Translations.tr("reinodoce.status.syntetic_join", config.isSynteticJoinEnabled()));
-        lines.add(Translations.tr("reinodoce.status.syntetic_member_level", config.isSynteticMemberLevelEnabled()));
+        lines.add(Translations.tr("reinodoce.status.synthetic_gift", config.getSyntheticGiftMinValue()));
+        lines.add(Translations.tr("reinodoce.status.synthetic_gift_combo", config.getSyntheticGiftComboMode()));
+        lines.add(Translations.tr("reinodoce.status.synthetic_follow", config.isSyntheticFollowEnabled()));
+        lines.add(Translations.tr("reinodoce.status.synthetic_join", config.isSyntheticJoinEnabled()));
+        lines.add(Translations.tr("reinodoce.status.synthetic_member_level", config.isSyntheticMemberLevelEnabled()));
         lines.add(Translations.tr("reinodoce.status.chat_prefix", config.getChatPrefix()));
         lines.add(Translations.tr("reinodoce.status.chat_format", config.getChatFormat()));
         lines.add(Translations.tr("reinodoce.status.chat_emotes", config.isChatEmotesEnabled()));
@@ -170,9 +170,9 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     public CommandResult setSyntheticGift(int value) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
-        config.setSynteticGiftMinValue(value);
+        config.setSyntheticGiftMinValue(value);
         persist(config);
-        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_gift", config.getSynteticGiftMinValue()));
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_gift", config.getSyntheticGiftMinValue()));
     }
 
     @Override
@@ -180,36 +180,36 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         ensureInitialized();
         GiftComboMode parsed = GiftComboMode.fromString(mode);
         ReinodoceConfig config = settingsState.getSnapshot();
-        config.setSynteticGiftComboMode(parsed.id());
+        config.setSyntheticGiftComboMode(parsed.id());
         persist(config);
-        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_gift_combo", parsed.id()));
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_gift_combo", parsed.id()));
     }
 
     @Override
     public CommandResult setSyntheticFollow(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
-        config.setSynteticFollowEnabled(enabled);
+        config.setSyntheticFollowEnabled(enabled);
         persist(config);
-        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_follow", enabled));
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_follow", enabled));
     }
 
     @Override
     public CommandResult setSyntheticJoin(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
-        config.setSynteticJoinEnabled(enabled);
+        config.setSyntheticJoinEnabled(enabled);
         persist(config);
-        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_join", enabled));
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_join", enabled));
     }
 
     @Override
     public CommandResult setSyntheticMemberLevel(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
-        config.setSynteticMemberLevelEnabled(enabled);
+        config.setSyntheticMemberLevelEnabled(enabled);
         persist(config);
-        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_member_level", enabled));
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_member_level", enabled));
     }
 
     @Override

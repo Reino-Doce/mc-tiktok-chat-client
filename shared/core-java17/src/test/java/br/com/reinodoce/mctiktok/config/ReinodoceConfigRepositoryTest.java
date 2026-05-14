@@ -26,28 +26,68 @@ class ReinodoceConfigRepositoryTest {
         config.setReconnectSeconds(5);
         config.setRuleFollowerOnly(true);
         config.setRuleMinMemberLevel(2);
-        config.setSynteticGiftMinValue(10);
-        config.setSynteticGiftComboMode("single");
-        config.setSynteticFollowEnabled(false);
-        config.setSynteticJoinEnabled(false);
-        config.setSynteticMemberLevelEnabled(true);
+        config.setSyntheticGiftMinValue(10);
+        config.setSyntheticGiftComboMode("single");
+        config.setSyntheticFollowEnabled(false);
+        config.setSyntheticJoinEnabled(false);
+        config.setSyntheticMemberLevelEnabled(true);
         config.setChatLogEnabled(true);
         config.setChatPrefix("[LIVE]");
 
         repository.save(config);
+        String savedJson = Files.readString(tempDir.resolve("reinodoce-mc-tiktok-client.json"), StandardCharsets.UTF_8);
         ReinodoceConfig loaded = repository.load();
 
+        assertTrue(savedJson.contains("\"syntheticGiftMinValue\""));
+        assertTrue(savedJson.contains("\"syntheticGiftComboMode\""));
+        assertTrue(savedJson.contains("\"syntheticFollowEnabled\""));
+        assertTrue(savedJson.contains("\"syntheticJoinEnabled\""));
+        assertTrue(savedJson.contains("\"syntheticMemberLevelEnabled\""));
+        assertFalse(savedJson.contains("\"synteticGiftMinValue\""));
+        assertFalse(savedJson.contains("\"synteticGiftComboMode\""));
+        assertFalse(savedJson.contains("\"synteticFollowEnabled\""));
+        assertFalse(savedJson.contains("\"synteticJoinEnabled\""));
+        assertFalse(savedJson.contains("\"synteticMemberLevelEnabled\""));
         assertEquals("streamer", loaded.getLastUsername());
         assertEquals(5, loaded.getReconnectSeconds());
         assertTrue(loaded.isRuleFollowerOnly());
         assertEquals(2, loaded.getRuleMinMemberLevel());
-        assertEquals(10, loaded.getSynteticGiftMinValue());
-        assertEquals("single", loaded.getSynteticGiftComboMode());
-        assertFalse(loaded.isSynteticFollowEnabled());
-        assertFalse(loaded.isSynteticJoinEnabled());
-        assertTrue(loaded.isSynteticMemberLevelEnabled());
+        assertEquals(10, loaded.getSyntheticGiftMinValue());
+        assertEquals("single", loaded.getSyntheticGiftComboMode());
+        assertFalse(loaded.isSyntheticFollowEnabled());
+        assertFalse(loaded.isSyntheticJoinEnabled());
+        assertTrue(loaded.isSyntheticMemberLevelEnabled());
         assertTrue(loaded.isChatLogEnabled());
         assertEquals("[LIVE]", loaded.getChatPrefix());
+    }
+
+    @Test
+    void loadLegacySyntheticFieldNamesMigratesToCorrectedNames() throws IOException {
+        Path file = tempDir.resolve("reinodoce-mc-tiktok-client.json");
+        Files.writeString(file, """
+                {
+                  "synteticGiftMinValue": 7,
+                  "synteticGiftComboMode": "single",
+                  "synteticFollowEnabled": true,
+                  "synteticJoinEnabled": true,
+                  "synteticMemberLevelEnabled": true
+                }
+                """, StandardCharsets.UTF_8);
+
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(tempDir);
+        ReinodoceConfig loaded = repository.load();
+
+        assertEquals(7, loaded.getSyntheticGiftMinValue());
+        assertEquals("single", loaded.getSyntheticGiftComboMode());
+        assertTrue(loaded.isSyntheticFollowEnabled());
+        assertTrue(loaded.isSyntheticJoinEnabled());
+        assertTrue(loaded.isSyntheticMemberLevelEnabled());
+
+        repository.save(loaded);
+        String savedJson = Files.readString(file, StandardCharsets.UTF_8);
+
+        assertTrue(savedJson.contains("\"syntheticGiftMinValue\""));
+        assertFalse(savedJson.contains("\"synteticGiftMinValue\""));
     }
 
     @Test
@@ -60,10 +100,10 @@ class ReinodoceConfigRepositoryTest {
 
         assertEquals("", loaded.getLastUsername());
         assertEquals(5, loaded.getReconnectSeconds());
-        assertEquals("bulk", loaded.getSynteticGiftComboMode());
-        assertFalse(loaded.isSynteticFollowEnabled());
-        assertFalse(loaded.isSynteticJoinEnabled());
-        assertFalse(loaded.isSynteticMemberLevelEnabled());
+        assertEquals("bulk", loaded.getSyntheticGiftComboMode());
+        assertFalse(loaded.isSyntheticFollowEnabled());
+        assertFalse(loaded.isSyntheticJoinEnabled());
+        assertFalse(loaded.isSyntheticMemberLevelEnabled());
         assertFalse(loaded.isChatLogEnabled());
         assertEquals("[LIVE]", loaded.getChatPrefix());
     }
@@ -75,7 +115,7 @@ class ReinodoceConfigRepositoryTest {
                 {
                   "lastUsername": "streamer",
                   "reconnectSeconds": 0,
-                  "synteticGiftComboMode": "bulk",
+                  "syntheticGiftComboMode": "bulk",
                   "chatPrefix": "[LIVE]"
                 }
                 """, StandardCharsets.UTF_8);
@@ -101,8 +141,8 @@ class ReinodoceConfigRepositoryTest {
 
         assertEquals("streamer", loaded.getLastUsername());
         assertEquals(5, loaded.getReconnectSeconds());
-        assertEquals(1, loaded.getSynteticGiftMinValue());
-        assertEquals("bulk", loaded.getSynteticGiftComboMode());
+        assertEquals(1, loaded.getSyntheticGiftMinValue());
+        assertEquals("bulk", loaded.getSyntheticGiftComboMode());
         assertTrue(loaded.isChatEmotesEnabled());
         assertFalse(loaded.isChatLogEnabled());
         assertEquals("[LIVE]", loaded.getChatPrefix());

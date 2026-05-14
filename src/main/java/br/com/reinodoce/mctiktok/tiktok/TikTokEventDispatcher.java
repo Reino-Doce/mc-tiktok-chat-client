@@ -70,7 +70,7 @@ final class TikTokEventDispatcher {
 
     void onFollow(long token, TikTokFollowEvent event) {
         ReinodoceConfig config = configSupplier.get();
-        if (!tokenCheck.test(token) || !config.isSynteticFollowEnabled()) {
+        if (!tokenCheck.test(token) || !config.isSyntheticFollowEnabled()) {
             return;
         }
         sendSyntheticAuthorNotice(SyntheticAuthorKind.FOLLOW, config, event.getUser());
@@ -78,7 +78,7 @@ final class TikTokEventDispatcher {
 
     void onJoin(long token, TikTokJoinEvent event) {
         ReinodoceConfig config = configSupplier.get();
-        if (!tokenCheck.test(token) || !config.isSynteticJoinEnabled()) {
+        if (!tokenCheck.test(token) || !config.isSyntheticJoinEnabled()) {
             return;
         }
         sendSyntheticAuthorNotice(SyntheticAuthorKind.JOIN, config, event.getUser());
@@ -89,7 +89,7 @@ final class TikTokEventDispatcher {
         if (!tokenCheck.test(token) || !ruleEngine.shouldEmitGift(config, event.getGift())) {
             return;
         }
-        GiftComboMode mode = GiftComboMode.fromString(config.getSynteticGiftComboMode());
+        GiftComboMode mode = GiftComboMode.fromString(config.getSyntheticGiftComboMode());
         giftEmitter.emit(giftComboAggregator.handleGift(mode, giftEmitter.toSnapshot(event)));
     }
 
@@ -98,7 +98,7 @@ final class TikTokEventDispatcher {
         if (!tokenCheck.test(token) || !ruleEngine.shouldEmitGift(config, event.getGift())) {
             return;
         }
-        GiftComboMode mode = GiftComboMode.fromString(config.getSynteticGiftComboMode());
+        GiftComboMode mode = GiftComboMode.fromString(config.getSyntheticGiftComboMode());
         boolean finished = event.getComboState() == GiftComboStateType.Finished;
         giftEmitter.emit(giftComboAggregator.handleCombo(mode, giftEmitter.toSnapshot(event), finished));
     }

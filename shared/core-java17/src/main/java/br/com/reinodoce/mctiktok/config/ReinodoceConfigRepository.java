@@ -63,12 +63,13 @@ public class ReinodoceConfigRepository {
         sanitized.setReconnectSeconds(Math.max(0, incoming.getReconnectSeconds()));
         sanitized.setRuleFollowerOnly(incoming.isRuleFollowerOnly());
         sanitized.setRuleMinMemberLevel(Math.max(0, incoming.getRuleMinMemberLevel()));
-        sanitized.setSynteticGiftMinValue(Math.max(0, incoming.getSynteticGiftMinValue()));
-        sanitized.setSynteticGiftComboMode(incoming.getSynteticGiftComboMode());
-        sanitized.setSynteticFollowEnabled(incoming.isSynteticFollowEnabled());
-        sanitized.setSynteticJoinEnabled(incoming.isSynteticJoinEnabled());
-        sanitized.setSynteticMemberLevelEnabled(incoming.isSynteticMemberLevelEnabled());
+        sanitized.setSyntheticGiftMinValue(Math.max(0, incoming.getSyntheticGiftMinValue()));
+        sanitized.setSyntheticGiftComboMode(incoming.getSyntheticGiftComboMode());
+        sanitized.setSyntheticFollowEnabled(incoming.isSyntheticFollowEnabled());
+        sanitized.setSyntheticJoinEnabled(incoming.isSyntheticJoinEnabled());
+        sanitized.setSyntheticMemberLevelEnabled(incoming.isSyntheticMemberLevelEnabled());
         sanitized.setChatEmotesEnabled(incoming.isChatEmotesEnabled());
+        sanitized.setChatLogEnabled(incoming.isChatLogEnabled());
         String prefix = nullToEmpty(incoming.getChatPrefix()).trim();
         sanitized.setChatPrefix(prefix.isEmpty() ? defaults.getChatPrefix() : prefix);
         return sanitized;

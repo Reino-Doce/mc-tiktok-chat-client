@@ -41,7 +41,7 @@ class MemberLevelEmitterTest {
 
     private static ReinodoceConfig enabledConfig() {
         ReinodoceConfig config = ReinodoceConfig.defaults();
-        config.setSynteticMemberLevelEnabled(true);
+        config.setSyntheticMemberLevelEnabled(true);
         config.setChatEmotesEnabled(false);
         return config;
     }

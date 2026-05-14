@@ -40,7 +40,7 @@ public class MessageRuleEngine {
             return false;
         }
 
-        int minValue = config.getSynteticGiftMinValue();
+        int minValue = config.getSyntheticGiftMinValue();
         if (minValue <= 0) {
             return false;
         }
