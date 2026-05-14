@@ -1,5 +1,7 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.alert.AlertService;
+import br.com.reinodoce.mctiktok.alert.AlertSink;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
@@ -52,10 +54,12 @@ class MemberLevelEmitterTest {
     private static MemberLevelEmitter newEmitter(ReinodoceConfig config, RecordingSink sink) {
         return new MemberLevelEmitter(
                 () -> config,
-                sink,
+                new TikTokRuntimeServices(
+                        sink,
+                        new SessionEventLogger(Path.of("build/test-session-logs")),
+                        new AlertService(AlertSink.noop())),
                 new RichLiveMessageFactory(new UnicodeEmojiParser()),
-                new SessionStatsTracker(),
-                new SessionEventLogger(Path.of("build/test-session-logs")));
+                new SessionStatsTracker());
     }
 
     private static final class RecordingSink implements ChatEventSink {

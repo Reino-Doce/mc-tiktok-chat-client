@@ -5,8 +5,11 @@ import br.com.reinodoce.mctiktok.util.ReinodoceLogger;
 import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.gui.components.toasts.SystemToast;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MessageSignature;
+import net.minecraft.sounds.SoundEvents;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -36,6 +39,26 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
             if (logToChat || !addSilentChatMessage(chat, component, minecraft.gui.getGuiTicks())) {
                 chat.addMessage(component);
             }
+        }
+    }
+
+    @Override
+    public void playAlertSound() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft != null && minecraft.getSoundManager() != null) {
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_IN, 1.0F, 1.0F));
+        }
+    }
+
+    @Override
+    public void showAlertToast(Component title, Component message) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft != null && minecraft.getToasts() != null) {
+            SystemToast.addOrUpdate(
+                    minecraft.getToasts(),
+                    SystemToast.SystemToastIds.PERIODIC_NOTIFICATION,
+                    title,
+                    message);
         }
     }
 

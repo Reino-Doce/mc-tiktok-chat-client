@@ -1,5 +1,7 @@
 package br.com.reinodoce.mctiktok.command;
 
+import br.com.reinodoce.mctiktok.alert.AlertEventType;
+
 import java.util.List;
 
 /**
@@ -182,6 +184,32 @@ public interface ReinodoceCommandService {
      * @return command result
      */
     CommandResult setSyntheticMemberLevel(boolean enabled);
+
+    /**
+     * Updates local sound alerts for an event type.
+     *
+     * @param eventType alert event type
+     * @param enabled whether sound alerts are enabled
+     * @return command result
+     */
+    CommandResult setAlertSound(AlertEventType eventType, boolean enabled);
+
+    /**
+     * Updates local toast alerts for an event type.
+     *
+     * @param eventType alert event type
+     * @param enabled whether toast alerts are enabled
+     * @return command result
+     */
+    CommandResult setAlertToast(AlertEventType eventType, boolean enabled);
+
+    /**
+     * Updates minimum gift value for local gift alerts.
+     *
+     * @param value minimum gift value
+     * @return command result
+     */
+    CommandResult setAlertGiftMinValue(int value);
 
     /**
      * Updates inline emote rendering.

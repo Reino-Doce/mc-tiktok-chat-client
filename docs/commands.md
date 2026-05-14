@@ -93,6 +93,24 @@ joins, member-level changes) into visible `[LIVE]`-prefixed chat lines.
 | `/reinodoce synthetic join <true\|false>` | boolean | `false` | Surface viewer-join events. |
 | `/reinodoce synthetic member-level <true\|false>` | boolean | `false` | Surface member-level-up events. |
 
+## Local alerts
+
+Local alerts play client-only sounds and show client-only toasts for
+synthetic events that have already passed the synthetic-event rules
+above. They never send packets or chat messages to the server.
+
+| Command | Argument | Default | Effect |
+| ------- | -------- | ------- | ------ |
+| `/reinodoce alert gift sound <true\|false>` | boolean | `false` | Play a local sound for surfaced gifts that pass `alertGiftMinValue`. |
+| `/reinodoce alert gift toast <true\|false>` | boolean | `false` | Show a local toast for surfaced gifts that pass `alertGiftMinValue`. |
+| `/reinodoce alert gift-min-value <value>` | integer >= 0 | `1` | Minimum single-gift diamond value required for gift alerts. |
+| `/reinodoce alert follow sound <true\|false>` | boolean | `false` | Play a local sound for surfaced follow events. |
+| `/reinodoce alert follow toast <true\|false>` | boolean | `false` | Show a local toast for surfaced follow events. |
+| `/reinodoce alert join sound <true\|false>` | boolean | `false` | Play a local sound for surfaced join events. Join alerts use a global cooldown to avoid noise. |
+| `/reinodoce alert join toast <true\|false>` | boolean | `false` | Show a local toast for surfaced join events. Join alerts use a global cooldown to avoid noise. |
+| `/reinodoce alert member-level sound <true\|false>` | boolean | `false` | Play a local sound for surfaced member-level-up events. |
+| `/reinodoce alert member-level toast <true\|false>` | boolean | `false` | Show a local toast for surfaced member-level-up events. |
+
 ## Quick example
 
 ```text
@@ -101,6 +119,7 @@ joins, member-level changes) into visible `[LIVE]`-prefixed chat lines.
 /reinodoce rule min-member-level 1
 /reinodoce logging enabled true
 /reinodoce synthetic gift-combo bulk
+/reinodoce alert gift toast true
 /reinodoce connect @yourusername
 /reinodoce settings auto-connect true
 /reinodoce status

@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.alert.AlertService;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
@@ -26,6 +27,7 @@ final class TikTokGiftEmitter {
     private final RichLiveMessageFactory messageFactory;
     private final SessionStatsTracker statsTracker;
     private final SessionEventLogger sessionEventLogger;
+    private final AlertService alertService;
 
     TikTokGiftEmitter(
             Supplier<ReinodoceConfig> configSupplier,
@@ -42,6 +44,7 @@ final class TikTokGiftEmitter {
         this.messageFactory = messageFactory;
         this.statsTracker = statsTracker;
         this.sessionEventLogger = runtimeServices.sessionEventLogger();
+        this.alertService = runtimeServices.alertService();
     }
 
     void emit(List<GiftComboAggregator.GiftEmission> emissions) {
@@ -98,6 +101,7 @@ final class TikTokGiftEmitter {
             sessionEventLogger.log(SessionLogEvent.gift(
                     username, giftName, count, (long) count * Math.max(0, emission.diamondCost())));
             statsTracker.recordGift(emission.userId(), username, emission.statsCount(), emission.diamondCost());
+            alertService.gift(config, username, giftName, count, emission.diamondCost());
         }
     }
 

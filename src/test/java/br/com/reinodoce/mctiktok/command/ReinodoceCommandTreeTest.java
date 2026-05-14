@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.command;
 
+import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
 import net.minecraft.commands.CommandSourceStack;
@@ -14,11 +15,12 @@ class ReinodoceCommandTreeTest {
     private static final String SECONDS_ARGUMENT = "seconds";
     private static final String USERNAME_ARGUMENT = "username";
     private static final String VALUE_ARGUMENT = "value";
+    private static final String SOUND_LITERAL = "sound";
+    private static final String TOAST_LITERAL = "toast";
 
     @Test
     void commandTreeExposesDocumentedPublicSurface() {
-        CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
-        CommandNode<CommandSourceStack> root = dispatcher.register(ReinodoceCommandTree.build(new StubCommandService()));
+        CommandNode<CommandSourceStack> root = root();
 
         CommandNode<CommandSourceStack> connect = root.getChild("connect");
         assertNotNull(connect.getCommand());
@@ -58,6 +60,26 @@ class ReinodoceCommandTreeTest {
         CommandNode<CommandSourceStack> logging = root.getChild("logging");
         assertNotNull(logging.getChild("enabled").getChild(ENABLED_ARGUMENT));
         assertNotNull(logging.getChild("format").getChild("format"));
+    }
+
+    @Test
+    void commandTreeExposesAlertSurface() {
+        CommandNode<CommandSourceStack> alert = root().getChild("alert");
+
+        assertNotNull(alert.getChild("gift").getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild("gift").getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild("gift-min-value").getChild(VALUE_ARGUMENT));
+        assertNotNull(alert.getChild("follow").getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild("follow").getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild("join").getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild("join").getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild("member-level").getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild("member-level").getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+    }
+
+    private static CommandNode<CommandSourceStack> root() {
+        CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
+        return dispatcher.register(ReinodoceCommandTree.build(new StubCommandService()));
     }
 
     private static final class StubCommandService implements ReinodoceCommandService {
@@ -173,6 +195,21 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setSyntheticMemberLevel(boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setAlertSound(AlertEventType eventType, boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setAlertToast(AlertEventType eventType, boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setAlertGiftMinValue(int value) {
             return unsupported();
         }
 

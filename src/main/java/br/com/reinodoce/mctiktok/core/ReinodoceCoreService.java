@@ -1,5 +1,8 @@
 package br.com.reinodoce.mctiktok.core;
 
+import br.com.reinodoce.mctiktok.alert.AlertEventType;
+import br.com.reinodoce.mctiktok.alert.AlertService;
+import br.com.reinodoce.mctiktok.alert.AlertSink;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
@@ -34,7 +37,7 @@ import java.util.function.Supplier;
  * Core command service that owns configuration, connection lifecycle, and operator-facing state.
  */
 // Command facade intentionally exposes one method per public command action.
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.TooManyMethods"})
 public class ReinodoceCoreService implements ReinodoceCommandService {
     private static final int DEDUPLICATION_WINDOW_MINUTES = 3;
     private static final Path DEFAULT_SESSION_LOG_DIRECTORY = Path.of("logs", "reinodoce");
@@ -66,7 +69,42 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
             ReinodoceConfigRepository configRepository,
             Supplier<String> languageSupplier
     ) {
-        this(chatEventSink, configRepository, languageSupplier, DEFAULT_SESSION_LOG_DIRECTORY);
+        this(chatEventSink, AlertSink.noop(), configRepository, languageSupplier, DEFAULT_SESSION_LOG_DIRECTORY);
+    }
+
+    /**
+     * Creates the core service.
+     *
+     * @param chatEventSink chat sink used for rendered TikTok events
+     * @param alertSink local alert sink
+     * @param configRepository persisted configuration repository
+     * @param languageSupplier selected client language supplier
+     * @param sessionLogDirectory local session log directory
+     */
+    public ReinodoceCoreService(
+            ChatEventSink chatEventSink,
+            AlertSink alertSink,
+            ReinodoceConfigRepository configRepository,
+            Supplier<String> languageSupplier,
+            Path sessionLogDirectory
+    ) {
+        this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
+        this.settingsState = new RuntimeSettingsState();
+        MessageRuleEngine ruleEngine = new MessageRuleEngine();
+        MemberLevelResolver memberLevelResolver = new MemberLevelResolver();
+        MessageDeduplicator deduplicator = new MessageDeduplicator(Duration.ofMinutes(DEDUPLICATION_WINDOW_MINUTES));
+        this.tikTokClientFacade = new TikTokClientFacade(
+                settingsState::getSnapshot,
+                new TikTokRuntimeServices(
+                        Objects.requireNonNull(chatEventSink, "chatEventSink"),
+                        new SessionEventLogger(Objects.requireNonNull(sessionLogDirectory, "sessionLogDirectory")),
+                        new AlertService(Objects.requireNonNull(alertSink, "alertSink"))),
+                ruleEngine,
+                memberLevelResolver,
+                deduplicator,
+                Objects.requireNonNull(languageSupplier, "languageSupplier")
+        );
+        this.initialized = new AtomicBoolean(false);
     }
 
     /**
@@ -83,22 +121,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
             Supplier<String> languageSupplier,
             Path sessionLogDirectory
     ) {
-        this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
-        this.settingsState = new RuntimeSettingsState();
-        MessageRuleEngine ruleEngine = new MessageRuleEngine();
-        MemberLevelResolver memberLevelResolver = new MemberLevelResolver();
-        MessageDeduplicator deduplicator = new MessageDeduplicator(Duration.ofMinutes(DEDUPLICATION_WINDOW_MINUTES));
-        this.tikTokClientFacade = new TikTokClientFacade(
-                settingsState::getSnapshot,
-                new TikTokRuntimeServices(
-                        Objects.requireNonNull(chatEventSink, "chatEventSink"),
-                        new SessionEventLogger(Objects.requireNonNull(sessionLogDirectory, "sessionLogDirectory"))),
-                ruleEngine,
-                memberLevelResolver,
-                deduplicator,
-                Objects.requireNonNull(languageSupplier, "languageSupplier")
-        );
-        this.initialized = new AtomicBoolean(false);
+        this(chatEventSink, AlertSink.noop(), configRepository, languageSupplier, sessionLogDirectory);
     }
 
     /**
@@ -175,6 +198,23 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.synthetic_follow", config.isSyntheticFollowEnabled()));
         lines.add(Translations.tr("reinodoce.status.synthetic_join", config.isSyntheticJoinEnabled()));
         lines.add(Translations.tr("reinodoce.status.synthetic_member_level", config.isSyntheticMemberLevelEnabled()));
+        lines.add(Translations.tr(
+                "reinodoce.status.alert_gift",
+                config.isAlertSoundEnabled(AlertEventType.GIFT),
+                config.isAlertToastEnabled(AlertEventType.GIFT),
+                config.getAlertGiftMinValue()));
+        lines.add(Translations.tr(
+                "reinodoce.status.alert_follow",
+                config.isAlertSoundEnabled(AlertEventType.FOLLOW),
+                config.isAlertToastEnabled(AlertEventType.FOLLOW)));
+        lines.add(Translations.tr(
+                "reinodoce.status.alert_join",
+                config.isAlertSoundEnabled(AlertEventType.JOIN),
+                config.isAlertToastEnabled(AlertEventType.JOIN)));
+        lines.add(Translations.tr(
+                "reinodoce.status.alert_member_level",
+                config.isAlertSoundEnabled(AlertEventType.MEMBER_LEVEL),
+                config.isAlertToastEnabled(AlertEventType.MEMBER_LEVEL)));
         lines.add(Translations.tr("reinodoce.status.chat_prefix", config.getChatPrefix()));
         lines.add(Translations.tr("reinodoce.status.chat_format", config.getChatFormat()));
         lines.add(Translations.tr("reinodoce.status.chat_emotes", config.isChatEmotesEnabled()));
@@ -386,6 +426,36 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         config.setSyntheticMemberLevelEnabled(enabled);
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_member_level", enabled));
+    }
+
+    @Override
+    public CommandResult setAlertSound(AlertEventType eventType, boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setAlertSoundEnabled(eventType, enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.alert_sound", eventType.id(), enabled));
+    }
+
+    @Override
+    public CommandResult setAlertToast(AlertEventType eventType, boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setAlertToastEnabled(eventType, enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.alert_toast", eventType.id(), enabled));
+    }
+
+    @Override
+    public CommandResult setAlertGiftMinValue(int value) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setAlertGiftMinValue(value);
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.alert_gift_min_value", config.getAlertGiftMinValue()));
     }
 
     @Override

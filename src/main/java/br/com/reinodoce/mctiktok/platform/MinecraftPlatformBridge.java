@@ -24,6 +24,21 @@ public interface MinecraftPlatformBridge {
     void addChatMessage(Component component, boolean logToChat);
 
     /**
+     * Plays a local alert sound.
+     */
+    default void playAlertSound() {
+    }
+
+    /**
+     * Shows a local alert toast.
+     *
+     * @param title toast title
+     * @param message toast message
+     */
+    default void showAlertToast(Component title, Component message) {
+    }
+
+    /**
      * Reports whether client GUI state is ready for chat messages.
      *
      * @return true when chat can be written safely

@@ -31,6 +31,15 @@ through `/reinodoce …`. You can also edit it by hand and run
 | `syntheticFollowEnabled` | boolean | `false` | Surface new-follower events. |
 | `syntheticJoinEnabled` | boolean | `false` | Surface viewer-join events. |
 | `syntheticMemberLevelEnabled` | boolean | `false` | Surface member-level-up events. |
+| `alertGiftSoundEnabled` | boolean | `false` | Play a local client-only sound for surfaced gifts that pass `alertGiftMinValue`. |
+| `alertGiftToastEnabled` | boolean | `false` | Show a local client-only toast for surfaced gifts that pass `alertGiftMinValue`. |
+| `alertGiftMinValue` | integer | `1` | Minimum single-gift diamond value for gift alerts. Clamped to >= 0. |
+| `alertFollowSoundEnabled` | boolean | `false` | Play a local sound for surfaced follow events. |
+| `alertFollowToastEnabled` | boolean | `false` | Show a local toast for surfaced follow events. |
+| `alertJoinSoundEnabled` | boolean | `false` | Play a local sound for surfaced join events. Join alerts are throttled. |
+| `alertJoinToastEnabled` | boolean | `false` | Show a local toast for surfaced join events. Join alerts are throttled. |
+| `alertMemberLevelSoundEnabled` | boolean | `false` | Play a local sound for surfaced member-level-up events. |
+| `alertMemberLevelToastEnabled` | boolean | `false` | Show a local toast for surfaced member-level-up events. |
 | `chatPrefix` | string | `"[LIVE]"` | Prefix prepended to every mirrored line. Empty / blank values revert to the default. |
 | `chatFormat` | string | current layout | Template used to arrange mirrored lines. Must include `{prefix}`, `{username}`, and `{message}`; unknown tokens or blank values revert to the default. |
 | `chatEmotesEnabled` | boolean | `true` | Render TikTok chat emotes inline in Minecraft chat. |

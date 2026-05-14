@@ -1,5 +1,7 @@
 package br.com.reinodoce.mctiktok.client;
 
+import br.com.reinodoce.mctiktok.alert.AlertEventType;
+import br.com.reinodoce.mctiktok.alert.MinecraftAlertGateway;
 import br.com.reinodoce.mctiktok.chat.LiveMessageFormatter;
 import br.com.reinodoce.mctiktok.chat.MinecraftChatGateway;
 import br.com.reinodoce.mctiktok.client.font.InlineMediaFontHooks;
@@ -29,18 +31,20 @@ public class ReinodoceClientService implements ReinodoceCommandService {
      * @param platformBridge Minecraft platform adapter
      */
     public ReinodoceClientService(MinecraftPlatformBridge platformBridge) {
+        MinecraftPlatformBridge safePlatformBridge = Objects.requireNonNull(platformBridge, "platformBridge");
         this.inlineMediaCache = new InlineMediaCache();
         this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
         InlineMediaFontHooks.installRegistry(inlineMediaTokenRegistry);
         this.coreService = new ReinodoceCoreService(
                 new MinecraftChatGateway(
-                        Objects.requireNonNull(platformBridge, "platformBridge"),
+                        safePlatformBridge,
                         new LiveMessageFormatter(inlineMediaTokenRegistry),
                         inlineMediaCache
                 ),
+                new MinecraftAlertGateway(safePlatformBridge),
                 new ReinodoceConfigRepository(),
-                platformBridge::selectedLanguageCode,
-                platformBridge.logsDirectory().resolve("reinodoce")
+                safePlatformBridge::selectedLanguageCode,
+                safePlatformBridge.logsDirectory().resolve("reinodoce")
         );
     }
 
@@ -180,6 +184,21 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     @Override
     public CommandResult setSyntheticMemberLevel(boolean enabled) {
         return coreService.setSyntheticMemberLevel(enabled);
+    }
+
+    @Override
+    public CommandResult setAlertSound(AlertEventType eventType, boolean enabled) {
+        return coreService.setAlertSound(eventType, enabled);
+    }
+
+    @Override
+    public CommandResult setAlertToast(AlertEventType eventType, boolean enabled) {
+        return coreService.setAlertToast(eventType, enabled);
+    }
+
+    @Override
+    public CommandResult setAlertGiftMinValue(int value) {
+        return coreService.setAlertGiftMinValue(value);
     }
 
     @Override

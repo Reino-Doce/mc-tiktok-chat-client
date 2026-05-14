@@ -92,7 +92,7 @@ record TikTokFacadeWiring(
                     emitters.renderedTracker(), emitters.messageFactory(),
                     emitters.giftEmitter(), emitters.giftComboAggregator(),
                     emitters.statsTracker(), emitters.moderationDuplicateTracker(),
-                    runtimeServices.sessionEventLogger());
+                    runtimeServices.sessionEventLogger(), runtimeServices.alertService());
             TikTokEventDispatcher dispatcher = new TikTokEventDispatcher(deps, binding::isTokenCurrentLazy);
             return new TikTokFacadeWiring(
                     sessionState, emitters.statsTracker(), dispatcher, handlers.websocketDispatcher(), binding);
@@ -109,8 +109,7 @@ record TikTokFacadeWiring(
                     moderationDuplicateTracker, runtimeServices.sessionEventLogger());
             LiveCommentEmitter liveCommentEmitter = new LiveCommentEmitter(liveCommentDependencies);
             MemberLevelEmitter memberLevelEmitter = new MemberLevelEmitter(
-                    configSupplier, runtimeServices.chatGateway(),
-                    messageFactory, statsTracker, runtimeServices.sessionEventLogger());
+                    configSupplier, runtimeServices, messageFactory, statsTracker);
             TikTokGiftEmitter giftEmitter = new TikTokGiftEmitter(
                     configSupplier, runtimeServices, ruleEngine, giftDeduplicator,
                     messageFactory, statsTracker);

@@ -16,6 +16,9 @@ from a TikTok LIVE inside the local Minecraft chat.
 - Optional session logs can write accepted LIVE events to
   `logs/reinodoce/` for after-stream review or diagnostics; enable them
   with `/reinodoce logging enabled true`.
+- Optional local alerts can play sounds or show toasts for surfaced
+  gifts, follows, joins, and member-level events; enable them with
+  `/reinodoce alert ...`.
 - This branch (`1.20.1`) targets Minecraft `1.20.1`, Forge `47.4.16`,
   Java `17`.
 
