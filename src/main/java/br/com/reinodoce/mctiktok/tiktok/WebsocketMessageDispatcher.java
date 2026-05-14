@@ -18,7 +18,6 @@ final class WebsocketMessageDispatcher {
 
     private final TikTokRichMessageParser richMessageParser;
     private final MemberLevelResolver memberLevelResolver;
-    private final MemberLevelEmitter memberLevelEmitter;
     private final LiveCommentEmitter liveCommentEmitter;
     private final BarrageMessageHandler barrageHandler;
     private final MemberMessageHandler memberHandler;
@@ -26,14 +25,12 @@ final class WebsocketMessageDispatcher {
     WebsocketMessageDispatcher(
             TikTokRichMessageParser richMessageParser,
             MemberLevelResolver memberLevelResolver,
-            MemberLevelEmitter memberLevelEmitter,
             LiveCommentEmitter liveCommentEmitter,
             BarrageMessageHandler barrageHandler,
             MemberMessageHandler memberHandler
     ) {
         this.richMessageParser = richMessageParser;
         this.memberLevelResolver = memberLevelResolver;
-        this.memberLevelEmitter = memberLevelEmitter;
         this.liveCommentEmitter = liveCommentEmitter;
         this.barrageHandler = barrageHandler;
         this.memberHandler = memberHandler;
@@ -71,11 +68,11 @@ final class WebsocketMessageDispatcher {
                 TikTokUserNames.chooseRawUserName(
                         chatMessage.getUser().getNickname(), chatMessage.getUser().getUsername()));
         String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(chatMessage.getUser());
-        memberLevelEmitter.emit(memberLevelResolver.updateLevel(
+        memberLevelResolver.updateLevel(
                 chatMessage.getUser().getId(),
                 username,
                 avatarUrl,
-                (int) chatMessage.getUser().getFansClubInfo().getFansLevel()));
+                (int) chatMessage.getUser().getFansClubInfo().getFansLevel());
         RichLiveMessage richMessage = richMessageParser.parseChatMessage(chatMessage, username);
         liveCommentEmitter.emit(new LiveCommentEmitter.EmissionContext(
                 user, username, avatarUrl, memberLevelResolver.resolveLevel(user), richMessage, false));

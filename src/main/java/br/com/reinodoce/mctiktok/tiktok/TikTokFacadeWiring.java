@@ -118,7 +118,7 @@ record TikTokFacadeWiring(
                     emitters.parser(), memberLevelResolver, emitters.memberLevelEmitter());
             WebsocketMessageDispatcher websocketDispatcher = new WebsocketMessageDispatcher(
                     emitters.parser(), memberLevelResolver,
-                    emitters.memberLevelEmitter(), emitters.liveCommentEmitter(),
+                    emitters.liveCommentEmitter(),
                     barrageHandler, memberHandler);
             return new Handlers(websocketDispatcher);
         }
