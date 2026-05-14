@@ -16,6 +16,23 @@ automatically.
 
 ## [Unreleased]
 
+## [0.3.0]
+
+### Added
+
+- Add a language override setting for client messages and command feedback.
+- Add per-event alert sound IDs for gift, follow, join, and member-level alerts.
+- Add custom alert toast templates and media selection for local notifications.
+- Organize the in-game settings screen into focused submenus.
+- Add a pinned-message overlay for TikTok pinned chat events.
+
+### Fixed
+
+- Reject invalid TikTok fan levels outside `1..50` from barrage payloads,
+  raw user data, and badge text parsing.
+- Stop treating TikTok user-grade values as fan/member levels in star and
+  common barrage comments.
+
 ## [0.2.1]
 
 ### Fixed
