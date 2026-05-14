@@ -25,6 +25,9 @@ from a TikTok LIVE inside the local Minecraft chat.
   `/reinodoce settings output ...`.
 - Language defaults to the Minecraft client language, with an optional
   override through `/reinodoce settings language <locale|auto>`.
+- `/reinodoce settings gui` opens a compact settings index with
+  domain-specific submenus; changes persist only when you press Done on
+  the top-level screen.
 - This branch (`1.20.1`) targets Minecraft `1.20.1`, Forge `47.4.16`,
   Java `17`.
 

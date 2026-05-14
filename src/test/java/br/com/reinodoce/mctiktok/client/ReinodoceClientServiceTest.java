@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.client;
 
+import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.client.hud.HudMessageStore;
 import br.com.reinodoce.mctiktok.command.CommandResult;
@@ -12,8 +13,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReinodoceClientServiceTest {
@@ -84,6 +87,18 @@ class ReinodoceClientServiceTest {
         assertEquals(1, hudMessageStore.snapshot(HUD_LINES).size());
     }
 
+    @Test
+    void guiDraftSavePersistsExpandedSettingsDomains() {
+        ReinodoceClientService service = service(new HudMessageStore());
+        ReinodoceConfig draft = service.currentConfig();
+        configureExpandedDraft(draft);
+
+        CommandResult result = service.saveSettingsDraft(draft);
+
+        assertTrue(result.success());
+        assertExpandedDraft(service.currentConfig());
+    }
+
     private ReinodoceClientService service(HudMessageStore hudMessageStore) {
         ReinodoceConfigRepository repository = new ReinodoceConfigRepository(tempDir.resolve("config.json"));
         ReinodoceCoreService coreService = new ReinodoceCoreService(
@@ -92,6 +107,80 @@ class ReinodoceClientServiceTest {
                 () -> EN_US,
                 tempDir.resolve("logs"));
         return new ReinodoceClientService(new RecordingPlatformBridge(), coreService, hudMessageStore);
+    }
+
+    private static void configureExpandedDraft(ReinodoceConfig draft) {
+        draft.setLastUsername("streamer");
+        draft.setAutoConnectOnStart(true);
+        draft.setReconnectSeconds(12);
+        draft.setOutputMode(HUD_MODE);
+        draft.setHudPosition("bottom-right");
+        draft.setHudLines(5);
+        draft.setChatLogEnabled(true);
+        draft.setChatPrefix("[TikTok]");
+        draft.setChatFormat("{prefix} <{username}> {message}");
+        draft.setChatEmotesEnabled(false);
+        draft.setRuleFollowerOnly(true);
+        draft.setRuleMinMemberLevel(3);
+        draft.setRuleBlockedWords(List.of("spam", "caps"));
+        draft.setRuleBlockedUsers(List.of("alice", "bob"));
+        draft.setRuleMaxMessageLength(80);
+        draft.setRuleDuplicateCooldownSeconds(9);
+        draft.setSyntheticGiftMinValue(7);
+        draft.setSyntheticGiftComboMode("single");
+        draft.setSyntheticFollowEnabled(true);
+        draft.setSyntheticJoinEnabled(true);
+        draft.setSyntheticMemberLevelEnabled(true);
+        draft.setAlertGiftMinValue(25);
+        draft.setAlertSoundEnabled(AlertEventType.GIFT, true);
+        draft.setAlertSoundId(AlertEventType.GIFT, "minecraft:entity.experience_orb.pickup");
+        draft.setAlertToastEnabled(AlertEventType.GIFT, true);
+        draft.setAlertToastTemplate(AlertEventType.GIFT, "{username} sent {giftName}");
+        draft.setAlertMediaMode(AlertEventType.GIFT, "gift");
+        draft.setAlertCustomImage(AlertEventType.GIFT, "resource://reinodoce/gift");
+        draft.setAlertSoundEnabled(AlertEventType.FOLLOW, true);
+        draft.setAlertToastEnabled(AlertEventType.JOIN, true);
+        draft.setAlertMediaMode(AlertEventType.MEMBER_LEVEL, "profile");
+        draft.setLanguage("pt_br");
+        draft.setSessionLoggingEnabled(true);
+        draft.setSessionLoggingFormat("text");
+    }
+
+    private static void assertExpandedDraft(ReinodoceConfig saved) {
+        assertEquals("streamer", saved.getLastUsername());
+        assertTrue(saved.isAutoConnectOnStart());
+        assertEquals(12, saved.getReconnectSeconds());
+        assertEquals(HUD_MODE, saved.getOutputMode());
+        assertEquals("bottom-right", saved.getHudPosition());
+        assertEquals(5, saved.getHudLines());
+        assertTrue(saved.isChatLogEnabled());
+        assertEquals("[TikTok]", saved.getChatPrefix());
+        assertEquals("{prefix} <{username}> {message}", saved.getChatFormat());
+        assertFalse(saved.isChatEmotesEnabled());
+        assertTrue(saved.isRuleFollowerOnly());
+        assertEquals(3, saved.getRuleMinMemberLevel());
+        assertEquals(List.of("spam", "caps"), saved.getRuleBlockedWords());
+        assertEquals(List.of("alice", "bob"), saved.getRuleBlockedUsers());
+        assertEquals(80, saved.getRuleMaxMessageLength());
+        assertEquals(9, saved.getRuleDuplicateCooldownSeconds());
+        assertEquals(7, saved.getSyntheticGiftMinValue());
+        assertEquals("single", saved.getSyntheticGiftComboMode());
+        assertTrue(saved.isSyntheticFollowEnabled());
+        assertTrue(saved.isSyntheticJoinEnabled());
+        assertTrue(saved.isSyntheticMemberLevelEnabled());
+        assertEquals(25, saved.getAlertGiftMinValue());
+        assertTrue(saved.isAlertSoundEnabled(AlertEventType.GIFT));
+        assertEquals("minecraft:entity.experience_orb.pickup", saved.getAlertSoundId(AlertEventType.GIFT));
+        assertTrue(saved.isAlertToastEnabled(AlertEventType.GIFT));
+        assertEquals("{username} sent {giftName}", saved.getAlertToastTemplate(AlertEventType.GIFT));
+        assertEquals("gift", saved.getAlertMediaMode(AlertEventType.GIFT));
+        assertEquals("resource://reinodoce/gift", saved.getAlertCustomImage(AlertEventType.GIFT));
+        assertTrue(saved.isAlertSoundEnabled(AlertEventType.FOLLOW));
+        assertTrue(saved.isAlertToastEnabled(AlertEventType.JOIN));
+        assertEquals("profile", saved.getAlertMediaMode(AlertEventType.MEMBER_LEVEL));
+        assertEquals("pt_br", saved.getLanguage());
+        assertTrue(saved.isSessionLoggingEnabled());
+        assertEquals("text", saved.getSessionLoggingFormat());
     }
 
     private static final class RecordingPlatformBridge implements MinecraftPlatformBridge {

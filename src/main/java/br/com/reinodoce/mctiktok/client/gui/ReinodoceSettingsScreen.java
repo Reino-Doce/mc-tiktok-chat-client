@@ -1,10 +1,7 @@
 package br.com.reinodoce.mctiktok.client.gui;
 
 import br.com.reinodoce.mctiktok.client.ReinodoceClientService;
-import br.com.reinodoce.mctiktok.config.HudPosition;
-import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
-import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -13,112 +10,91 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
  * Client-only settings editor for the persisted Reino Doce TikTok configuration.
  */
-// The screen owns fixed widget geometry and draft state for the config editor.
-@SuppressWarnings("PMD.TooManyFields")
+// The screen owns the shared draft plus Minecraft widget wiring for this client-only UI shell.
+@SuppressWarnings({"PMD.CognitiveComplexity", "PMD.CouplingBetweenObjects", "PMD.TooManyMethods"})
 public class ReinodoceSettingsScreen extends Screen {
-    private static final Component TITLE = Component.literal("Reino Doce TikTok Settings");
-    private static final Component ON = Component.literal("On");
-    private static final Component OFF = Component.literal("Off");
     private static final int TITLE_COLOR = 0xFFFFFF;
+    private static final int SUBTITLE_COLOR = 0xA0A0A0;
     private static final int LABEL_COLOR = 0xA0A0A0;
-    private static final int MAX_CONTENT_WIDTH = 520;
     private static final int HORIZONTAL_MARGIN = 10;
-    private static final int COLUMN_GAP = 16;
-    private static final int LABEL_CONTROL_GAP = 4;
-    private static final int LABEL_WIDTH_CAP = 82;
-    private static final int LABEL_WIDTH_FLOOR = 52;
-    private static final int ROW_START_Y = 30;
+    private static final int INDEX_MAX_CONTENT_WIDTH = 440;
+    private static final int INDEX_COLUMN_GAP = 12;
+    private static final int INDEX_BUTTON_HEIGHT = 20;
+    private static final int INDEX_ROW_HEIGHT = 24;
+    private static final int INDEX_START_Y = 50;
+    private static final int FORM_MAX_CONTENT_WIDTH = 430;
+    private static final int FORM_LABEL_WIDTH = 118;
+    private static final int LABEL_CONTROL_GAP = 6;
+    private static final int ROW_START_Y = 48;
     private static final int ROW_HEIGHT = 22;
-    private static final int LABEL_Y_OFFSET = 6;
     private static final int CONTROL_HEIGHT = 20;
+    private static final int LABEL_Y_OFFSET = 6;
     private static final int BOTTOM_BUTTON_WIDTH = 98;
     private static final int BOTTOM_BUTTON_GAP = 8;
     private static final int BOTTOM_BUTTON_Y_OFFSET = 26;
-    private static final int TEXT_MAX_LENGTH = 80;
-    private static final int FORMAT_MAX_LENGTH = 160;
     private static final int SHORT_NUMBER_MAX_LENGTH = 6;
-    private static final int LEFT_COLUMN = 0;
-    private static final int RIGHT_COLUMN = 1;
-    private static final int ROW_RECONNECT_SECONDS = 2;
-    private static final int ROW_OUTPUT = 3;
-    private static final int ROW_HUD_POSITION = 4;
-    private static final int ROW_HUD_LINES = 5;
-    private static final int ROW_CHAT_PREFIX = 6;
-    private static final int ROW_CHAT_FORMAT = 7;
-    private static final int LABEL_WIDTH_DIVISOR = 3;
+    private static final int SUBTITLE_Y_OFFSET = 12;
+    private static final int LAYOUT_LABEL_WIDTH_DIVISOR = 3;
     private static final Predicate<String> UNSIGNED_INTEGER = ReinodoceSettingsScreen::isUnsignedIntegerInput;
-    private static final List<String> OUTPUT_MODES = valuesOf(OutputMode.ids());
-    private static final List<String> HUD_POSITIONS = valuesOf(HudPosition.ids());
-    private static final List<String> GIFT_COMBO_MODES = List.copyOf(GiftComboMode.ids());
 
     private final ReinodoceClientService service;
     private final Screen parent;
-    private final ReinodoceConfig draft;
-    private final Map<TextField, EditBox> fields = new EnumMap<>(TextField.class);
+    private final ReinodoceConfig settingsDraft;
+    private final ReinodoceSettingsPages.Page page;
+    private final SettingsTextDrafts textDrafts;
+    private final List<EditBox> fields = new ArrayList<>();
     private final List<RowLabel> labels = new ArrayList<>();
 
     /**
-     * Creates the settings screen from a defensive config snapshot.
+     * Creates the root settings screen from a defensive config snapshot.
      *
      * @param service client service used to persist saved changes
      * @param initialConfig initial configuration snapshot
      * @param parent parent screen to return to when closing
      */
     public ReinodoceSettingsScreen(ReinodoceClientService service, ReinodoceConfig initialConfig, Screen parent) {
-        super(TITLE);
+        this(service, parent, Objects.requireNonNull(initialConfig, "initialConfig").copy(),
+                ReinodoceSettingsPages.Page.ROOT, new SettingsTextDrafts());
+    }
+
+    private ReinodoceSettingsScreen(
+            ReinodoceClientService service,
+            Screen parent,
+            ReinodoceConfig draft,
+            ReinodoceSettingsPages.Page page,
+            SettingsTextDrafts textDrafts
+    ) {
+        super(Component.literal(Objects.requireNonNull(page, "page").title()));
         this.service = Objects.requireNonNull(service, "service");
         this.parent = parent;
-        this.draft = Objects.requireNonNull(initialConfig, "initialConfig").copy();
+        this.settingsDraft = Objects.requireNonNull(draft, "draft");
+        this.page = page;
+        this.textDrafts = Objects.requireNonNull(textDrafts, "textDrafts");
     }
 
     @Override
     protected void init() {
         fields.clear();
         labels.clear();
-        Layout layout = Layout.fromWidth(width);
-        addTextField(layout, LEFT_COLUMN, 0, TextField.LAST_USERNAME);
-        addToggle(layout, position(LEFT_COLUMN, 1, "Auto-connect"), draft::isAutoConnectOnStart,
-                draft::setAutoConnectOnStart);
-        addTextField(layout, LEFT_COLUMN, ROW_RECONNECT_SECONDS, TextField.RECONNECT_SECONDS);
-        addCycle(layout, position(LEFT_COLUMN, ROW_OUTPUT, "Output"), draft::getOutputMode,
-                draft::setOutputMode, OUTPUT_MODES);
-        addCycle(layout, position(LEFT_COLUMN, ROW_HUD_POSITION, "HUD position"), draft::getHudPosition,
-                draft::setHudPosition, HUD_POSITIONS);
-        addTextField(layout, LEFT_COLUMN, ROW_HUD_LINES, TextField.HUD_LINES);
-        addTextField(layout, LEFT_COLUMN, ROW_CHAT_PREFIX, TextField.CHAT_PREFIX);
-        addTextField(layout, LEFT_COLUMN, ROW_CHAT_FORMAT, TextField.CHAT_FORMAT);
-        addToggle(layout, position(RIGHT_COLUMN, 0, "Chat emotes"), draft::isChatEmotesEnabled,
-                draft::setChatEmotesEnabled);
-        addTextField(layout, RIGHT_COLUMN, 1, TextField.SYNTHETIC_GIFT_MIN_VALUE);
-        addCycle(layout, position(RIGHT_COLUMN, 2, "Gift combo"), draft::getSyntheticGiftComboMode,
-                draft::setSyntheticGiftComboMode, GIFT_COMBO_MODES);
-        addToggle(layout, position(RIGHT_COLUMN, ROW_OUTPUT, "Follow event"), draft::isSyntheticFollowEnabled,
-                draft::setSyntheticFollowEnabled);
-        addToggle(layout, position(RIGHT_COLUMN, ROW_HUD_POSITION, "Join event"), draft::isSyntheticJoinEnabled,
-                draft::setSyntheticJoinEnabled);
-        addToggle(layout, position(RIGHT_COLUMN, ROW_HUD_LINES, "Member event"), draft::isSyntheticMemberLevelEnabled,
-                draft::setSyntheticMemberLevelEnabled);
-        addToggle(layout, position(RIGHT_COLUMN, ROW_CHAT_PREFIX, "Follower only"), draft::isRuleFollowerOnly,
-                draft::setRuleFollowerOnly);
-        addTextField(layout, RIGHT_COLUMN, ROW_CHAT_FORMAT, TextField.RULE_MIN_MEMBER_LEVEL);
-        addBottomButtons();
+        clearWidgets();
+        ReinodoceSettingsPages.init(page, this);
     }
 
     @Override
     public void tick() {
-        for (EditBox field : fields.values()) {
+        for (EditBox field : fields) {
             field.tick();
         }
     }
@@ -127,6 +103,7 @@ public class ReinodoceSettingsScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
         graphics.drawCenteredString(font, title, width / 2, HORIZONTAL_MARGIN, TITLE_COLOR);
+        drawSubtitle(graphics);
         renderLabels(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
@@ -141,46 +118,77 @@ public class ReinodoceSettingsScreen extends Screen {
         return false;
     }
 
-    private void addTextField(Layout layout, int column, int row, TextField fieldId) {
-        EditBox field = new EditBox(font, layout.controlX(column), layout.rowY(row), layout.controlWidth(),
-                CONTROL_HEIGHT, Component.literal(fieldId.label()));
-        field.setMaxLength(fieldId.maxLength());
-        if (fieldId.numeric()) {
-            field.setFilter(UNSIGNED_INTEGER);
-        }
-        field.setValue(fieldId.value(draft));
-        fields.put(fieldId, field);
-        addRowLabel(layout, column, row, fieldId.label());
+    void addDomainButton(int column, int row, ReinodoceSettingsPages.Page targetPage) {
+        IndexLayout layout = IndexLayout.fromWidth(width);
+        addRenderableWidget(Button.builder(Component.literal(targetPage.buttonLabel()), button -> openPage(targetPage))
+                .bounds(layout.buttonX(column), layout.rowY(row), layout.buttonWidth(), INDEX_BUTTON_HEIGHT)
+                .build());
+    }
+
+    void addTextField(
+            int row,
+            String label,
+            int maxLength,
+            Supplier<String> getter,
+            Consumer<String> setter
+    ) {
+        FormLayout layout = FormLayout.fromWidth(width);
+        EditBox field = new EditBox(font, layout.controlX(), layout.rowY(row), layout.controlWidth(),
+                CONTROL_HEIGHT, Component.literal(label));
+        String draftKey = textKey(page, label);
+        field.setMaxLength(maxLength);
+        field.setValue(textDrafts.value(draftKey, getter, setter));
+        field.setResponder(value -> textDrafts.update(draftKey, value));
+        fields.add(field);
+        addRowLabel(layout, row, label);
         addRenderableWidget(field);
     }
 
-    private void addToggle(Layout layout, ControlPosition position, BooleanSupplier getter, Consumer<Boolean> setter) {
+    void addNumberField(
+            int row,
+            String label,
+            IntSupplier getter,
+            IntConsumer setter
+    ) {
+        FormLayout layout = FormLayout.fromWidth(width);
+        EditBox field = new EditBox(font, layout.controlX(), layout.rowY(row), layout.controlWidth(),
+                CONTROL_HEIGHT, Component.literal(label));
+        field.setMaxLength(SHORT_NUMBER_MAX_LENGTH);
+        field.setFilter(UNSIGNED_INTEGER);
+        field.setValue(String.valueOf(getter.getAsInt()));
+        field.setResponder(value -> setter.accept(parseUnsignedInteger(value)));
+        fields.add(field);
+        addRowLabel(layout, row, label);
+        addRenderableWidget(field);
+    }
+
+    void addToggle(int row, String label, BooleanSupplier getter, Consumer<Boolean> setter) {
+        FormLayout layout = FormLayout.fromWidth(width);
         Button button = Button.builder(booleanMessage(getter.getAsBoolean()), pressed -> {
             setter.accept(!getter.getAsBoolean());
             pressed.setMessage(booleanMessage(getter.getAsBoolean()));
-        }).bounds(layout.controlX(position.column()), layout.rowY(position.row()), layout.controlWidth(), CONTROL_HEIGHT)
-                .build();
-        addRowLabel(layout, position.column(), position.row(), position.label());
+        }).bounds(layout.controlX(), layout.rowY(row), layout.controlWidth(), CONTROL_HEIGHT).build();
+        addRowLabel(layout, row, label);
         addRenderableWidget(button);
     }
 
-    private void addCycle(
-            Layout layout,
-            ControlPosition position,
+    void addCycle(
+            int row,
+            String label,
             Supplier<String> getter,
             Consumer<String> setter,
             List<String> values
     ) {
+        FormLayout layout = FormLayout.fromWidth(width);
         Button button = Button.builder(Component.literal(getter.get()), pressed -> {
             setter.accept(nextValue(values, getter.get()));
             pressed.setMessage(Component.literal(getter.get()));
-        }).bounds(layout.controlX(position.column()), layout.rowY(position.row()), layout.controlWidth(), CONTROL_HEIGHT)
-                .build();
-        addRowLabel(layout, position.column(), position.row(), position.label());
+        }).bounds(layout.controlX(), layout.rowY(row), layout.controlWidth(), CONTROL_HEIGHT).build();
+        addRowLabel(layout, row, label);
         addRenderableWidget(button);
     }
 
-    private void addBottomButtons() {
+    void addRootButtons() {
         int y = height - BOTTOM_BUTTON_Y_OFFSET;
         int doneX = width / 2 - BOTTOM_BUTTON_WIDTH - BOTTOM_BUTTON_GAP / 2;
         int cancelX = width / 2 + BOTTOM_BUTTON_GAP / 2;
@@ -192,17 +200,24 @@ public class ReinodoceSettingsScreen extends Screen {
                 .build());
     }
 
+    void addBackButton() {
+        int x = width / 2 - BOTTOM_BUTTON_WIDTH / 2;
+        int y = height - BOTTOM_BUTTON_Y_OFFSET;
+        addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> closeToParent())
+                .bounds(x, y, BOTTOM_BUTTON_WIDTH, CONTROL_HEIGHT)
+                .build());
+    }
+
     private void saveAndClose() {
-        ReinodoceConfig updated = draft.copy();
-        updated.setLastUsername(text(TextField.LAST_USERNAME));
-        updated.setReconnectSeconds(number(TextField.RECONNECT_SECONDS));
-        updated.setHudLines(number(TextField.HUD_LINES));
-        updated.setChatPrefix(text(TextField.CHAT_PREFIX));
-        updated.setChatFormat(text(TextField.CHAT_FORMAT));
-        updated.setSyntheticGiftMinValue(number(TextField.SYNTHETIC_GIFT_MIN_VALUE));
-        updated.setRuleMinMemberLevel(number(TextField.RULE_MIN_MEMBER_LEVEL));
-        service.saveSettingsDraft(updated);
+        textDrafts.apply();
+        service.saveSettingsDraft(settingsDraft.copy());
         closeToParent();
+    }
+
+    private void openPage(ReinodoceSettingsPages.Page targetPage) {
+        if (minecraft != null) {
+            minecraft.setScreen(new ReinodoceSettingsScreen(service, this, settingsDraft, targetPage, textDrafts));
+        }
     }
 
     private void closeToParent() {
@@ -211,25 +226,8 @@ public class ReinodoceSettingsScreen extends Screen {
         }
     }
 
-    private String text(TextField fieldId) {
-        EditBox field = fields.get(fieldId);
-        return field == null ? "" : field.getValue();
-    }
-
-    private int number(TextField fieldId) {
-        String value = text(fieldId);
-        if (value.isBlank()) {
-            return 0;
-        }
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException ignored) {
-            return 0;
-        }
-    }
-
-    private void addRowLabel(Layout layout, int column, int row, String label) {
-        labels.add(new RowLabel(label, layout.labelX(column), layout.rowY(row), layout.labelWidth()));
+    private void addRowLabel(FormLayout layout, int row, String label) {
+        labels.add(new RowLabel(label, layout.labelX(), layout.rowY(row), layout.labelWidth()));
     }
 
     private void renderLabels(GuiGraphics graphics) {
@@ -238,18 +236,58 @@ public class ReinodoceSettingsScreen extends Screen {
         }
     }
 
-    private static ControlPosition position(int column, int row, String label) {
-        return new ControlPosition(column, row, label);
+    private void drawSubtitle(GuiGraphics graphics) {
+        int maxWidth = width - HORIZONTAL_MARGIN * 2;
+        String subtitle = font.plainSubstrByWidth(page.subtitle(), maxWidth);
+        graphics.drawCenteredString(font, subtitle, width / 2, HORIZONTAL_MARGIN + SUBTITLE_Y_OFFSET, SUBTITLE_COLOR);
+    }
+
+    ReinodoceConfig configDraft() {
+        return settingsDraft;
+    }
+
+    static String textKey(ReinodoceSettingsPages.Page page, String label) {
+        return page.name() + ':' + label;
+    }
+
+    static List<String> parseCsvList(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        String[] values = value.split(",");
+        List<String> parsed = new ArrayList<>(values.length);
+        for (String candidate : values) {
+            String trimmed = candidate.trim();
+            if (!trimmed.isEmpty()) {
+                parsed.add(trimmed);
+            }
+        }
+        return List.copyOf(parsed);
+    }
+
+    static String joinCsv(List<String> values) {
+        return String.join(", ", values);
     }
 
     private static Component booleanMessage(boolean enabled) {
-        return enabled ? ON : OFF;
+        return Component.literal(enabled ? "On" : "Off");
     }
 
     private static String nextValue(List<String> values, String current) {
         int index = values.indexOf(current);
         int nextIndex = index < 0 ? 0 : (index + 1) % values.size();
         return values.get(nextIndex);
+    }
+
+    private static int parseUnsignedInteger(String value) {
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ignored) {
+            return 0;
+        }
     }
 
     private static boolean isUnsignedIntegerInput(String value) {
@@ -264,99 +302,21 @@ public class ReinodoceSettingsScreen extends Screen {
         return true;
     }
 
-    private static List<String> valuesOf(Iterable<String> values) {
-        List<String> ids = new ArrayList<>();
-        values.forEach(ids::add);
-        return List.copyOf(ids);
-    }
-
-    private enum TextField {
-        LAST_USERNAME("Last user", TEXT_MAX_LENGTH, false) {
-            @Override
-            String value(ReinodoceConfig config) {
-                return config.getLastUsername();
-            }
-        },
-        RECONNECT_SECONDS("Reconnect", SHORT_NUMBER_MAX_LENGTH, true) {
-            @Override
-            String value(ReinodoceConfig config) {
-                return String.valueOf(config.getReconnectSeconds());
-            }
-        },
-        HUD_LINES("HUD lines", SHORT_NUMBER_MAX_LENGTH, true) {
-            @Override
-            String value(ReinodoceConfig config) {
-                return String.valueOf(config.getHudLines());
-            }
-        },
-        CHAT_PREFIX("Chat prefix", TEXT_MAX_LENGTH, false) {
-            @Override
-            String value(ReinodoceConfig config) {
-                return config.getChatPrefix();
-            }
-        },
-        CHAT_FORMAT("Chat format", FORMAT_MAX_LENGTH, false) {
-            @Override
-            String value(ReinodoceConfig config) {
-                return config.getChatFormat();
-            }
-        },
-        SYNTHETIC_GIFT_MIN_VALUE("Gift minimum", SHORT_NUMBER_MAX_LENGTH, true) {
-            @Override
-            String value(ReinodoceConfig config) {
-                return String.valueOf(config.getSyntheticGiftMinValue());
-            }
-        },
-        RULE_MIN_MEMBER_LEVEL("Min level", SHORT_NUMBER_MAX_LENGTH, true) {
-            @Override
-            String value(ReinodoceConfig config) {
-                return String.valueOf(config.getRuleMinMemberLevel());
-            }
-        };
-
-        private final String displayLabel;
-        private final int lengthLimit;
-        private final boolean numericOnly;
-
-        TextField(String label, int maxLength, boolean numeric) {
-            this.displayLabel = label;
-            this.lengthLimit = maxLength;
-            this.numericOnly = numeric;
-        }
-
-        String label() {
-            return displayLabel;
-        }
-
-        int maxLength() {
-            return lengthLimit;
-        }
-
-        boolean numeric() {
-            return numericOnly;
-        }
-
-        abstract String value(ReinodoceConfig config);
-    }
-
-    private record Layout(int leftX, int rightX, int labelWidth, int controlWidth) {
-        static Layout fromWidth(int screenWidth) {
-            int contentWidth = Math.min(MAX_CONTENT_WIDTH, screenWidth - HORIZONTAL_MARGIN * 2);
-            int columnWidth = (contentWidth - COLUMN_GAP) / 2;
-            int labelWidth = Math.max(
-                    LABEL_WIDTH_FLOOR,
-                    Math.min(LABEL_WIDTH_CAP, columnWidth / LABEL_WIDTH_DIVISOR));
-            int controlWidth = columnWidth - labelWidth - LABEL_CONTROL_GAP;
+    private record FormLayout(int leftX, int labelWidth, int controlWidth) {
+        static FormLayout fromWidth(int screenWidth) {
+            int contentWidth = Math.min(FORM_MAX_CONTENT_WIDTH, screenWidth - HORIZONTAL_MARGIN * 2);
+            int labelWidth = Math.min(FORM_LABEL_WIDTH, contentWidth / LAYOUT_LABEL_WIDTH_DIVISOR);
+            int controlWidth = contentWidth - labelWidth - LABEL_CONTROL_GAP;
             int leftX = (screenWidth - contentWidth) / 2;
-            return new Layout(leftX, leftX + columnWidth + COLUMN_GAP, labelWidth, controlWidth);
+            return new FormLayout(leftX, labelWidth, controlWidth);
         }
 
-        int labelX(int column) {
-            return column == LEFT_COLUMN ? leftX : rightX;
+        int labelX() {
+            return leftX;
         }
 
-        int controlX(int column) {
-            return labelX(column) + labelWidth + LABEL_CONTROL_GAP;
+        int controlX() {
+            return leftX + labelWidth + LABEL_CONTROL_GAP;
         }
 
         int rowY(int row) {
@@ -364,7 +324,21 @@ public class ReinodoceSettingsScreen extends Screen {
         }
     }
 
-    private record ControlPosition(int column, int row, String label) {
+    private record IndexLayout(int leftX, int buttonWidth) {
+        static IndexLayout fromWidth(int screenWidth) {
+            int contentWidth = Math.min(INDEX_MAX_CONTENT_WIDTH, screenWidth - HORIZONTAL_MARGIN * 2);
+            int buttonWidth = (contentWidth - INDEX_COLUMN_GAP) / 2;
+            int leftX = (screenWidth - contentWidth) / 2;
+            return new IndexLayout(leftX, buttonWidth);
+        }
+
+        int buttonX(int column) {
+            return leftX + column * (buttonWidth + INDEX_COLUMN_GAP);
+        }
+
+        int rowY(int row) {
+            return INDEX_START_Y + row * INDEX_ROW_HEIGHT;
+        }
     }
 
     private record RowLabel(String label, int x, int y, int width) {

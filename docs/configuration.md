@@ -11,7 +11,9 @@ stores its config).
 
 The file is read on mod startup and rewritten whenever a setting changes
 through `/reinodoce …` or the client settings screen opened with
-`/reinodoce settings gui`. You can also edit it by hand and run
+`/reinodoce settings gui`. That screen now opens to a compact domain
+index and persists the shared draft only when you press Done on the
+top-level screen. You can also edit the file by hand and run
 `/reinodoce reload` to pick up the changes without restarting the client.
 
 ## Fields
