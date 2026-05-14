@@ -29,6 +29,7 @@ public final class SessionEventLogger implements AutoCloseable {
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicInteger generationCounter = new AtomicInteger();
     private final SessionLogWriter logWriter;
+    private final Object queueLock = new Object();
 
     private volatile int activeGeneration;
 
@@ -73,14 +74,16 @@ public final class SessionEventLogger implements AutoCloseable {
             stopSession();
             return;
         }
-        int generation = activateNewGeneration();
         SessionLogFormat format = SessionLogFormat.fromString(safeConfig.getSessionLoggingFormat());
         String safeUsername = username == null ? "" : username.trim();
-        submit(() -> {
-            if (!logWriter.start(generation, format, safeUsername) && activeGeneration == generation) {
-                activeGeneration = 0;
-            }
-        });
+        synchronized (queueLock) {
+            int generation = activateNewGeneration();
+            submit(() -> {
+                if (!logWriter.start(generation, format, safeUsername) && activeGeneration == generation) {
+                    activeGeneration = 0;
+                }
+            });
+        }
     }
 
     /**
@@ -105,12 +108,14 @@ public final class SessionEventLogger implements AutoCloseable {
      * Stops the active session log after queued writes complete.
      */
     public void stopSession() {
-        if (activeGeneration == 0) {
-            return;
+        synchronized (queueLock) {
+            if (activeGeneration == 0) {
+                return;
+            }
+            activeGeneration = 0;
+            generationCounter.incrementAndGet();
+            submit(logWriter::closeQuietly);
         }
-        activeGeneration = 0;
-        generationCounter.incrementAndGet();
-        submit(logWriter::closeQuietly);
     }
 
     /**
@@ -119,12 +124,14 @@ public final class SessionEventLogger implements AutoCloseable {
      * @param event event to log
      */
     public void log(SessionLogEvent event) {
-        int generation = activeGeneration;
-        if (generation == 0 || event == null) {
-            return;
+        synchronized (queueLock) {
+            int generation = activeGeneration;
+            if (generation == 0 || event == null) {
+                return;
+            }
+            SessionLogRecord record = new SessionLogRecord(Instant.now(clock), event);
+            submit(() -> writeOnWorker(generation, record));
         }
-        SessionLogRecord record = new SessionLogRecord(Instant.now(clock), event);
-        submit(() -> writeOnWorker(generation, record));
     }
 
     @Override
