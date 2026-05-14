@@ -19,7 +19,7 @@ automatically.
 ### Fixed
 
 - Correct the synthetic event command branch spelling to `/reinodoce synthetic`.
-- Correct persisted synthetic-event config field names while dual-writing legacy keys.
+- Correct persisted synthetic-event config field names.
 
 ## [0.1.3]
 
@@ -73,7 +73,7 @@ automatically.
 ### Added
 
 - Client-side Forge 1.20.1 mod that mirrors TikTok LIVE chat into the local Minecraft chat.
-- Commands: `/reinodoce connect|disconnect|status|settings|rule|syntetic|reload`.
+- Commands: `/reinodoce connect|disconnect|status|settings|rule|synthetic|reload`.
 - Client-side mod bundle in Packwiz format with `side = "client"`
   metadata (`prismBundle`, `verifyPrismMetadata`) for Prism Launcher
   display.

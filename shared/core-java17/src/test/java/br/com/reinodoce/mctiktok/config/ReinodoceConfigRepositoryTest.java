@@ -43,11 +43,6 @@ class ReinodoceConfigRepositoryTest {
         assertTrue(savedJson.contains("\"syntheticFollowEnabled\""));
         assertTrue(savedJson.contains("\"syntheticJoinEnabled\""));
         assertTrue(savedJson.contains("\"syntheticMemberLevelEnabled\""));
-        assertTrue(savedJson.contains("\"synteticGiftMinValue\""));
-        assertTrue(savedJson.contains("\"synteticGiftComboMode\""));
-        assertTrue(savedJson.contains("\"synteticFollowEnabled\""));
-        assertTrue(savedJson.contains("\"synteticJoinEnabled\""));
-        assertTrue(savedJson.contains("\"synteticMemberLevelEnabled\""));
         assertEquals("streamer", loaded.getLastUsername());
         assertEquals(5, loaded.getReconnectSeconds());
         assertTrue(loaded.isRuleFollowerOnly());
@@ -59,35 +54,6 @@ class ReinodoceConfigRepositoryTest {
         assertTrue(loaded.isSyntheticMemberLevelEnabled());
         assertTrue(loaded.isChatLogEnabled());
         assertEquals("[LIVE]", loaded.getChatPrefix());
-    }
-
-    @Test
-    void loadLegacySyntheticFieldNamesPreservesDowngradeCompatibility() throws IOException {
-        Path file = tempDir.resolve("reinodoce-mc-tiktok-client.json");
-        Files.writeString(file, """
-                {
-                  "synteticGiftMinValue": 7,
-                  "synteticGiftComboMode": "single",
-                  "synteticFollowEnabled": true,
-                  "synteticJoinEnabled": true,
-                  "synteticMemberLevelEnabled": true
-                }
-                """, StandardCharsets.UTF_8);
-
-        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(tempDir);
-        ReinodoceConfig loaded = repository.load();
-
-        assertEquals(7, loaded.getSyntheticGiftMinValue());
-        assertEquals("single", loaded.getSyntheticGiftComboMode());
-        assertTrue(loaded.isSyntheticFollowEnabled());
-        assertTrue(loaded.isSyntheticJoinEnabled());
-        assertTrue(loaded.isSyntheticMemberLevelEnabled());
-
-        repository.save(loaded);
-        String savedJson = Files.readString(file, StandardCharsets.UTF_8);
-
-        assertTrue(savedJson.contains("\"syntheticGiftMinValue\""));
-        assertTrue(savedJson.contains("\"synteticGiftMinValue\""));
     }
 
     @Test

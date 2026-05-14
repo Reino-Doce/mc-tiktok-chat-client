@@ -5,7 +5,7 @@ import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 /**
  * Persisted client configuration for the `/reinodoce` command surface.
  */
-// Legacy dual-write fields keep downgraded clients compatible.
+// Config intentionally mirrors persisted JSON fields.
 @SuppressWarnings({"PMD.DataClass", "PMD.TooManyFields"})
 public class ReinodoceConfig {
     /** Default prefix used before rendered LIVE chat lines. */
@@ -19,21 +19,11 @@ public class ReinodoceConfig {
     private int reconnectSeconds = DEFAULT_RECONNECT_SECONDS;
     private boolean ruleFollowerOnly = false;
     private int ruleMinMemberLevel = 0;
-    private Integer syntheticGiftMinValue;
-    private String syntheticGiftComboMode;
-    private Boolean syntheticFollowEnabled;
-    private Boolean syntheticJoinEnabled;
-    private Boolean syntheticMemberLevelEnabled;
-    @Deprecated
-    private Integer synteticGiftMinValue;
-    @Deprecated
-    private String synteticGiftComboMode;
-    @Deprecated
-    private Boolean synteticFollowEnabled;
-    @Deprecated
-    private Boolean synteticJoinEnabled;
-    @Deprecated
-    private Boolean synteticMemberLevelEnabled;
+    private int syntheticGiftMinValue = DEFAULT_SYNTHETIC_GIFT_MIN_VALUE;
+    private String syntheticGiftComboMode = GiftComboMode.BULK.id();
+    private boolean syntheticFollowEnabled = false;
+    private boolean syntheticJoinEnabled = false;
+    private boolean syntheticMemberLevelEnabled = false;
     private String chatPrefix = DEFAULT_CHAT_PREFIX;
     private String chatFormat = DEFAULT_CHAT_FORMAT;
     private boolean chatEmotesEnabled = true;
@@ -59,11 +49,11 @@ public class ReinodoceConfig {
         copy.setReconnectSeconds(reconnectSeconds);
         copy.setRuleFollowerOnly(ruleFollowerOnly);
         copy.setRuleMinMemberLevel(ruleMinMemberLevel);
-        copy.setSyntheticGiftMinValue(getSyntheticGiftMinValue());
-        copy.setSyntheticGiftComboMode(getSyntheticGiftComboMode());
-        copy.setSyntheticFollowEnabled(isSyntheticFollowEnabled());
-        copy.setSyntheticJoinEnabled(isSyntheticJoinEnabled());
-        copy.setSyntheticMemberLevelEnabled(isSyntheticMemberLevelEnabled());
+        copy.setSyntheticGiftMinValue(syntheticGiftMinValue);
+        copy.setSyntheticGiftComboMode(syntheticGiftComboMode);
+        copy.setSyntheticFollowEnabled(syntheticFollowEnabled);
+        copy.setSyntheticJoinEnabled(syntheticJoinEnabled);
+        copy.setSyntheticMemberLevelEnabled(syntheticMemberLevelEnabled);
         copy.setChatPrefix(chatPrefix);
         copy.setChatFormat(chatFormat);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
@@ -149,8 +139,7 @@ public class ReinodoceConfig {
      * @return minimum gift value
      */
     public int getSyntheticGiftMinValue() {
-        Integer value = syntheticGiftMinValue == null ? synteticGiftMinValue : syntheticGiftMinValue;
-        return value == null ? DEFAULT_SYNTHETIC_GIFT_MIN_VALUE : Math.max(0, value);
+        return syntheticGiftMinValue;
     }
 
     /**
@@ -159,9 +148,7 @@ public class ReinodoceConfig {
      * @param syntheticGiftMinValue minimum gift value, clamped to zero or greater
      */
     public void setSyntheticGiftMinValue(int syntheticGiftMinValue) {
-        int normalized = Math.max(0, syntheticGiftMinValue);
-        this.syntheticGiftMinValue = normalized;
-        this.synteticGiftMinValue = normalized;
+        this.syntheticGiftMinValue = Math.max(0, syntheticGiftMinValue);
     }
 
     /**
@@ -170,8 +157,7 @@ public class ReinodoceConfig {
      * @return persisted combo mode identifier
      */
     public String getSyntheticGiftComboMode() {
-        String value = syntheticGiftComboMode == null ? synteticGiftComboMode : syntheticGiftComboMode;
-        return GiftComboMode.fromString(value).id();
+        return syntheticGiftComboMode;
     }
 
     /**
@@ -180,9 +166,7 @@ public class ReinodoceConfig {
      * @param syntheticGiftComboMode combo mode identifier
      */
     public void setSyntheticGiftComboMode(String syntheticGiftComboMode) {
-        String normalized = GiftComboMode.fromString(syntheticGiftComboMode).id();
-        this.syntheticGiftComboMode = normalized;
-        this.synteticGiftComboMode = normalized;
+        this.syntheticGiftComboMode = GiftComboMode.fromString(syntheticGiftComboMode).id();
     }
 
     /**
@@ -191,8 +175,7 @@ public class ReinodoceConfig {
      * @return synthetic follow state
      */
     public boolean isSyntheticFollowEnabled() {
-        Boolean value = syntheticFollowEnabled == null ? synteticFollowEnabled : syntheticFollowEnabled;
-        return Boolean.TRUE.equals(value);
+        return syntheticFollowEnabled;
     }
 
     /**
@@ -202,7 +185,6 @@ public class ReinodoceConfig {
      */
     public void setSyntheticFollowEnabled(boolean syntheticFollowEnabled) {
         this.syntheticFollowEnabled = syntheticFollowEnabled;
-        this.synteticFollowEnabled = syntheticFollowEnabled;
     }
 
     /**
@@ -211,8 +193,7 @@ public class ReinodoceConfig {
      * @return synthetic join state
      */
     public boolean isSyntheticJoinEnabled() {
-        Boolean value = syntheticJoinEnabled == null ? synteticJoinEnabled : syntheticJoinEnabled;
-        return Boolean.TRUE.equals(value);
+        return syntheticJoinEnabled;
     }
 
     /**
@@ -222,7 +203,6 @@ public class ReinodoceConfig {
      */
     public void setSyntheticJoinEnabled(boolean syntheticJoinEnabled) {
         this.syntheticJoinEnabled = syntheticJoinEnabled;
-        this.synteticJoinEnabled = syntheticJoinEnabled;
     }
 
     /**
@@ -231,8 +211,7 @@ public class ReinodoceConfig {
      * @return synthetic member-level state
      */
     public boolean isSyntheticMemberLevelEnabled() {
-        Boolean value = syntheticMemberLevelEnabled == null ? synteticMemberLevelEnabled : syntheticMemberLevelEnabled;
-        return Boolean.TRUE.equals(value);
+        return syntheticMemberLevelEnabled;
     }
 
     /**
@@ -242,7 +221,6 @@ public class ReinodoceConfig {
      */
     public void setSyntheticMemberLevelEnabled(boolean syntheticMemberLevelEnabled) {
         this.syntheticMemberLevelEnabled = syntheticMemberLevelEnabled;
-        this.synteticMemberLevelEnabled = syntheticMemberLevelEnabled;
     }
 
     /**

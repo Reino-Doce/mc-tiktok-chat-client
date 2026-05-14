@@ -90,7 +90,7 @@ class ReinodoceConfigRepositoryTest {
         String savedJson = Files.readString(configFile);
         ReinodoceConfig loaded = repository.load();
 
-        assertDualWrittenSyntheticFieldNames(savedJson);
+        assertCorrectedSyntheticFieldNames(savedJson);
         assertEquals("alice", loaded.getLastUsername());
         assertEquals(9, loaded.getReconnectSeconds());
         assertTrue(loaded.isRuleFollowerOnly());
@@ -106,47 +106,11 @@ class ReinodoceConfigRepositoryTest {
         assertTrue(loaded.isChatLogEnabled());
     }
 
-    @Test
-    void loadLegacySyntheticFieldNamesPreservesDowngradeCompatibility() throws IOException {
-        Path configDir = tempDir.resolve("config");
-        Path configFile = configDir.resolve(ReinodoceConfigRepository.DEFAULT_FILE_NAME);
-        Files.createDirectories(configDir);
-        Files.writeString(configFile, """
-                {
-                  "synteticGiftMinValue": 7,
-                  "synteticGiftComboMode": "single",
-                  "synteticFollowEnabled": true,
-                  "synteticJoinEnabled": true,
-                  "synteticMemberLevelEnabled": true
-                }
-                """);
-
-        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
-        ReinodoceConfig loaded = repository.load();
-
-        assertEquals(7, loaded.getSyntheticGiftMinValue());
-        assertEquals("single", loaded.getSyntheticGiftComboMode());
-        assertTrue(loaded.isSyntheticFollowEnabled());
-        assertTrue(loaded.isSyntheticJoinEnabled());
-        assertTrue(loaded.isSyntheticMemberLevelEnabled());
-
-        repository.save(loaded);
-        String savedJson = Files.readString(configFile);
-
-        assertTrue(savedJson.contains("\"syntheticGiftMinValue\""));
-        assertTrue(savedJson.contains("\"synteticGiftMinValue\""));
-    }
-
-    private void assertDualWrittenSyntheticFieldNames(String savedJson) {
+    private void assertCorrectedSyntheticFieldNames(String savedJson) {
         assertTrue(savedJson.contains("\"syntheticGiftMinValue\""));
         assertTrue(savedJson.contains("\"syntheticGiftComboMode\""));
         assertTrue(savedJson.contains("\"syntheticFollowEnabled\""));
         assertTrue(savedJson.contains("\"syntheticJoinEnabled\""));
         assertTrue(savedJson.contains("\"syntheticMemberLevelEnabled\""));
-        assertTrue(savedJson.contains("\"synteticGiftMinValue\""));
-        assertTrue(savedJson.contains("\"synteticGiftComboMode\""));
-        assertTrue(savedJson.contains("\"synteticFollowEnabled\""));
-        assertTrue(savedJson.contains("\"synteticJoinEnabled\""));
-        assertTrue(savedJson.contains("\"synteticMemberLevelEnabled\""));
     }
 }

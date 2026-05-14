@@ -13,11 +13,6 @@ The file is read on mod startup and rewritten whenever a setting changes
 through `/reinodoce …`. You can also edit it by hand and run
 `/reinodoce reload` to pick up the changes without restarting the client.
 
-Legacy config files that still use the old `syntetic...` spelling are
-accepted on load. The config writer stores both the corrected `synthetic...`
-names and the legacy `syntetic...` names so users can downgrade without
-losing synthetic-event settings.
-
 ## Fields
 
 | Field | Type | Default | Notes |

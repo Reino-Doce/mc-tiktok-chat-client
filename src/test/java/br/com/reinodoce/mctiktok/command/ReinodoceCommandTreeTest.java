@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ReinodoceCommandTreeTest {
     private static final String ENABLED_ARGUMENT = "enabled";
@@ -40,7 +39,6 @@ class ReinodoceCommandTreeTest {
         assertNotNull(synthetic.getChild("follow").getChild(ENABLED_ARGUMENT));
         assertNotNull(synthetic.getChild("join").getChild(ENABLED_ARGUMENT));
         assertNotNull(synthetic.getChild("member-level").getChild(ENABLED_ARGUMENT));
-        assertNull(root.getChild("syntetic"));
     }
 
     private static final class StubCommandService implements ReinodoceCommandService {
