@@ -74,14 +74,10 @@ final class WebsocketMessageDispatcher {
                 TikTokUserNames.chooseRawUserName(
                         chatMessage.getUser().getNickname(), chatMessage.getUser().getUsername()));
         String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(chatMessage.getUser());
-        memberLevelResolver.updateLevel(
-                chatMessage.getUser().getId(),
-                username,
-                avatarUrl,
-                (int) chatMessage.getUser().getFansClubInfo().getFansLevel());
+        int memberLevel = resolveCommentMemberLevel(user, chatMessage.getUser(), username, avatarUrl);
         RichLiveMessage richMessage = richMessageParser.parseChatMessage(chatMessage, username);
         liveCommentEmitter.emit(new LiveCommentEmitter.EmissionContext(
-                user, username, avatarUrl, memberLevelResolver.resolveLevel(user), richMessage, false));
+                user, username, avatarUrl, memberLevel, richMessage, false));
     }
 
     private void handleEmote(WebcastEmoteChatMessage emoteChatMessage) {
@@ -90,8 +86,25 @@ final class WebsocketMessageDispatcher {
                 TikTokUserNames.chooseRawUserName(
                         emoteChatMessage.getUser().getNickname(), emoteChatMessage.getUser().getUsername()));
         String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(emoteChatMessage.getUser());
+        int memberLevel = resolveCommentMemberLevel(user, emoteChatMessage.getUser(), username, avatarUrl);
         RichLiveMessage richMessage = richMessageParser.parseEmoteChatMessage(emoteChatMessage, username);
         liveCommentEmitter.emit(new LiveCommentEmitter.EmissionContext(
-                user, username, avatarUrl, memberLevelResolver.resolveLevel(user), richMessage, false));
+                user, username, avatarUrl, memberLevel, richMessage, false));
+    }
+
+    int resolveCommentMemberLevel(
+            User user,
+            io.github.jwdeveloper.tiktok.messages.data.User rawUser,
+            String username,
+            String avatarUrl
+    ) {
+        if (rawUser != null) {
+            memberLevelResolver.updateLevel(
+                    rawUser.getId(),
+                    username,
+                    avatarUrl,
+                    MemberLevelResolver.resolveRawUserLevel(rawUser));
+        }
+        return memberLevelResolver.resolveLevel(user);
     }
 }

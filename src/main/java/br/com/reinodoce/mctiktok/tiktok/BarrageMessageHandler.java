@@ -48,7 +48,7 @@ final class BarrageMessageHandler {
         User user = rawUser == null ? null : User.map(rawUser);
         String username = resolveBarrageUsername(parsed, rawUser);
         String avatarUrl = resolveBarrageAvatarUrl(parsed, rawUser);
-        int memberLevel = resolveBarrageMemberLevel(user, barrageMessage);
+        int memberLevel = resolveBarrageMemberLevel(user, rawUser, barrageMessage);
         RichLiveMessage richMessage = new RichLiveMessage(
                 resolveMessageId(barrageMessage.hasCommon() ? barrageMessage.getCommon() : null),
                 username,
@@ -69,7 +69,7 @@ final class BarrageMessageHandler {
                 TikTokUserNames.sanitizeUserName(
                         TikTokUserNames.chooseRawUserName(rawUser.getNickname(), rawUser.getUsername())),
                 TikTokMediaResolver.resolveUserAvatarUrl(rawUser),
-                Math.max(0, fansLevelParam.getCurrentGrade()));
+                fansLevelParam.getCurrentGrade());
         if (!memberLevelEmitter.emit(update)) {
             logNotRendered(barrageMessage, "");
         }
@@ -119,16 +119,21 @@ final class BarrageMessageHandler {
         return TikTokMediaResolver.defaultAvatarUrl();
     }
 
-    private int resolveBarrageMemberLevel(User user, WebcastBarrageMessage barrageMessage) {
+    int resolveBarrageMemberLevel(
+            User user,
+            io.github.jwdeveloper.tiktok.messages.data.User rawUser,
+            WebcastBarrageMessage barrageMessage
+    ) {
         int memberLevel = user == null ? 0 : memberLevelResolver.resolveLevel(user);
         if (memberLevel > 0) {
             return memberLevel;
         }
-        if (barrageMessage.hasFansLevelParam()) {
-            return Math.max(0, barrageMessage.getFansLevelParam().getCurrentGrade());
+        int rawUserLevel = MemberLevelResolver.resolveRawUserLevel(rawUser);
+        if (rawUserLevel > 0) {
+            return rawUserLevel;
         }
-        if (barrageMessage.hasUserGradeParam()) {
-            return Math.max(0, barrageMessage.getUserGradeParam().getCurrentGrade());
+        if (barrageMessage.hasFansLevelParam()) {
+            return MemberLevelResolver.normalizeLevel(barrageMessage.getFansLevelParam().getCurrentGrade());
         }
         return 0;
     }
