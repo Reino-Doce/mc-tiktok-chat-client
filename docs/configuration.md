@@ -18,6 +18,7 @@ through `/reinodoce …`. You can also edit it by hand and run
 | Field | Type | Default | Notes |
 | ----- | ---- | ------- | ----- |
 | `lastUsername` | string | `""` | Last `@username` successfully started through `/reinodoce connect`. Trimmed, never null. |
+| `autoConnectOnStart` | boolean | `false` | When enabled, startup attempts one connection to `lastUsername` if it is non-blank and valid. |
 | `reconnectSeconds` | integer | `5` | Reconnect delay in seconds. `0` disables reconnect. Clamped to ≥ 0. |
 | `ruleFollowerOnly` | boolean | `false` | Mirror only comments from followers of the streamer. |
 | `ruleMinMemberLevel` | integer | `0` | Minimum LIVE member level required. `0` disables. Clamped to ≥ 0. |

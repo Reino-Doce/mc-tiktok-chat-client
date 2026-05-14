@@ -18,6 +18,7 @@ from a TikTok LIVE inside the local Minecraft chat.
 
 ```
 /reinodoce connect @yourusername
+/reinodoce settings auto-connect true
 ```
 
 For the full command surface, see [docs/commands.md](docs/commands.md).

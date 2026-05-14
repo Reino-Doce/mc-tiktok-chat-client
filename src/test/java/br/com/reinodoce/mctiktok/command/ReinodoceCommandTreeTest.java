@@ -17,13 +17,16 @@ class ReinodoceCommandTreeTest {
         CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
         CommandNode<CommandSourceStack> root = dispatcher.register(ReinodoceCommandTree.build(new StubCommandService()));
 
-        assertNotNull(root.getChild("connect").getChild("username"));
+        CommandNode<CommandSourceStack> connect = root.getChild("connect");
+        assertNotNull(connect.getCommand());
+        assertNotNull(connect.getChild("username"));
         assertNotNull(root.getChild("disconnect"));
         assertNotNull(root.getChild("status"));
         assertNotNull(root.getChild("reload"));
 
         CommandNode<CommandSourceStack> settings = root.getChild("settings");
         assertNotNull(settings.getChild("reconnect").getChild("seconds"));
+        assertNotNull(settings.getChild("auto-connect").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("chat-emotes").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("chat-log").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("prefix").getChild("value"));
@@ -48,6 +51,11 @@ class ReinodoceCommandTreeTest {
         }
 
         @Override
+        public CommandResult connectLast() {
+            return unsupported();
+        }
+
+        @Override
         public CommandResult disconnect() {
             return unsupported();
         }
@@ -59,6 +67,11 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setReconnectSeconds(int seconds) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setAutoConnectOnStart(boolean enabled) {
             return unsupported();
         }
 

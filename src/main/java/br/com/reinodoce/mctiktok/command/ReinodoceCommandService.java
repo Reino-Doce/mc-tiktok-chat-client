@@ -15,6 +15,13 @@ public interface ReinodoceCommandService {
     CommandResult connect(String username);
 
     /**
+     * Starts a TikTok LIVE connection using the saved last username.
+     *
+     * @return command result
+     */
+    CommandResult connectLast();
+
+    /**
      * Stops the active TikTok LIVE connection.
      *
      * @return command result
@@ -35,6 +42,14 @@ public interface ReinodoceCommandService {
      * @return command result
      */
     CommandResult setReconnectSeconds(int seconds);
+
+    /**
+     * Updates startup auto-connect.
+     *
+     * @param enabled whether the client should connect to the saved username on startup
+     * @return command result
+     */
+    CommandResult setAutoConnectOnStart(boolean enabled);
 
     /**
      * Updates follower-only comment filtering.

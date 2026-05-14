@@ -77,6 +77,15 @@ public class TikTokClientFacade {
     }
 
     /**
+     * Records a local lifecycle error without attempting a network connection.
+     *
+     * @param message error text to expose through status
+     */
+    public void recordLocalError(String message) {
+        sessionState.setLastError(message);
+    }
+
+    /**
      * Applies runtime configuration changes to the lifecycle manager.
      */
     public void onConfigUpdated() {

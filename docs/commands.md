@@ -11,6 +11,7 @@ Bare `/reinodoce` (no subcommand) is equivalent to `/reinodoce status`.
 | Command | Argument | Effect |
 | ------- | -------- | ------ |
 | `/reinodoce connect <username>` | TikTok handle, 2–30 chars of `A-Z a-z 0-9 . _` (the leading `@` is optional and stripped) | Starts the TikTok LIVE connection for `<username>` and mirrors chat events into Minecraft. Persists `<username>` as `lastUsername` after a successful connection start. |
+| `/reinodoce connect` | — | Starts the TikTok LIVE connection for the saved `lastUsername`. Prints a clear error when no username has been saved yet. |
 | `/reinodoce disconnect` | — | Closes the active connection and cancels any pending reconnect. |
 | `/reinodoce status` | — | Prints connection state, target username, reconnect timing, active rules, last error (if any), inline media renderer state, token count, cache stats, download counters, and cache eviction counters. |
 | `/reinodoce reload` | — | Re-reads `config/reinodoce-mc-tiktok-client.json` from disk and propagates the new values to the active TikTok session. Use it after editing the file by hand. |
@@ -22,6 +23,7 @@ Settings change runtime behavior and are persisted to the client config.
 | Command | Argument | Default | Effect |
 | ------- | -------- | ------- | ------ |
 | `/reinodoce settings reconnect <seconds>` | integer ≥ 0 | `5` | Delay between reconnect attempts when the LIVE drops or is offline. `0` disables reconnect. |
+| `/reinodoce settings auto-connect <true\|false>` | boolean | `false` | When `true`, the client attempts one startup connection to the saved `lastUsername`. Blank or invalid saved usernames are ignored safely. |
 | `/reinodoce settings chat-emotes <true\|false>` | boolean | `true` | When `true`, TikTok chat emotes are rendered inline in the Minecraft chat HUD. |
 | `/reinodoce settings chat-log <true\|false>` | boolean | `false` | When `true`, mirrored TikTok lines are written through Minecraft's chat logger. System/status/error lines remain logged either way. |
 | `/reinodoce settings prefix <value>` | text | `"[LIVE]"` | Prefix rendered on every mirrored TikTok line. Blank values fall back to the default. |
@@ -73,6 +75,7 @@ joins, member-level changes) into visible `[LIVE]`-prefixed chat lines.
 /reinodoce rule min-member-level 1
 /reinodoce synthetic gift-combo bulk
 /reinodoce connect @yourusername
+/reinodoce settings auto-connect true
 /reinodoce status
 ```
 

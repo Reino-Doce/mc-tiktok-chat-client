@@ -24,6 +24,18 @@ public final class SettingsCommandHandler {
     }
 
     /**
+     * Updates startup auto-connect settings.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param enabled whether startup auto-connect should be enabled
+     * @return Brigadier command result code
+     */
+    public static int autoConnect(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
+        return CommandFeedback.sendResult(source, service.setAutoConnectOnStart(enabled));
+    }
+
+    /**
      * Updates chat inline-emote rendering settings.
      *
      * @param service command service boundary
