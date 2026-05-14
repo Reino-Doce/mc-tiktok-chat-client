@@ -7,6 +7,8 @@ import java.util.List;
 /**
  * Command-facing service contract used by the `/reinodoce` Brigadier tree.
  */
+// Public command service intentionally exposes one method per command action.
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public interface ReinodoceCommandService {
     /**
      * Starts a TikTok LIVE connection.
@@ -90,6 +92,38 @@ public interface ReinodoceCommandService {
      * @return command result
      */
     CommandResult setHudLines(int lines);
+
+    /**
+     * Updates local pinned-message overlay visibility.
+     *
+     * @param enabled whether pinned-message overlay rendering is enabled
+     * @return command result
+     */
+    CommandResult setPinnedOverlayEnabled(boolean enabled);
+
+    /**
+     * Updates local pinned-message overlay anchor.
+     *
+     * @param position pinned-message overlay position identifier
+     * @return command result
+     */
+    CommandResult setPinnedOverlayPosition(String position);
+
+    /**
+     * Updates whether pinned messages are also sent through the normal mirrored output mode.
+     *
+     * @param enabled whether pinned messages should also appear in normal mirrored output
+     * @return command result
+     */
+    CommandResult setPinnedMessagesInOutput(boolean enabled);
+
+    /**
+     * Updates retained local pinned-message overlay count.
+     *
+     * @param messages pinned-message overlay item count
+     * @return command result
+     */
+    CommandResult setPinnedOverlayMessages(int messages);
 
     /**
      * Returns language setting status lines.

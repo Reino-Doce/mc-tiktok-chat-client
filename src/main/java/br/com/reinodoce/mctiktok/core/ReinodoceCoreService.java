@@ -1,7 +1,6 @@
 package br.com.reinodoce.mctiktok.core;
 
 import br.com.reinodoce.mctiktok.alert.AlertEventType;
-import br.com.reinodoce.mctiktok.alert.AlertService;
 import br.com.reinodoce.mctiktok.alert.AlertSink;
 import br.com.reinodoce.mctiktok.alert.AlertSoundId;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
@@ -13,7 +12,6 @@ import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
 import br.com.reinodoce.mctiktok.i18n.Translations;
-import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
 import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
@@ -87,6 +85,23 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
      * Creates the core service.
      *
      * @param chatEventSink chat sink used for rendered TikTok events
+     * @param configRepository persisted configuration repository
+     * @param languageSupplier selected client language supplier
+     * @param sessionLogDirectory local session log directory
+     */
+    public ReinodoceCoreService(
+            ChatEventSink chatEventSink,
+            ReinodoceConfigRepository configRepository,
+            Supplier<String> languageSupplier,
+            Path sessionLogDirectory
+    ) {
+        this(chatEventSink, AlertSink.noop(), configRepository, languageSupplier, sessionLogDirectory);
+    }
+
+    /**
+     * Creates the core service.
+     *
+     * @param chatEventSink chat sink used for rendered TikTok events
      * @param alertSink local alert sink
      * @param configRepository persisted configuration repository
      * @param languageSupplier selected client language supplier
@@ -99,24 +114,32 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
             Supplier<String> languageSupplier,
             Path sessionLogDirectory
     ) {
+        this(
+                new TikTokRuntimeServices.SideEffects(chatEventSink, alertSink, sessionLogDirectory),
+                configRepository,
+                languageSupplier);
+    }
+
+    /**
+     * Creates the core service.
+     *
+     * @param runtimeSideEffects rendered event sinks and local side effects
+     * @param configRepository persisted configuration repository
+     * @param languageSupplier selected client language supplier
+     */
+    public ReinodoceCoreService(
+            TikTokRuntimeServices.SideEffects runtimeSideEffects,
+            ReinodoceConfigRepository configRepository,
+            Supplier<String> languageSupplier
+    ) {
         this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
         this.settingsState = new RuntimeSettingsState();
         this.clientLanguageSupplier = Objects.requireNonNull(languageSupplier, "languageSupplier");
-        MessageRuleEngine ruleEngine = new MessageRuleEngine();
-        MemberLevelResolver memberLevelResolver = new MemberLevelResolver();
-        MessageDeduplicator deduplicator = new MessageDeduplicator(Duration.ofMinutes(DEDUPLICATION_WINDOW_MINUTES));
-        this.tikTokClientFacade = new TikTokClientFacade(
-                settingsState::getSnapshot,
-                new TikTokRuntimeServices(
-                        Objects.requireNonNull(chatEventSink, "chatEventSink"),
-                        new SessionEventLogger(Objects.requireNonNull(sessionLogDirectory, "sessionLogDirectory")),
-                        new AlertService(Objects.requireNonNull(alertSink, "alertSink")),
-                        this::effectiveLanguageUnchecked,
-                        this::useRuntimeLanguageForEffectiveLanguage),
-                ruleEngine,
-                memberLevelResolver,
-                deduplicator
-        );
+        this.tikTokClientFacade = createTikTokClientFacade(
+                Objects.requireNonNull(runtimeSideEffects, "runtimeSideEffects")
+                        .withLanguageSuppliers(
+                                this::effectiveLanguageUnchecked,
+                                this::useRuntimeLanguageForEffectiveLanguage));
         this.initialized = new AtomicBoolean(false);
     }
 
@@ -132,21 +155,17 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         this.initialized = new AtomicBoolean(false);
     }
 
-    /**
-     * Creates the core service.
-     *
-     * @param chatEventSink chat sink used for rendered TikTok events
-     * @param configRepository persisted configuration repository
-     * @param languageSupplier selected client language supplier
-     * @param sessionLogDirectory local session log directory
-     */
-    public ReinodoceCoreService(
-            ChatEventSink chatEventSink,
-            ReinodoceConfigRepository configRepository,
-            Supplier<String> languageSupplier,
-            Path sessionLogDirectory
-    ) {
-        this(chatEventSink, AlertSink.noop(), configRepository, languageSupplier, sessionLogDirectory);
+    private TikTokClientFacade createTikTokClientFacade(TikTokRuntimeServices runtimeServices) {
+        MessageRuleEngine ruleEngine = new MessageRuleEngine();
+        MemberLevelResolver memberLevelResolver = new MemberLevelResolver();
+        MessageDeduplicator deduplicator = new MessageDeduplicator(Duration.ofMinutes(DEDUPLICATION_WINDOW_MINUTES));
+        return new TikTokClientFacade(
+                settingsState::getSnapshot,
+                runtimeServices,
+                ruleEngine,
+                memberLevelResolver,
+                deduplicator
+        );
     }
 
     /**
@@ -342,6 +361,45 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         config.setHudLines(lines);
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.set.hud_lines", config.getHudLines()));
+    }
+
+    @Override
+    public CommandResult setPinnedOverlayEnabled(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setPinnedOverlayEnabled(enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.pinned_overlay", enabled));
+    }
+
+    @Override
+    public CommandResult setPinnedOverlayPosition(String position) {
+        ensureInitialized();
+        HudPosition parsed = HudPosition.fromString(position);
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setPinnedOverlayPosition(parsed.id());
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.pinned_overlay_position", parsed.id()));
+    }
+
+    @Override
+    public CommandResult setPinnedMessagesInOutput(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setPinnedMessagesInOutput(enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.pinned_output", enabled));
+    }
+
+    @Override
+    public CommandResult setPinnedOverlayMessages(int messages) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setPinnedOverlayMessages(messages);
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.pinned_overlay_messages",
+                config.getPinnedOverlayMessages()));
     }
 
     @Override
@@ -775,6 +833,12 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.output_mode", config.getOutputMode()));
         lines.add(Translations.tr("reinodoce.status.hud_position", config.getHudPosition()));
         lines.add(Translations.tr("reinodoce.status.hud_lines", config.getHudLines()));
+        lines.add(Translations.tr(
+                "reinodoce.status.pinned_overlay",
+                config.isPinnedOverlayEnabled(),
+                config.getPinnedOverlayPosition(),
+                config.getPinnedOverlayMessages(),
+                config.isPinnedMessagesInOutput()));
     }
 
     private static void addAlertStatusLines(List<String> lines, ReinodoceConfig config) {

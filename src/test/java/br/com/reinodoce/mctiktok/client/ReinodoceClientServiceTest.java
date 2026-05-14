@@ -106,7 +106,10 @@ class ReinodoceClientServiceTest {
                 repository,
                 () -> EN_US,
                 tempDir.resolve("logs"));
-        return new ReinodoceClientService(new RecordingPlatformBridge(), coreService, hudMessageStore);
+        return new ReinodoceClientService(
+                new RecordingPlatformBridge(),
+                coreService,
+                new ClientOverlayServices(hudMessageStore));
     }
 
     private static void configureExpandedDraft(ReinodoceConfig draft) {
@@ -116,6 +119,10 @@ class ReinodoceClientServiceTest {
         draft.setOutputMode(HUD_MODE);
         draft.setHudPosition("bottom-right");
         draft.setHudLines(5);
+        draft.setPinnedOverlayEnabled(false);
+        draft.setPinnedOverlayPosition("bottom-left");
+        draft.setPinnedMessagesInOutput(true);
+        draft.setPinnedOverlayMessages(2);
         draft.setChatLogEnabled(true);
         draft.setChatPrefix("[TikTok]");
         draft.setChatFormat("{prefix} <{username}> {message}");
@@ -153,6 +160,10 @@ class ReinodoceClientServiceTest {
         assertEquals(HUD_MODE, saved.getOutputMode());
         assertEquals("bottom-right", saved.getHudPosition());
         assertEquals(5, saved.getHudLines());
+        assertFalse(saved.isPinnedOverlayEnabled());
+        assertEquals("bottom-left", saved.getPinnedOverlayPosition());
+        assertTrue(saved.isPinnedMessagesInOutput());
+        assertEquals(2, saved.getPinnedOverlayMessages());
         assertTrue(saved.isChatLogEnabled());
         assertEquals("[TikTok]", saved.getChatPrefix());
         assertEquals("{prefix} <{username}> {message}", saved.getChatFormat());

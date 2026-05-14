@@ -23,7 +23,8 @@ record TikTokFacadeWiring(
         SessionStatsTracker statsTracker,
         TikTokEventDispatcher eventDispatcher,
         WebsocketMessageDispatcher websocketDispatcher,
-        LifecycleHookBinding lifecycleBinding
+        LifecycleHookBinding lifecycleBinding,
+        Runnable resetAction
 ) {
     private static final int ERROR_NOTICE_COOLDOWN_SECONDS = 8;
     private static final int RECONNECT_NOTICE_COOLDOWN_SECONDS = 5;
@@ -48,6 +49,10 @@ record TikTokFacadeWiring(
 
     void bindFacade(TikTokClientFacade facade) {
         lifecycleBinding.build(facade);
+    }
+
+    void resetTransientState() {
+        resetAction.run();
     }
 
     @SuppressWarnings("PMD.CouplingBetweenObjects")
@@ -82,7 +87,8 @@ record TikTokFacadeWiring(
         TikTokFacadeWiring assemble() {
             Emitters emitters = buildEmitters();
             Handlers handlers = buildHandlers(emitters);
-            LifecycleHookBinding binding = buildLifecycleBinding(emitters);
+            Runnable reset = () -> resetTransientState(emitters);
+            LifecycleHookBinding binding = buildLifecycleBinding(reset, emitters.statsTracker()::reset);
             TikTokEventDispatcher.Dependencies deps = new TikTokEventDispatcher.Dependencies(
                     configSupplier, runtimeServices.chatGateway(), ruleEngine, memberLevelResolver,
                     emitters.renderedTracker(), emitters.messageFactory(),
@@ -91,7 +97,7 @@ record TikTokFacadeWiring(
                     runtimeServices.sessionEventLogger(), runtimeServices.alertService());
             TikTokEventDispatcher dispatcher = new TikTokEventDispatcher(deps, binding::isTokenCurrentLazy);
             return new TikTokFacadeWiring(
-                    sessionState, emitters.statsTracker(), dispatcher, handlers.websocketDispatcher(), binding);
+                    sessionState, emitters.statsTracker(), dispatcher, handlers.websocketDispatcher(), binding, reset);
         }
 
         private Emitters buildEmitters() {
@@ -112,12 +118,16 @@ record TikTokFacadeWiring(
             TikTokGiftEmitter giftEmitter = new TikTokGiftEmitter(
                     configSupplier, runtimeServices, ruleEngine, giftDeduplicator,
                     messageFactory, statsTracker);
+            TikTokRichMessageParser parser = new TikTokRichMessageParser();
+            PinnedMessageEmitter pinnedMessageEmitter = new PinnedMessageEmitter(new PinnedMessageEmitter.Dependencies(
+                    configSupplier, runtimeServices.chatGateway(), runtimeServices.pinnedMessageSink(), ruleEngine,
+                    memberLevelResolver, parser, messageFactory));
             GiftComboAggregator giftComboAggregator = new GiftComboAggregator(
                     executors.scheduler(), giftEmitter::emitFromAsyncFlush);
             return new Emitters(
                     renderedTracker, statsTracker, moderationDuplicateTracker,
                     messageFactory, liveCommentEmitter, memberLevelEmitter,
-                    giftEmitter, new TikTokRichMessageParser(), giftComboAggregator);
+                    giftEmitter, parser, pinnedMessageEmitter, giftComboAggregator);
         }
 
         private Handlers buildHandlers(Emitters emitters) {
@@ -129,19 +139,18 @@ record TikTokFacadeWiring(
             WebsocketMessageDispatcher websocketDispatcher = new WebsocketMessageDispatcher(
                     emitters.parser(), memberLevelResolver,
                     emitters.liveCommentEmitter(),
-                    barrageHandler, memberHandler);
+                    barrageHandler, memberHandler, emitters.pinnedMessageEmitter());
             return new Handlers(websocketDispatcher);
         }
 
-        private LifecycleHookBinding buildLifecycleBinding(Emitters emitters) {
-            Runnable reset = () -> resetTransientState(emitters);
+        private LifecycleHookBinding buildLifecycleBinding(Runnable reset, Runnable resetStats) {
             TikTokConnectionLifecycle.LifecycleParams params = new TikTokConnectionLifecycle.LifecycleParams(
                     configSupplier, runtimeServices.chatGateway(), sessionState,
                     executors.ioExecutor(), executors.scheduler(),
                     new NoticeThrottler(Duration.ofSeconds(ERROR_NOTICE_COOLDOWN_SECONDS)),
                     new NoticeThrottler(Duration.ofSeconds(RECONNECT_NOTICE_COOLDOWN_SECONDS)),
                     reset,
-                    emitters.statsTracker()::reset,
+                    resetStats,
                     runtimeServices.languageSupplier(),
                     runtimeServices.sessionEventLogger());
             return new LifecycleHookBinding(params);
@@ -154,6 +163,7 @@ record TikTokFacadeWiring(
             memberLevelResolver.clear();
             emitters.renderedTracker().clear();
             emitters.moderationDuplicateTracker().clear();
+            runtimeServices.pinnedMessageSink().clearPinnedMessages();
         }
     }
 
@@ -174,6 +184,7 @@ record TikTokFacadeWiring(
             MemberLevelEmitter memberLevelEmitter,
             TikTokGiftEmitter giftEmitter,
             TikTokRichMessageParser parser,
+            PinnedMessageEmitter pinnedMessageEmitter,
             GiftComboAggregator giftComboAggregator
     ) {
     }

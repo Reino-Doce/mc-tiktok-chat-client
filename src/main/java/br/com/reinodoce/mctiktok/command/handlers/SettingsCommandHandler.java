@@ -98,6 +98,58 @@ public final class SettingsCommandHandler {
     }
 
     /**
+     * Updates pinned-message overlay visibility.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param enabled whether pinned-message overlay rendering should be enabled
+     * @return Brigadier command result code
+     */
+    public static int pinnedOverlay(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
+        return CommandFeedback.sendResult(source, service.setPinnedOverlayEnabled(enabled));
+    }
+
+    /**
+     * Updates pinned-message overlay position.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param position pinned-message overlay position identifier
+     * @return Brigadier command result code
+     */
+    public static int pinnedOverlayPosition(
+            ReinodoceCommandService service, CommandSourceStack source, String position
+    ) {
+        return CommandFeedback.sendResult(source, service.setPinnedOverlayPosition(position));
+    }
+
+    /**
+     * Updates whether pinned messages are also sent through normal mirrored output.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param enabled whether normal mirrored output should include pinned messages
+     * @return Brigadier command result code
+     */
+    public static int pinnedOutput(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
+        return CommandFeedback.sendResult(source, service.setPinnedMessagesInOutput(enabled));
+    }
+
+    /**
+     * Updates visible pinned-message overlay count.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param messages pinned-message overlay item count
+     * @return Brigadier command result code
+     */
+    public static int pinnedOverlayMessages(
+            ReinodoceCommandService service, CommandSourceStack source, int messages
+    ) {
+        return CommandFeedback.sendResult(source, service.setPinnedOverlayMessages(messages));
+    }
+
+    /**
      * Opens the client settings GUI.
      *
      * @param service command service boundary

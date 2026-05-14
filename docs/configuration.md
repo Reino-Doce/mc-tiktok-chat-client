@@ -62,6 +62,10 @@ top-level screen. You can also edit the file by hand and run
 | `outputMode` | string | `"chat"` | One of `"chat"`, `"actionbar"`, `"hud"`, or `"off"`. Unknown values fall back to `"chat"`. |
 | `hudPosition` | string | `"top-left"` | One of `"top-left"`, `"top-right"`, `"bottom-left"`, or `"bottom-right"`. Unknown values fall back to `"top-left"`. |
 | `hudLines` | integer | `6` | Maximum retained HUD lines. Clamped to 1–12. |
+| `pinnedOverlayEnabled` | boolean | `true` | Render TikTok pinned-message events in a dedicated local screen overlay. The overlay is client-only and does not send packets or chat messages. |
+| `pinnedOverlayPosition` | string | `"top-right"` | One of `"top-left"`, `"top-right"`, `"bottom-left"`, or `"bottom-right"`. Unknown values fall back to `"top-left"`. |
+| `pinnedMessagesInOutput` | boolean | `false` | When `true`, pinned-message events also appear in the normal mirrored output selected by `outputMode`. |
+| `pinnedOverlayMessages` | integer | `3` | Maximum visible pinned-message overlay entries. Clamped to 1–6. Pinned messages expire after TikTok's supplied display duration when present, otherwise after a short local fallback. |
 | `chatPrefix` | string | `"[LIVE]"` | Prefix prepended to every mirrored line. Empty / blank values revert to the default. |
 | `chatFormat` | string | current layout | Template used to arrange mirrored lines. Must include `{prefix}`, `{username}`, and `{message}`; unknown tokens or blank values revert to the default. |
 | `chatEmotesEnabled` | boolean | `true` | Render TikTok chat emotes inline in Minecraft chat. |

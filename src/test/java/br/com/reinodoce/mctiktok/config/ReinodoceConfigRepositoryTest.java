@@ -50,6 +50,7 @@ class ReinodoceConfigRepositoryTest {
         assertFalse(loaded.isSyntheticMemberLevelEnabled());
         assertDefaultAlerts(loaded);
         assertDefaultOutputSettings(loaded);
+        assertDefaultPinnedOverlaySettings(loaded);
         assertFalse(loaded.isRuleFollowerOnly());
     }
 
@@ -73,6 +74,10 @@ class ReinodoceConfigRepositoryTest {
         assertEquals("chat", config.getOutputMode());
         assertEquals("top-left", config.getHudPosition());
         assertEquals(12, config.getHudLines());
+        assertTrue(config.isPinnedOverlayEnabled());
+        assertEquals("top-left", config.getPinnedOverlayPosition());
+        assertFalse(config.isPinnedMessagesInOutput());
+        assertEquals(ReinodoceConfig.MAX_PINNED_OVERLAY_MESSAGES, config.getPinnedOverlayMessages());
         assertEquals("jsonl", config.getSessionLoggingFormat());
         assertEquals("[LIVE]", config.getChatPrefix());
         assertEquals("{prefix}  <{username}> {message}", config.getChatFormat());
@@ -101,6 +106,8 @@ class ReinodoceConfigRepositoryTest {
         config.setOutputMode(UNKNOWN);
         config.setHudPosition(UNKNOWN);
         config.setHudLines(99);
+        config.setPinnedOverlayPosition(UNKNOWN);
+        config.setPinnedOverlayMessages(99);
         config.setSessionLoggingFormat(UNKNOWN);
         config.setChatPrefix("   ");
         config.setChatFormat("{username}: {message}");
@@ -134,6 +141,10 @@ class ReinodoceConfigRepositoryTest {
         assertEquals("hud", loaded.getOutputMode());
         assertEquals("bottom-right", loaded.getHudPosition());
         assertEquals(4, loaded.getHudLines());
+        assertFalse(loaded.isPinnedOverlayEnabled());
+        assertEquals("bottom-left", loaded.getPinnedOverlayPosition());
+        assertTrue(loaded.isPinnedMessagesInOutput());
+        assertEquals(2, loaded.getPinnedOverlayMessages());
         assertEquals("[RD]", loaded.getChatPrefix());
         assertEquals("{prefix} {username}: {message}", loaded.getChatFormat());
         assertFalse(loaded.isChatEmotesEnabled());
@@ -200,6 +211,12 @@ class ReinodoceConfigRepositoryTest {
     }
 
     private void configureRoundTripConfig(ReinodoceConfig config) {
+        configureRoundTripRules(config);
+        configureRoundTripAlerts(config);
+        configureRoundTripPresentation(config);
+    }
+
+    private void configureRoundTripRules(ReinodoceConfig config) {
         config.setLastUsername(ALICE);
         config.setAutoConnectOnStart(true);
         config.setReconnectSeconds(9);
@@ -214,6 +231,9 @@ class ReinodoceConfigRepositoryTest {
         config.setSyntheticFollowEnabled(true);
         config.setSyntheticJoinEnabled(true);
         config.setSyntheticMemberLevelEnabled(true);
+    }
+
+    private void configureRoundTripAlerts(ReinodoceConfig config) {
         config.setAlertSoundEnabled(AlertEventType.GIFT, true);
         config.setAlertSoundId(AlertEventType.GIFT, CUSTOM_SOUND_ID);
         config.setAlertToastEnabled(AlertEventType.GIFT, true);
@@ -229,9 +249,16 @@ class ReinodoceConfigRepositoryTest {
         config.setAlertToastEnabled(AlertEventType.MEMBER_LEVEL, true);
         config.setAlertSoundId(AlertEventType.MEMBER_LEVEL, "reinodoce_mctiktok:member_level");
         config.setAlertCustomImage(AlertEventType.MEMBER_LEVEL, "default");
+    }
+
+    private void configureRoundTripPresentation(ReinodoceConfig config) {
         config.setOutputMode("hud");
         config.setHudPosition("bottom-right");
         config.setHudLines(4);
+        config.setPinnedOverlayEnabled(false);
+        config.setPinnedOverlayPosition("bottom-left");
+        config.setPinnedMessagesInOutput(true);
+        config.setPinnedOverlayMessages(2);
         config.setChatPrefix("[RD]");
         config.setChatFormat("{prefix} {username}: {message}");
         config.setChatEmotesEnabled(false);
@@ -306,6 +333,7 @@ class ReinodoceConfigRepositoryTest {
         assertEquals("chat", loaded.getOutputMode());
         assertEquals("top-left", loaded.getHudPosition());
         assertEquals(6, loaded.getHudLines());
+        assertDefaultPinnedOverlaySettings(loaded);
         assertTrue(loaded.isChatEmotesEnabled());
         assertFalse(loaded.isChatLogEnabled());
         assertEquals("auto", loaded.getLanguage());
@@ -338,6 +366,17 @@ class ReinodoceConfigRepositoryTest {
         assertTrue(savedJson.contains("\"outputMode\""));
         assertTrue(savedJson.contains("\"hudPosition\""));
         assertTrue(savedJson.contains("\"hudLines\""));
+        assertTrue(savedJson.contains("\"pinnedOverlayEnabled\""));
+        assertTrue(savedJson.contains("\"pinnedOverlayPosition\""));
+        assertTrue(savedJson.contains("\"pinnedMessagesInOutput\""));
+        assertTrue(savedJson.contains("\"pinnedOverlayMessages\""));
         assertTrue(savedJson.contains("\"language\""));
+    }
+
+    private static void assertDefaultPinnedOverlaySettings(ReinodoceConfig loaded) {
+        assertTrue(loaded.isPinnedOverlayEnabled());
+        assertEquals("top-right", loaded.getPinnedOverlayPosition());
+        assertFalse(loaded.isPinnedMessagesInOutput());
+        assertEquals(3, loaded.getPinnedOverlayMessages());
     }
 }

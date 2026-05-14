@@ -41,6 +41,27 @@ public interface ChatEventSink {
     void sendStarComment(ReinodoceConfig config, RichLiveMessage message);
 
     /**
+     * Sends a plain pinned comment through the configured mirrored output mode.
+     *
+     * @param config runtime configuration snapshot
+     * @param username display name to show
+     * @param message sanitized message body
+     */
+    default void sendPinnedComment(ReinodoceConfig config, String username, String message) {
+        sendLiveComment(config, username, message);
+    }
+
+    /**
+     * Sends a pinned comment that may contain inline media through the configured mirrored output mode.
+     *
+     * @param config runtime configuration snapshot
+     * @param message parsed rich chat message
+     */
+    default void sendPinnedComment(ReinodoceConfig config, RichLiveMessage message) {
+        sendLiveComment(config, message);
+    }
+
+    /**
      * Sends a plain synthetic gift message.
      *
      * @param config runtime configuration snapshot

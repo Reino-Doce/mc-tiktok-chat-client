@@ -42,6 +42,7 @@ public final class ReinodoceCommandTree {
     private static final String ARG_MODE = "mode";
     private static final String ARG_POSITION = "position";
     private static final String ARG_LINES = "lines";
+    private static final String ARG_MESSAGES = "messages";
     private static final String ARG_LOCALE = "locale";
     private static final String ARG_SOUND_ID = "soundId";
     private static final String ARG_CUSTOM_IMAGE = "customImage";
@@ -118,6 +119,7 @@ public final class ReinodoceCommandTree {
                 .then(outputBranch(service))
                 .then(hudPositionBranch(service))
                 .then(hudLinesBranch(service))
+                .then(pinnedOverlayBranch(service))
                 .then(Commands.literal("gui")
                         .executes(ctx -> SettingsCommandHandler.gui(service, ctx.getSource())))
                 .then(Commands.literal("chat-emotes")
@@ -187,6 +189,38 @@ public final class ReinodoceCommandTree {
                                 service,
                                 ctx.getSource(),
                                 IntegerArgumentType.getInteger(ctx, ARG_LINES))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> pinnedOverlayBranch(ReinodoceCommandService service) {
+        return Commands.literal("pinned-overlay")
+                .then(Commands.literal("enabled")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> SettingsCommandHandler.pinnedOverlay(
+                                        service,
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal(ARG_POSITION)
+                        .then(Commands.argument(ARG_POSITION, StringArgumentType.string())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                        HudPosition.ids(), builder))
+                                .executes(ctx -> SettingsCommandHandler.pinnedOverlayPosition(
+                                        service,
+                                        ctx.getSource(),
+                                        StringArgumentType.getString(ctx, ARG_POSITION)))))
+                .then(Commands.literal("mirror-output")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> SettingsCommandHandler.pinnedOutput(
+                                        service,
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal("messages")
+                        .then(Commands.argument(
+                                        ARG_MESSAGES,
+                                        IntegerArgumentType.integer(1, ReinodoceConfig.MAX_PINNED_OVERLAY_MESSAGES))
+                                .executes(ctx -> SettingsCommandHandler.pinnedOverlayMessages(
+                                        service,
+                                        ctx.getSource(),
+                                        IntegerArgumentType.getInteger(ctx, ARG_MESSAGES)))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> ruleBranch(ReinodoceCommandService service) {

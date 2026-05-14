@@ -7,18 +7,15 @@ import br.com.reinodoce.mctiktok.chat.MinecraftChatGateway;
 import br.com.reinodoce.mctiktok.client.font.InlineMediaFontHooks;
 import br.com.reinodoce.mctiktok.client.font.InlineMediaTokenRegistry;
 import br.com.reinodoce.mctiktok.client.gui.ReinodoceSettingsScreen;
-import br.com.reinodoce.mctiktok.client.hud.HudMessageStore;
-import br.com.reinodoce.mctiktok.client.hud.LocalHudOverlay;
 import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
-import br.com.reinodoce.mctiktok.config.HudPosition;
-import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
 import br.com.reinodoce.mctiktok.core.ReinodoceCoreService;
 import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
+import br.com.reinodoce.mctiktok.tiktok.TikTokRuntimeServices;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 
@@ -35,8 +32,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     private final ReinodoceCoreService coreService;
     private final InlineMediaCache inlineMediaCache;
     private final InlineMediaTokenRegistry inlineMediaTokenRegistry;
-    private final HudMessageStore hudMessageStore;
-    private final LocalHudOverlay localHudOverlay;
+    private final ClientOverlayServices overlays;
     private final MinecraftPlatformBridge platformBridge;
 
     /**
@@ -49,33 +45,33 @@ public class ReinodoceClientService implements ReinodoceCommandService {
         this.platformBridge = safePlatformBridge;
         this.inlineMediaCache = new InlineMediaCache();
         this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
-        this.hudMessageStore = new HudMessageStore();
-        this.localHudOverlay = new LocalHudOverlay(hudMessageStore);
+        this.overlays = new ClientOverlayServices();
         InlineMediaFontHooks.installRegistry(inlineMediaTokenRegistry);
         this.coreService = new ReinodoceCoreService(
-                new MinecraftChatGateway(
-                        safePlatformBridge,
-                        new LiveMessageFormatter(inlineMediaTokenRegistry),
-                        inlineMediaCache,
-                        hudMessageStore
-                ),
-                new MinecraftAlertGateway(safePlatformBridge),
+                new TikTokRuntimeServices.SideEffects(
+                        new MinecraftChatGateway(
+                                safePlatformBridge,
+                                new LiveMessageFormatter(inlineMediaTokenRegistry),
+                                inlineMediaCache,
+                                overlays.chatHudStore()
+                        ),
+                        new MinecraftAlertGateway(safePlatformBridge),
+                        overlays.pinnedMessageSink(safePlatformBridge),
+                        safePlatformBridge.logsDirectory().resolve("reinodoce")),
                 new ReinodoceConfigRepository(),
-                safePlatformBridge::selectedLanguageCode,
-                safePlatformBridge.logsDirectory().resolve("reinodoce")
+                safePlatformBridge::selectedLanguageCode
         );
     }
 
     ReinodoceClientService(
             MinecraftPlatformBridge platformBridge,
             ReinodoceCoreService coreService,
-            HudMessageStore hudMessageStore
+            ClientOverlayServices overlays
     ) {
         this.platformBridge = Objects.requireNonNull(platformBridge, "platformBridge");
         this.inlineMediaCache = new InlineMediaCache();
         this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
-        this.hudMessageStore = Objects.requireNonNull(hudMessageStore, "hudMessageStore");
-        this.localHudOverlay = new LocalHudOverlay(this.hudMessageStore);
+        this.overlays = Objects.requireNonNull(overlays, "overlays");
         this.coreService = Objects.requireNonNull(coreService, "coreService");
     }
 
@@ -95,15 +91,18 @@ public class ReinodoceClientService implements ReinodoceCommandService {
      */
     public void renderHud(GuiGraphics graphics, int screenWidth, int screenHeight) {
         ReinodoceConfig config = coreService.currentConfig();
-        if (OutputMode.fromString(config.getOutputMode()) != OutputMode.HUD) {
-            return;
-        }
-        localHudOverlay.render(
-                graphics,
-                screenWidth,
-                screenHeight,
-                HudPosition.fromString(config.getHudPosition()),
-                config.getHudLines());
+        overlays.renderHud(graphics, screenWidth, screenHeight, config);
+    }
+
+    /**
+     * Renders all local screen overlays owned by this mod.
+     *
+     * @param graphics GUI graphics context
+     * @param screenWidth current screen width
+     * @param screenHeight current screen height
+     */
+    public void renderOverlays(GuiGraphics graphics, int screenWidth, int screenHeight) {
+        overlays.renderOverlays(graphics, screenWidth, screenHeight, coreService.currentConfig());
     }
 
     /**
@@ -115,7 +114,8 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     public CommandResult saveSettingsDraft(ReinodoceConfig config) {
         CommandResult result = coreService.replaceConfig(config);
         if (result.success()) {
-            clearHudMessagesIfOutputHidden(config.getOutputMode());
+            overlays.clearHudMessagesIfOutputHidden(config.getOutputMode());
+            overlays.clearPinnedMessagesIfOverlayHidden(config.isPinnedOverlayEnabled());
         }
         return result;
     }
@@ -189,7 +189,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     public CommandResult setOutputMode(String mode) {
         CommandResult result = coreService.setOutputMode(mode);
         if (result.success()) {
-            clearHudMessagesIfOutputHidden(mode);
+            overlays.clearHudMessagesIfOutputHidden(mode);
         }
         return result;
     }
@@ -202,6 +202,30 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     @Override
     public CommandResult setHudLines(int lines) {
         return coreService.setHudLines(lines);
+    }
+
+    @Override
+    public CommandResult setPinnedOverlayEnabled(boolean enabled) {
+        CommandResult result = coreService.setPinnedOverlayEnabled(enabled);
+        if (result.success()) {
+            overlays.clearPinnedMessagesIfOverlayHidden(enabled);
+        }
+        return result;
+    }
+
+    @Override
+    public CommandResult setPinnedOverlayPosition(String position) {
+        return coreService.setPinnedOverlayPosition(position);
+    }
+
+    @Override
+    public CommandResult setPinnedMessagesInOutput(boolean enabled) {
+        return coreService.setPinnedMessagesInOutput(enabled);
+    }
+
+    @Override
+    public CommandResult setPinnedOverlayMessages(int messages) {
+        return coreService.setPinnedOverlayMessages(messages);
     }
 
     @Override
@@ -367,14 +391,9 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     public CommandResult reload() {
         CommandResult result = coreService.reload();
         if (result.success()) {
-            clearHudMessagesIfOutputHidden(coreService.currentConfig().getOutputMode());
+            overlays.clearHudMessagesIfOutputHidden(coreService.currentConfig().getOutputMode());
+            overlays.clearPinnedMessagesIfOverlayHidden(coreService.currentConfig().isPinnedOverlayEnabled());
         }
         return result;
-    }
-
-    private void clearHudMessagesIfOutputHidden(String outputMode) {
-        if (OutputMode.fromString(outputMode) != OutputMode.HUD) {
-            hudMessageStore.clear();
-        }
     }
 }
