@@ -1,5 +1,7 @@
 package br.com.reinodoce.mctiktok.command;
 
+import br.com.reinodoce.mctiktok.alert.AlertEventType;
+import br.com.reinodoce.mctiktok.command.handlers.AlertCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.ConnectCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.DisconnectCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.LoggingCommandHandler;
@@ -52,6 +54,7 @@ public final class ReinodoceCommandTree {
                 .then(settingsBranch(commandService))
                 .then(ruleBranch(commandService))
                 .then(syntheticBranch(commandService))
+                .then(alertBranch(commandService))
                 .then(loggingBranch(commandService))
                 .then(reloadBranch(commandService));
     }
@@ -202,6 +205,40 @@ public final class ReinodoceCommandTree {
                 .then(syntheticToggle(service, "follow", SyntheticCommandHandler::follow))
                 .then(syntheticToggle(service, "join", SyntheticCommandHandler::join))
                 .then(syntheticToggle(service, "member-level", SyntheticCommandHandler::memberLevel));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> alertBranch(ReinodoceCommandService service) {
+        return Commands.literal("alert")
+                .then(alertToggle(service, "gift", AlertEventType.GIFT))
+                .then(Commands.literal("gift-min-value")
+                        .then(Commands.argument(ARG_VALUE, IntegerArgumentType.integer(0))
+                                .executes(ctx -> AlertCommandHandler.giftMinValue(
+                                        service,
+                                        ctx.getSource(),
+                                        IntegerArgumentType.getInteger(ctx, ARG_VALUE)))))
+                .then(alertToggle(service, "follow", AlertEventType.FOLLOW))
+                .then(alertToggle(service, "join", AlertEventType.JOIN))
+                .then(alertToggle(service, "member-level", AlertEventType.MEMBER_LEVEL));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> alertToggle(
+            ReinodoceCommandService service, String literal, AlertEventType eventType
+    ) {
+        return Commands.literal(literal)
+                .then(Commands.literal("sound")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> AlertCommandHandler.sound(
+                                        service,
+                                        ctx.getSource(),
+                                        eventType,
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal("toast")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> AlertCommandHandler.toast(
+                                        service,
+                                        ctx.getSource(),
+                                        eventType,
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> loggingBranch(ReinodoceCommandService service) {

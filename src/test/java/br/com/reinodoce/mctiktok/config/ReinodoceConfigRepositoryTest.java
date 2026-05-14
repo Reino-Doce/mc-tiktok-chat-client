@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.config;
 
+import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -42,6 +43,7 @@ class ReinodoceConfigRepositoryTest {
         assertFalse(loaded.isSyntheticFollowEnabled());
         assertFalse(loaded.isSyntheticJoinEnabled());
         assertFalse(loaded.isSyntheticMemberLevelEnabled());
+        assertDefaultAlerts(loaded);
         assertTrue(loaded.isChatEmotesEnabled());
         assertFalse(loaded.isChatLogEnabled());
         assertFalse(loaded.isSessionLoggingEnabled());
@@ -62,6 +64,7 @@ class ReinodoceConfigRepositoryTest {
         config.setRuleDuplicateCooldownSeconds(-5);
         config.setSyntheticGiftMinValue(-3);
         config.setSyntheticGiftComboMode("unknown");
+        config.setAlertGiftMinValue(-7);
         config.setSessionLoggingFormat("unknown");
         config.setChatPrefix("   ");
         config.setChatFormat("{username}: {message}");
@@ -75,6 +78,7 @@ class ReinodoceConfigRepositoryTest {
         assertEquals(0, config.getRuleDuplicateCooldownSeconds());
         assertEquals(0, config.getSyntheticGiftMinValue());
         assertEquals("bulk", config.getSyntheticGiftComboMode());
+        assertEquals(0, config.getAlertGiftMinValue());
         assertEquals("jsonl", config.getSessionLoggingFormat());
         assertEquals("[LIVE]", config.getChatPrefix());
         assertEquals("{prefix}  <{username}> {message}", config.getChatFormat());
@@ -103,6 +107,7 @@ class ReinodoceConfigRepositoryTest {
         assertCorrectedSyntheticFieldNames(savedJson);
         assertRoundTripRules(loaded);
         assertRoundTripSyntheticSettings(loaded);
+        assertRoundTripAlertSettings(loaded);
         assertEquals("[RD]", loaded.getChatPrefix());
         assertEquals("{prefix} {username}: {message}", loaded.getChatFormat());
         assertFalse(loaded.isChatEmotesEnabled());
@@ -126,6 +131,12 @@ class ReinodoceConfigRepositoryTest {
         config.setSyntheticFollowEnabled(true);
         config.setSyntheticJoinEnabled(true);
         config.setSyntheticMemberLevelEnabled(true);
+        config.setAlertSoundEnabled(AlertEventType.GIFT, true);
+        config.setAlertToastEnabled(AlertEventType.GIFT, true);
+        config.setAlertGiftMinValue(100);
+        config.setAlertToastEnabled(AlertEventType.FOLLOW, true);
+        config.setAlertSoundEnabled(AlertEventType.JOIN, true);
+        config.setAlertToastEnabled(AlertEventType.MEMBER_LEVEL, true);
         config.setChatPrefix("[RD]");
         config.setChatFormat("{prefix} {username}: {message}");
         config.setChatEmotesEnabled(false);
@@ -154,11 +165,41 @@ class ReinodoceConfigRepositoryTest {
         assertTrue(loaded.isSyntheticMemberLevelEnabled());
     }
 
+    private void assertRoundTripAlertSettings(ReinodoceConfig loaded) {
+        assertTrue(loaded.isAlertSoundEnabled(AlertEventType.GIFT));
+        assertTrue(loaded.isAlertToastEnabled(AlertEventType.GIFT));
+        assertEquals(100, loaded.getAlertGiftMinValue());
+        assertFalse(loaded.isAlertSoundEnabled(AlertEventType.FOLLOW));
+        assertTrue(loaded.isAlertToastEnabled(AlertEventType.FOLLOW));
+        assertTrue(loaded.isAlertSoundEnabled(AlertEventType.JOIN));
+        assertFalse(loaded.isAlertToastEnabled(AlertEventType.JOIN));
+        assertFalse(loaded.isAlertSoundEnabled(AlertEventType.MEMBER_LEVEL));
+        assertTrue(loaded.isAlertToastEnabled(AlertEventType.MEMBER_LEVEL));
+    }
+
+    private void assertDefaultAlerts(ReinodoceConfig loaded) {
+        assertFalse(loaded.isAlertSoundEnabled(AlertEventType.GIFT));
+        assertFalse(loaded.isAlertToastEnabled(AlertEventType.GIFT));
+        assertEquals(1, loaded.getAlertGiftMinValue());
+        assertFalse(loaded.isAlertSoundEnabled(AlertEventType.FOLLOW));
+        assertFalse(loaded.isAlertToastEnabled(AlertEventType.FOLLOW));
+        assertFalse(loaded.isAlertSoundEnabled(AlertEventType.JOIN));
+        assertFalse(loaded.isAlertToastEnabled(AlertEventType.JOIN));
+        assertFalse(loaded.isAlertSoundEnabled(AlertEventType.MEMBER_LEVEL));
+        assertFalse(loaded.isAlertToastEnabled(AlertEventType.MEMBER_LEVEL));
+    }
+
     private void assertCorrectedSyntheticFieldNames(String savedJson) {
         assertTrue(savedJson.contains("\"syntheticGiftMinValue\""));
         assertTrue(savedJson.contains("\"syntheticGiftComboMode\""));
         assertTrue(savedJson.contains("\"syntheticFollowEnabled\""));
         assertTrue(savedJson.contains("\"syntheticJoinEnabled\""));
         assertTrue(savedJson.contains("\"syntheticMemberLevelEnabled\""));
+        assertTrue(savedJson.contains("\"alertGiftSoundEnabled\""));
+        assertTrue(savedJson.contains("\"alertGiftToastEnabled\""));
+        assertTrue(savedJson.contains("\"alertGiftMinValue\""));
+        assertTrue(savedJson.contains("\"alertFollowToastEnabled\""));
+        assertTrue(savedJson.contains("\"alertJoinSoundEnabled\""));
+        assertTrue(savedJson.contains("\"alertMemberLevelToastEnabled\""));
     }
 }

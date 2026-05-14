@@ -7,6 +7,15 @@
   "reinodoce.chat.user_unknown": "unknown",
   "reinodoce.chat.gift_unknown": "gift",
 
+  "reinodoce.alert.title.gift": "TikTok gift",
+  "reinodoce.alert.title.follow": "TikTok follow",
+  "reinodoce.alert.title.join": "TikTok join",
+  "reinodoce.alert.title.member_level": "TikTok member level",
+  "reinodoce.alert.gift": "%s sent %s x%s",
+  "reinodoce.alert.follow": "%s started following",
+  "reinodoce.alert.join": "%s joined the live",
+  "reinodoce.alert.member_level": "%s reached member level %s",
+
   "reinodoce.chat.connected": "Connected to @%s",
   "reinodoce.chat.disconnected_reason": "Disconnected: %s",
   "reinodoce.chat.error_live": "LIVE error: %s",
@@ -55,6 +64,9 @@
   "reinodoce.command.set.chat_format": "Chat format = %s.",
   "reinodoce.command.set.session_logging": "Session logging = %s.",
   "reinodoce.command.set.session_logging_format": "Session log format = %s.",
+  "reinodoce.command.set.alert_sound": "Alert %s sound = %s.",
+  "reinodoce.command.set.alert_toast": "Alert %s toast = %s.",
+  "reinodoce.command.set.alert_gift_min_value": "Alert gift-min-value = %s.",
   "reinodoce.command.reload.ok": "Configuration reloaded.",
 
 
@@ -87,6 +99,10 @@
   "reinodoce.status.synthetic_follow": "Synthetic follow: %s",
   "reinodoce.status.synthetic_join": "Synthetic join: %s",
   "reinodoce.status.synthetic_member_level": "Synthetic member-level: %s",
+  "reinodoce.status.alert_gift": "Alert gift: sound=%s toast=%s min=%s",
+  "reinodoce.status.alert_follow": "Alert follow: sound=%s toast=%s",
+  "reinodoce.status.alert_join": "Alert join: sound=%s toast=%s",
+  "reinodoce.status.alert_member_level": "Alert member-level: sound=%s toast=%s",
   "reinodoce.status.chat_prefix": "Chat prefix: %s",
   "reinodoce.status.chat_format": "Chat format: %s",
   "reinodoce.status.chat_emotes": "Chat emotes: %s",

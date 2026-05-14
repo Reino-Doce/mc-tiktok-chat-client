@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.alert.AlertService;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
 import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
@@ -39,7 +40,8 @@ final class TikTokEventDispatcher {
             GiftComboAggregator giftComboAggregator,
             SessionStatsTracker statsTracker,
             ModerationDuplicateTracker moderationDuplicateTracker,
-            SessionEventLogger sessionEventLogger
+            SessionEventLogger sessionEventLogger,
+            AlertService alertService
     ) {
     }
 
@@ -71,7 +73,8 @@ final class TikTokEventDispatcher {
         if (!tokenCheck.test(token) || !config.isSyntheticFollowEnabled()) {
             return;
         }
-        sendSyntheticAuthorNotice(SyntheticAuthorKind.FOLLOW, config, event.getUser());
+        String username = sendSyntheticAuthorNotice(SyntheticAuthorKind.FOLLOW, config, event.getUser());
+        dependencies.alertService().follow(config, username);
         dependencies.statsTracker().recordFollow();
     }
 
@@ -80,7 +83,8 @@ final class TikTokEventDispatcher {
         if (!tokenCheck.test(token) || !config.isSyntheticJoinEnabled()) {
             return;
         }
-        sendSyntheticAuthorNotice(SyntheticAuthorKind.JOIN, config, event.getUser());
+        String username = sendSyntheticAuthorNotice(SyntheticAuthorKind.JOIN, config, event.getUser());
+        dependencies.alertService().join(config, username);
         dependencies.statsTracker().recordJoin();
     }
 
@@ -120,7 +124,7 @@ final class TikTokEventDispatcher {
         }
     }
 
-    private void sendSyntheticAuthorNotice(SyntheticAuthorKind kind, ReinodoceConfig config, User user) {
+    private String sendSyntheticAuthorNotice(SyntheticAuthorKind kind, ReinodoceConfig config, User user) {
         String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user));
         if (config.isChatEmotesEnabled()) {
             RichLiveMessage rich = dependencies.messageFactory().richAuthorOnlyMessage(
@@ -130,6 +134,7 @@ final class TikTokEventDispatcher {
             kind.sendPlain(dependencies.chatGateway(), config, username);
         }
         dependencies.sessionEventLogger().log(kind.logEvent(username));
+        return username;
     }
 
     private enum SyntheticAuthorKind {

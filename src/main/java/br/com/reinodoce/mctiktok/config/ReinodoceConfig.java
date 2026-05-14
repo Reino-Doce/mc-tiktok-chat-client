@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.config;
 
+import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import br.com.reinodoce.mctiktok.util.UsernameValidator;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -28,6 +30,8 @@ public class ReinodoceConfig {
     public static final String DEFAULT_CHAT_FORMAT = "{prefix}  <{username}> {message}";
     private static final int DEFAULT_RECONNECT_SECONDS = 5;
     private static final int DEFAULT_SYNTHETIC_GIFT_MIN_VALUE = 1;
+    private static final int DEFAULT_ALERT_GIFT_MIN_VALUE = 1;
+    private static final String ALERT_EVENT_TYPE_ARGUMENT = "eventType";
 
     private String lastUsername = "";
     private boolean autoConnectOnStart = false;
@@ -43,6 +47,15 @@ public class ReinodoceConfig {
     private boolean syntheticFollowEnabled = false;
     private boolean syntheticJoinEnabled = false;
     private boolean syntheticMemberLevelEnabled = false;
+    private boolean alertGiftSoundEnabled = false;
+    private boolean alertGiftToastEnabled = false;
+    private int alertGiftMinValue = DEFAULT_ALERT_GIFT_MIN_VALUE;
+    private boolean alertFollowSoundEnabled = false;
+    private boolean alertFollowToastEnabled = false;
+    private boolean alertJoinSoundEnabled = false;
+    private boolean alertJoinToastEnabled = false;
+    private boolean alertMemberLevelSoundEnabled = false;
+    private boolean alertMemberLevelToastEnabled = false;
     private String chatPrefix = DEFAULT_CHAT_PREFIX;
     private String chatFormat = DEFAULT_CHAT_FORMAT;
     private boolean chatEmotesEnabled = true;
@@ -80,6 +93,15 @@ public class ReinodoceConfig {
         copy.setSyntheticFollowEnabled(syntheticFollowEnabled);
         copy.setSyntheticJoinEnabled(syntheticJoinEnabled);
         copy.setSyntheticMemberLevelEnabled(syntheticMemberLevelEnabled);
+        copy.setAlertSoundEnabled(AlertEventType.GIFT, alertGiftSoundEnabled);
+        copy.setAlertToastEnabled(AlertEventType.GIFT, alertGiftToastEnabled);
+        copy.setAlertGiftMinValue(alertGiftMinValue);
+        copy.setAlertSoundEnabled(AlertEventType.FOLLOW, alertFollowSoundEnabled);
+        copy.setAlertToastEnabled(AlertEventType.FOLLOW, alertFollowToastEnabled);
+        copy.setAlertSoundEnabled(AlertEventType.JOIN, alertJoinSoundEnabled);
+        copy.setAlertToastEnabled(AlertEventType.JOIN, alertJoinToastEnabled);
+        copy.setAlertSoundEnabled(AlertEventType.MEMBER_LEVEL, alertMemberLevelSoundEnabled);
+        copy.setAlertToastEnabled(AlertEventType.MEMBER_LEVEL, alertMemberLevelToastEnabled);
         copy.setChatPrefix(chatPrefix);
         copy.setChatFormat(chatFormat);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
@@ -391,6 +413,68 @@ public class ReinodoceConfig {
      */
     public void setSyntheticMemberLevelEnabled(boolean syntheticMemberLevelEnabled) {
         this.syntheticMemberLevelEnabled = syntheticMemberLevelEnabled;
+    }
+
+    public boolean isAlertSoundEnabled(AlertEventType eventType) {
+        return switch (requireAlertEventType(eventType)) {
+            case GIFT -> alertGiftSoundEnabled;
+            case FOLLOW -> alertFollowSoundEnabled;
+            case JOIN -> alertJoinSoundEnabled;
+            case MEMBER_LEVEL -> alertMemberLevelSoundEnabled;
+            default -> false;
+        };
+    }
+
+    public void setAlertSoundEnabled(AlertEventType eventType, boolean enabled) {
+        switch (requireAlertEventType(eventType)) {
+            case GIFT -> alertGiftSoundEnabled = enabled;
+            case FOLLOW -> alertFollowSoundEnabled = enabled;
+            case JOIN -> alertJoinSoundEnabled = enabled;
+            case MEMBER_LEVEL -> alertMemberLevelSoundEnabled = enabled;
+            default -> throw new IllegalArgumentException(ALERT_EVENT_TYPE_ARGUMENT);
+        }
+    }
+
+    public boolean isAlertToastEnabled(AlertEventType eventType) {
+        return switch (requireAlertEventType(eventType)) {
+            case GIFT -> alertGiftToastEnabled;
+            case FOLLOW -> alertFollowToastEnabled;
+            case JOIN -> alertJoinToastEnabled;
+            case MEMBER_LEVEL -> alertMemberLevelToastEnabled;
+            default -> false;
+        };
+    }
+
+    public void setAlertToastEnabled(AlertEventType eventType, boolean enabled) {
+        switch (requireAlertEventType(eventType)) {
+            case GIFT -> alertGiftToastEnabled = enabled;
+            case FOLLOW -> alertFollowToastEnabled = enabled;
+            case JOIN -> alertJoinToastEnabled = enabled;
+            case MEMBER_LEVEL -> alertMemberLevelToastEnabled = enabled;
+            default -> throw new IllegalArgumentException(ALERT_EVENT_TYPE_ARGUMENT);
+        }
+    }
+
+    /**
+     * Returns the minimum single-gift diamond cost for gift alerts.
+     *
+     * @return minimum gift alert value
+     */
+    public int getAlertGiftMinValue() {
+        return alertGiftMinValue;
+    }
+
+    /**
+     * Sets the minimum single-gift diamond cost for gift alerts.
+     *
+     * @param alertGiftMinValue minimum value, clamped to zero or greater
+     */
+    public void setAlertGiftMinValue(int alertGiftMinValue) {
+        this.alertGiftMinValue = Math.max(0, alertGiftMinValue);
+    }
+
+    private static AlertEventType requireAlertEventType(AlertEventType eventType) {
+        return Objects.requireNonNull(eventType, ALERT_EVENT_TYPE_ARGUMENT);
     }
 
     /**

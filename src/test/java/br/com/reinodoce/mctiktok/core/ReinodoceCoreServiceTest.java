@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.core;
 
+import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
@@ -42,5 +43,24 @@ class ReinodoceCoreServiceTest {
 
         assertTrue(result.success());
         assertTrue(loaded.isAutoConnectOnStart());
+    }
+
+    @Test
+    void alertSettingsPersist() {
+        Path configFile = tempDir.resolve("alerts.json");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> "en_us");
+
+        CommandResult soundResult = service.setAlertSound(AlertEventType.GIFT, true);
+        CommandResult toastResult = service.setAlertToast(AlertEventType.FOLLOW, true);
+        CommandResult minValueResult = service.setAlertGiftMinValue(100);
+        ReinodoceConfig loaded = repository.load();
+
+        assertTrue(soundResult.success());
+        assertTrue(toastResult.success());
+        assertTrue(minValueResult.success());
+        assertTrue(loaded.isAlertSoundEnabled(AlertEventType.GIFT));
+        assertTrue(loaded.isAlertToastEnabled(AlertEventType.FOLLOW));
+        assertEquals(100, loaded.getAlertGiftMinValue());
     }
 }

@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.alert.AlertService;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
 
@@ -8,6 +9,11 @@ import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
  *
  * @param chatGateway rendered event sink
  * @param sessionEventLogger local session logger
+ * @param alertService local alert dispatcher
  */
-public record TikTokRuntimeServices(ChatEventSink chatGateway, SessionEventLogger sessionEventLogger) {
+public record TikTokRuntimeServices(
+        ChatEventSink chatGateway,
+        SessionEventLogger sessionEventLogger,
+        AlertService alertService
+) {
 }

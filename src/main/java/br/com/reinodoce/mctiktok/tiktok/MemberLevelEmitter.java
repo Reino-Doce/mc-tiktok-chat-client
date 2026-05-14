@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.alert.AlertService;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
@@ -14,19 +15,20 @@ final class MemberLevelEmitter {
     private final RichLiveMessageFactory messageFactory;
     private final SessionStatsTracker statsTracker;
     private final SessionEventLogger sessionEventLogger;
+    private final AlertService alertService;
 
     MemberLevelEmitter(
             Supplier<ReinodoceConfig> configSupplier,
-            ChatEventSink chatGateway,
+            TikTokRuntimeServices runtimeServices,
             RichLiveMessageFactory messageFactory,
-            SessionStatsTracker statsTracker,
-            SessionEventLogger sessionEventLogger
+            SessionStatsTracker statsTracker
     ) {
         this.configSupplier = configSupplier;
-        this.chatGateway = chatGateway;
+        this.chatGateway = runtimeServices.chatGateway();
         this.messageFactory = messageFactory;
         this.statsTracker = statsTracker;
-        this.sessionEventLogger = sessionEventLogger;
+        this.sessionEventLogger = runtimeServices.sessionEventLogger();
+        this.alertService = runtimeServices.alertService();
     }
 
     boolean emit(MemberLevelResolver.LevelUpdate update) {
@@ -45,13 +47,12 @@ final class MemberLevelEmitter {
                     config,
                     messageFactory.richAuthorOnlyMessage(username, update.avatarUrl()),
                     update.newLevel());
-            sessionEventLogger.log(SessionLogEvent.memberLevel(username, update.newLevel()));
-            statsTracker.recordMemberLevel();
-            return true;
+        } else {
+            chatGateway.sendSyntheticMemberLevel(config, username, update.newLevel());
         }
-        chatGateway.sendSyntheticMemberLevel(config, username, update.newLevel());
         sessionEventLogger.log(SessionLogEvent.memberLevel(username, update.newLevel()));
         statsTracker.recordMemberLevel();
+        alertService.memberLevel(config, username, update.newLevel());
         return true;
     }
 
