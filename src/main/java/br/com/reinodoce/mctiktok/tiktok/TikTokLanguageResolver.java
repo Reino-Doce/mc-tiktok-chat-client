@@ -1,5 +1,7 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.config.LanguageSetting;
+
 import java.util.Locale;
 
 final class TikTokLanguageResolver {
@@ -10,10 +12,12 @@ final class TikTokLanguageResolver {
     }
 
     static String resolve(String selectedLanguageCode) {
-        if (selectedLanguageCode == null || selectedLanguageCode.isBlank()) {
+        String normalizedLocale = LanguageSetting.normalizeLocale(selectedLanguageCode)
+                .orElse("");
+        if (normalizedLocale.isBlank()) {
             return DEFAULT_LANGUAGE;
         }
-        String normalized = selectedLanguageCode.trim().replace('_', '-');
+        String normalized = normalizedLocale.replace('_', '-');
         String[] parts = normalized.split("-", LANGUAGE_PARTS);
         if (parts.length < LANGUAGE_PARTS || parts[1].isBlank()) {
             return parts[0].toLowerCase(Locale.ROOT);

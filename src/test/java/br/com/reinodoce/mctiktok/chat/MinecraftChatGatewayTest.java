@@ -39,6 +39,30 @@ class MinecraftChatGatewayTest {
     }
 
     @Test
+    void syntheticLinesUseConfiguredLanguageOverride() {
+        RecordingPlatformBridge bridge = new RecordingPlatformBridge();
+        MinecraftChatGateway gateway = gateway(bridge);
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.setLanguage("pt_br");
+
+        gateway.sendSyntheticFollow(config, ALICE);
+
+        assertEquals("[LIVE]  <alice> comecou a seguir", bridge.lastChatMessage().getString());
+    }
+
+    @Test
+    void syntheticLinesUseEffectiveLanguageWhenRuntimeLanguageIsUnavailable() {
+        RecordingPlatformBridge bridge = new RecordingPlatformBridge();
+        bridge.setSelectedLanguageCode("pt_br");
+        MinecraftChatGateway gateway = gateway(bridge);
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+
+        gateway.sendSyntheticJoin(config, ALICE);
+
+        assertEquals("[LIVE]  <alice> entrou na live", bridge.lastChatMessage().getString());
+    }
+
+    @Test
     void systemLinesAlwaysUseChatLog() {
         RecordingPlatformBridge bridge = new RecordingPlatformBridge();
         MinecraftChatGateway gateway = gateway(bridge, new HudMessageStore());
@@ -107,6 +131,8 @@ class MinecraftChatGatewayTest {
     private static final class RecordingPlatformBridge implements MinecraftPlatformBridge {
         private boolean recordedLogToChat;
         private boolean recordedChatWrite;
+        private String configuredLanguageCode = "en_us";
+        private Component recordedChatMessage = Component.literal("");
         private Component recordedActionbar = Component.literal("");
 
         @Override
@@ -118,6 +144,7 @@ class MinecraftChatGatewayTest {
         public void addChatMessage(Component component, boolean logToChat) {
             this.recordedLogToChat = logToChat;
             this.recordedChatWrite = true;
+            this.recordedChatMessage = component;
         }
 
         @Override
@@ -130,6 +157,15 @@ class MinecraftChatGatewayTest {
             return true;
         }
 
+        @Override
+        public String selectedLanguageCode() {
+            return configuredLanguageCode;
+        }
+
+        void setSelectedLanguageCode(String selectedLanguageCode) {
+            this.configuredLanguageCode = selectedLanguageCode;
+        }
+
         boolean lastLogToChat() {
             return recordedLogToChat;
         }
@@ -140,6 +176,10 @@ class MinecraftChatGatewayTest {
 
         Component lastActionbar() {
             return recordedActionbar;
+        }
+
+        Component lastChatMessage() {
+            return recordedChatMessage;
         }
     }
 }

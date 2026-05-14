@@ -1,15 +1,25 @@
 package br.com.reinodoce.mctiktok.core;
 
 import br.com.reinodoce.mctiktok.alert.AlertEventType;
+import br.com.reinodoce.mctiktok.alert.AlertService;
+import br.com.reinodoce.mctiktok.alert.AlertSink;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
 import br.com.reinodoce.mctiktok.i18n.Translations;
+import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
+import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
+import br.com.reinodoce.mctiktok.tiktok.MemberLevelResolver;
+import br.com.reinodoce.mctiktok.tiktok.TikTokClientFacade;
+import br.com.reinodoce.mctiktok.tiktok.TikTokRuntimeServices;
+import br.com.reinodoce.mctiktok.util.MessageDeduplicator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -17,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReinodoceCoreServiceTest {
     private static final String EN_US = "en_us";
+    private static final String PT_BR = "pt_br";
+    private static final String DE_DE = "de_de";
     private static final String HUD_MODE = "hud";
 
     @TempDir
@@ -87,6 +99,134 @@ class ReinodoceCoreServiceTest {
     }
 
     @Test
+    void languageSettingPersistsOverrideAndAutoUsesMinecraftLanguage() {
+        Path configFile = tempDir.resolve("language.json");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        AtomicReference<String> minecraftLanguage = new AtomicReference<>(PT_BR);
+        ReinodoceCoreService service = new ReinodoceCoreService(
+                ChatEventSink.noop(), repository, minecraftLanguage::get);
+
+        assertEquals(
+                Translations.tr("reinodoce.command.language.auto", PT_BR),
+                service.languageLines().get(0));
+
+        CommandResult overrideResult = service.setLanguage("de-DE");
+        ReinodoceConfig loadedOverride = repository.load();
+        minecraftLanguage.set("fr_fr");
+
+        assertTrue(overrideResult.success());
+        assertEquals(DE_DE, loadedOverride.getLanguage());
+        assertEquals(
+                Translations.tr("reinodoce.command.language.set_override", DE_DE, DE_DE),
+                overrideResult.message());
+        assertEquals(
+                Translations.tr("reinodoce.command.language.override", DE_DE, DE_DE),
+                service.languageLines().get(0));
+
+        CommandResult autoResult = service.setLanguage("auto");
+        ReinodoceConfig loadedAuto = repository.load();
+
+        assertTrue(autoResult.success());
+        assertEquals("auto", loadedAuto.getLanguage());
+        assertEquals(
+                Translations.tr("reinodoce.command.language.set_auto", "fr_fr"),
+                autoResult.message());
+    }
+
+    @Test
+    void invalidLanguageSettingIsRejectedWithoutPersisting() {
+        Path configFile = tempDir.resolve("invalid-language.json");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> EN_US);
+        service.setLanguage(PT_BR);
+
+        CommandResult result = service.setLanguage("not a locale");
+        ReinodoceConfig loaded = repository.load();
+
+        assertFalse(result.success());
+        assertEquals(Translations.tr("reinodoce.command.language.invalid", "not a locale"), result.message());
+        assertEquals(PT_BR, loaded.getLanguage());
+    }
+
+    @Test
+    void reloadReconnectsWhenEffectiveLanguageChanges() {
+        Path configFile = tempDir.resolve("reload-language-changed.json");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        AtomicReference<String> minecraftLanguage = new AtomicReference<>(PT_BR);
+        RecordingTikTokClientFacade facade = new RecordingTikTokClientFacade();
+        ReinodoceCoreService service = new ReinodoceCoreService(repository, minecraftLanguage::get, facade);
+        service.currentConfig();
+        facade.reset();
+        ReinodoceConfig updated = ReinodoceConfig.defaults();
+        updated.setLanguage(DE_DE);
+        repository.save(updated);
+
+        CommandResult result = service.reload();
+
+        assertTrue(result.success());
+        assertEquals(1, facade.configUpdates());
+        assertEquals(1, facade.reconnects());
+    }
+
+    @Test
+    void reloadDoesNotReconnectWhenEffectiveLanguageStaysTheSame() {
+        Path configFile = tempDir.resolve("reload-language-unchanged.json");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        AtomicReference<String> minecraftLanguage = new AtomicReference<>(PT_BR);
+        RecordingTikTokClientFacade facade = new RecordingTikTokClientFacade();
+        ReinodoceCoreService service = new ReinodoceCoreService(repository, minecraftLanguage::get, facade);
+        service.currentConfig();
+        facade.reset();
+        ReinodoceConfig updated = ReinodoceConfig.defaults();
+        updated.setLanguage(PT_BR);
+        repository.save(updated);
+
+        CommandResult result = service.reload();
+
+        assertTrue(result.success());
+        assertEquals(1, facade.configUpdates());
+        assertEquals(0, facade.reconnects());
+    }
+
+    @Test
+    void replaceConfigReconnectsWhenEffectiveLanguageChanges() {
+        Path configFile = tempDir.resolve("replace-language-changed.json");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        AtomicReference<String> minecraftLanguage = new AtomicReference<>(PT_BR);
+        RecordingTikTokClientFacade facade = new RecordingTikTokClientFacade();
+        ReinodoceCoreService service = new ReinodoceCoreService(repository, minecraftLanguage::get, facade);
+        service.currentConfig();
+        facade.reset();
+        ReinodoceConfig draft = ReinodoceConfig.defaults();
+        draft.setLanguage(DE_DE);
+
+        CommandResult result = service.replaceConfig(draft);
+
+        assertTrue(result.success());
+        assertEquals(1, facade.configUpdates());
+        assertEquals(1, facade.reconnects());
+    }
+
+    @Test
+    void replaceConfigDoesNotReconnectWhenEffectiveLanguageStaysTheSame() {
+        Path configFile = tempDir.resolve("replace-language-unchanged.json");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        AtomicReference<String> minecraftLanguage = new AtomicReference<>(PT_BR);
+        RecordingTikTokClientFacade facade = new RecordingTikTokClientFacade();
+        ReinodoceCoreService service = new ReinodoceCoreService(repository, minecraftLanguage::get, facade);
+        service.currentConfig();
+        facade.reset();
+        ReinodoceConfig draft = ReinodoceConfig.defaults();
+        draft.setLanguage(PT_BR);
+
+        CommandResult result = service.replaceConfig(draft);
+
+        assertTrue(result.success());
+        assertEquals(1, facade.configUpdates());
+        assertEquals(0, facade.reconnects());
+    }
+
+    @Test
     void guiDraftPersistsThroughConfigRepository() {
         Path configFile = tempDir.resolve("settings-gui.json");
         ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
@@ -100,6 +240,7 @@ class ReinodoceCoreServiceTest {
         draft.setChatPrefix("TikTok");
         draft.setChatFormat("{prefix} {username}: {message}");
         draft.setChatEmotesEnabled(false);
+        draft.setLanguage("ja-JP");
         draft.setSyntheticGiftMinValue(50);
         draft.setSyntheticGiftComboMode("single");
         draft.setSyntheticFollowEnabled(true);
@@ -120,6 +261,7 @@ class ReinodoceCoreServiceTest {
         assertEquals("TikTok", loaded.getChatPrefix());
         assertEquals("{prefix} {username}: {message}", loaded.getChatFormat());
         assertFalse(loaded.isChatEmotesEnabled());
+        assertEquals("ja_jp", loaded.getLanguage());
         assertEquals(50, loaded.getSyntheticGiftMinValue());
         assertEquals("single", loaded.getSyntheticGiftComboMode());
         assertTrue(loaded.isSyntheticFollowEnabled());
@@ -127,5 +269,45 @@ class ReinodoceCoreServiceTest {
         assertTrue(loaded.isSyntheticMemberLevelEnabled());
         assertTrue(loaded.isRuleFollowerOnly());
         assertEquals(2, loaded.getRuleMinMemberLevel());
+    }
+
+    private static final class RecordingTikTokClientFacade extends TikTokClientFacade {
+        private int configUpdateCount;
+        private int reconnectCount;
+
+        RecordingTikTokClientFacade() {
+            super(
+                    ReinodoceConfig::defaults,
+                    new TikTokRuntimeServices(
+                            ChatEventSink.noop(),
+                            new SessionEventLogger(Path.of("build/test-session-logs/core-service")),
+                            new AlertService(AlertSink.noop())),
+                    new MessageRuleEngine(),
+                    new MemberLevelResolver(),
+                    new MessageDeduplicator(Duration.ofSeconds(1)));
+        }
+
+        @Override
+        public void onConfigUpdated() {
+            configUpdateCount++;
+        }
+
+        @Override
+        public void reconnectForConfigChange() {
+            reconnectCount++;
+        }
+
+        void reset() {
+            configUpdateCount = 0;
+            reconnectCount = 0;
+        }
+
+        int configUpdates() {
+            return configUpdateCount;
+        }
+
+        int reconnects() {
+            return reconnectCount;
+        }
     }
 }

@@ -34,12 +34,11 @@ record TikTokFacadeWiring(
             TikTokRuntimeServices runtimeServices,
             MessageRuleEngine ruleEngine,
             MemberLevelResolver memberLevelResolver,
-            MessageDeduplicator giftDeduplicator,
-            Supplier<String> languageSupplier
+            MessageDeduplicator giftDeduplicator
     ) {
         AssemblyContext context = new AssemblyContext(
                 configSupplier, runtimeServices, ruleEngine, memberLevelResolver,
-                giftDeduplicator, languageSupplier);
+                giftDeduplicator);
         return context.assemble();
     }
 
@@ -58,7 +57,6 @@ record TikTokFacadeWiring(
         private final MessageRuleEngine ruleEngine;
         private final MemberLevelResolver memberLevelResolver;
         private final MessageDeduplicator giftDeduplicator;
-        private final Supplier<String> languageSupplier;
         private final MessageDeduplicator commentDeduplicator;
         private final LiveSessionState sessionState;
         private final SharedExecutors executors;
@@ -68,15 +66,13 @@ record TikTokFacadeWiring(
                 TikTokRuntimeServices runtimeServices,
                 MessageRuleEngine ruleEngine,
                 MemberLevelResolver memberLevelResolver,
-                MessageDeduplicator giftDeduplicator,
-                Supplier<String> languageSupplier
+                MessageDeduplicator giftDeduplicator
         ) {
             this.configSupplier = configSupplier;
             this.runtimeServices = runtimeServices;
             this.ruleEngine = ruleEngine;
             this.memberLevelResolver = memberLevelResolver;
             this.giftDeduplicator = giftDeduplicator;
-            this.languageSupplier = languageSupplier;
             this.commentDeduplicator = new MessageDeduplicator(
                     Duration.ofMinutes(COMMENT_DEDUPLICATION_WINDOW_MINUTES));
             this.sessionState = new LiveSessionState();
@@ -102,7 +98,10 @@ record TikTokFacadeWiring(
             RenderedCommentTracker renderedTracker = new RenderedCommentTracker();
             SessionStatsTracker statsTracker = new SessionStatsTracker();
             ModerationDuplicateTracker moderationDuplicateTracker = new ModerationDuplicateTracker();
-            RichLiveMessageFactory messageFactory = new RichLiveMessageFactory(new UnicodeEmojiParser());
+            RichLiveMessageFactory messageFactory = new RichLiveMessageFactory(
+                    new UnicodeEmojiParser(),
+                    runtimeServices.languageSupplier(),
+                    runtimeServices.runtimeLanguageSupplier());
             LiveCommentEmitter.Dependencies liveCommentDependencies = new LiveCommentEmitter.Dependencies(
                     configSupplier, runtimeServices.chatGateway(), ruleEngine, commentDeduplicator,
                     renderedTracker, messageFactory, statsTracker,
@@ -143,7 +142,7 @@ record TikTokFacadeWiring(
                     new NoticeThrottler(Duration.ofSeconds(RECONNECT_NOTICE_COOLDOWN_SECONDS)),
                     reset,
                     emitters.statsTracker()::reset,
-                    languageSupplier,
+                    runtimeServices.languageSupplier(),
                     runtimeServices.sessionEventLogger());
             return new LifecycleHookBinding(params);
         }

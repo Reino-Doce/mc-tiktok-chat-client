@@ -6,10 +6,11 @@ import br.com.reinodoce.mctiktok.alert.AlertSink;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
+import br.com.reinodoce.mctiktok.config.HudPosition;
+import br.com.reinodoce.mctiktok.config.LanguageSetting;
+import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
-import br.com.reinodoce.mctiktok.config.HudPosition;
-import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
 import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
@@ -39,7 +40,12 @@ import java.util.function.Supplier;
  * Core command service that owns configuration, connection lifecycle, and operator-facing state.
  */
 // Command facade intentionally exposes one method per public command action.
-@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.CyclomaticComplexity", "PMD.TooManyMethods"})
+@SuppressWarnings({
+    "PMD.CouplingBetweenObjects",
+    "PMD.CyclomaticComplexity",
+    "PMD.ExcessivePublicCount",
+    "PMD.TooManyMethods"
+})
 public class ReinodoceCoreService implements ReinodoceCommandService {
     private static final int DEDUPLICATION_WINDOW_MINUTES = 3;
     private static final Path DEFAULT_SESSION_LOG_DIRECTORY = Path.of("logs", "reinodoce");
@@ -47,6 +53,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     private final ReinodoceConfigRepository configRepository;
     private final RuntimeSettingsState settingsState;
     private final TikTokClientFacade tikTokClientFacade;
+    private final Supplier<String> clientLanguageSupplier;
     private final AtomicBoolean initialized;
 
     /**
@@ -92,6 +99,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     ) {
         this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
         this.settingsState = new RuntimeSettingsState();
+        this.clientLanguageSupplier = Objects.requireNonNull(languageSupplier, "languageSupplier");
         MessageRuleEngine ruleEngine = new MessageRuleEngine();
         MemberLevelResolver memberLevelResolver = new MemberLevelResolver();
         MessageDeduplicator deduplicator = new MessageDeduplicator(Duration.ofMinutes(DEDUPLICATION_WINDOW_MINUTES));
@@ -100,12 +108,25 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
                 new TikTokRuntimeServices(
                         Objects.requireNonNull(chatEventSink, "chatEventSink"),
                         new SessionEventLogger(Objects.requireNonNull(sessionLogDirectory, "sessionLogDirectory")),
-                        new AlertService(Objects.requireNonNull(alertSink, "alertSink"))),
+                        new AlertService(Objects.requireNonNull(alertSink, "alertSink")),
+                        this::effectiveLanguageUnchecked,
+                        this::useRuntimeLanguageForEffectiveLanguage),
                 ruleEngine,
                 memberLevelResolver,
-                deduplicator,
-                Objects.requireNonNull(languageSupplier, "languageSupplier")
+                deduplicator
         );
+        this.initialized = new AtomicBoolean(false);
+    }
+
+    ReinodoceCoreService(
+            ReinodoceConfigRepository configRepository,
+            Supplier<String> languageSupplier,
+            TikTokClientFacade tikTokClientFacade
+    ) {
+        this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
+        this.settingsState = new RuntimeSettingsState();
+        this.clientLanguageSupplier = Objects.requireNonNull(languageSupplier, "languageSupplier");
+        this.tikTokClientFacade = Objects.requireNonNull(tikTokClientFacade, "tikTokClientFacade");
         this.initialized = new AtomicBoolean(false);
     }
 
@@ -157,8 +178,11 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
      */
     public CommandResult replaceConfig(ReinodoceConfig config) {
         ensureInitialized();
-        persist(Objects.requireNonNull(config, "config"));
+        ReinodoceConfig updated = Objects.requireNonNull(config, "config");
+        String previousEffectiveLanguage = effectiveLanguage(settingsState.getSnapshot());
+        persist(updated);
         tikTokClientFacade.onConfigUpdated();
+        reconnectIfLanguageChanged(previousEffectiveLanguage, updated);
         return CommandResult.ok(Translations.tr("reinodoce.command.settings_gui.saved"));
     }
 
@@ -332,6 +356,30 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         config.setHudLines(lines);
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.set.hud_lines", config.getHudLines()));
+    }
+
+    @Override
+    public List<String> languageLines() {
+        ensureInitialized();
+        return List.of(languageStatusLine(settingsState.getSnapshot()));
+    }
+
+    @Override
+    public CommandResult setLanguage(String language) {
+        ensureInitialized();
+        String normalized = LanguageSetting.parse(language).orElse("");
+        if (normalized.isBlank()) {
+            return CommandResult.error(Translations.tr(
+                    "reinodoce.command.language.invalid",
+                    language == null ? "" : language));
+        }
+        String previousEffectiveLanguage = effectiveLanguage(settingsState.getSnapshot());
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setLanguage(normalized);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        reconnectIfLanguageChanged(previousEffectiveLanguage, config);
+        return CommandResult.ok(languageSetLine(config));
     }
 
     @Override
@@ -579,9 +627,11 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     @Override
     public CommandResult reload() {
         ensureInitialized();
+        String previousEffectiveLanguage = effectiveLanguage(settingsState.getSnapshot());
         ReinodoceConfig loaded = configRepository.load();
         settingsState.set(loaded);
         tikTokClientFacade.onConfigUpdated();
+        reconnectIfLanguageChanged(previousEffectiveLanguage, loaded);
         return CommandResult.ok(Translations.tr("reinodoce.command.reload.ok"));
     }
 
@@ -594,6 +644,44 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     private void persist(ReinodoceConfig config) {
         settingsState.set(config);
         configRepository.save(config);
+    }
+
+    private String effectiveLanguageUnchecked() {
+        return effectiveLanguage(settingsState.getSnapshot());
+    }
+
+    private String effectiveLanguage(ReinodoceConfig config) {
+        return LanguageSetting.resolveEffective(config.getLanguage(), clientLanguageSupplier.get());
+    }
+
+    private boolean useRuntimeLanguageForEffectiveLanguage() {
+        ReinodoceConfig config = settingsState.getSnapshot();
+        return LanguageSetting.isAuto(config.getLanguage())
+                || LanguageSetting.normalizeLocale(clientLanguageSupplier.get())
+                .filter(config.getLanguage()::equals)
+                .isPresent();
+    }
+
+    private String languageStatusLine(ReinodoceConfig config) {
+        String effectiveLanguage = effectiveLanguage(config);
+        if (LanguageSetting.isAuto(config.getLanguage())) {
+            return Translations.tr("reinodoce.command.language.auto", effectiveLanguage);
+        }
+        return Translations.tr("reinodoce.command.language.override", config.getLanguage(), effectiveLanguage);
+    }
+
+    private String languageSetLine(ReinodoceConfig config) {
+        String effectiveLanguage = effectiveLanguage(config);
+        if (LanguageSetting.isAuto(config.getLanguage())) {
+            return Translations.tr("reinodoce.command.language.set_auto", effectiveLanguage);
+        }
+        return Translations.tr("reinodoce.command.language.set_override", config.getLanguage(), effectiveLanguage);
+    }
+
+    private void reconnectIfLanguageChanged(String previousEffectiveLanguage, ReinodoceConfig config) {
+        if (!previousEffectiveLanguage.equals(effectiveLanguage(config))) {
+            tikTokClientFacade.reconnectForConfigChange();
+        }
     }
 
     private void autoConnectIfConfigured(ReinodoceConfig config) {
@@ -628,7 +716,8 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         return lines;
     }
 
-    private static void addOutputStatusLines(List<String> lines, ReinodoceConfig config) {
+    private void addOutputStatusLines(List<String> lines, ReinodoceConfig config) {
+        lines.add(Translations.tr("reinodoce.status.language", config.getLanguage(), effectiveLanguage(config)));
         lines.add(Translations.tr("reinodoce.status.output_mode", config.getOutputMode()));
         lines.add(Translations.tr("reinodoce.status.hud_position", config.getHudPosition()));
         lines.add(Translations.tr("reinodoce.status.hud_lines", config.getHudLines()));

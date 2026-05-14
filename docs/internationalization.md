@@ -19,17 +19,28 @@ largest TikTok LIVE gaming-streamer markets:
 | `de_de` | German                         |
 | `ar_sa` | Arabic                         |
 
-The Minecraft client selects the locale automatically based on the
-player's language setting and falls back to `en_us` when a key is
-missing.
+By default, `language` is `auto`, so the Minecraft client selects the
+locale based on the player's language setting and falls back to `en_us`
+when a key is missing. Operators can inspect the active language with
+`/reinodoce settings language`, set an explicit override with
+`/reinodoce settings language <locale>`, or return to automatic
+detection with `/reinodoce settings language auto`.
 
-TikTok LIVE connections also use the selected Minecraft language code
-when requesting event metadata from TikTok. Fixed synthetic phrases such
-as joins, follows, gifts, and member-level messages come from the mod's
-Minecraft lang files. Gift names are preferred from TikTok's localized
-payload for the requested language; if TikTok does not provide one, the
-mod falls back to the gift name supplied by TikTok or the localized
+TikTok LIVE connections use the effective language code when requesting
+event metadata from TikTok. Fixed synthetic phrases such as joins,
+follows, gifts, and member-level messages also use that effective
+language. Gift names are preferred from TikTok's localized payload for
+the requested language; if TikTok does not provide one, the mod falls
+back to the gift name supplied by TikTok or the localized
 `reinodoce.chat.gift_unknown` placeholder.
+
+When the effective language changes while a TikTok LIVE session is
+active, the client reconnects so TikTok metadata requests use the new
+language.
+
+Locale overrides must use Minecraft-style locale codes such as `en_us`,
+`pt_br`, or `ja_jp`; `pt-BR` style input is accepted and normalized to
+`pt_br`.
 
 ## Adding a new locale
 

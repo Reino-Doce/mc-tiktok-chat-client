@@ -4,7 +4,6 @@ import br.com.reinodoce.mctiktok.alert.AlertService;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
-import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
 import br.com.reinodoce.mctiktok.logging.SessionLogEvent;
 import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
@@ -69,7 +68,7 @@ final class TikTokGiftEmitter {
         String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user));
         String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(user);
         String giftName = MessageSanitizer.sanitize(
-                gift == null ? Translations.tr(GIFT_UNKNOWN_KEY) : gift.getName());
+                gift == null ? messageFactory.translate(GIFT_UNKNOWN_KEY) : gift.getName());
         String giftIconUrl = TikTokMediaResolver.resolveGiftIconUrl(gift);
         return new GiftComboAggregator.GiftSnapshot(
                 new GiftComboAggregator.GiftKey(userId, giftId),

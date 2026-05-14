@@ -86,6 +86,15 @@ final class TikTokConnectionLifecycle {
                 snapshot.username());
     }
 
+    void reconnectForConfigChange() {
+        LiveSessionState.Snapshot snapshot = params.sessionState().snapshot();
+        if (!shouldReconnectForConfigChange(snapshot)) {
+            return;
+        }
+        long token = beginNewLifecycle(snapshot.username());
+        params.ioExecutor().submit(() -> performConnect(token, snapshot.username()));
+    }
+
     boolean isTokenCurrent(long token) {
         return lifecycleToken.get() == token;
     }
@@ -313,6 +322,12 @@ final class TikTokConnectionLifecycle {
         return state == ConnectionLifecycleState.CONNECTED
                 || state == ConnectionLifecycleState.CONNECTING
                 || state == ConnectionLifecycleState.RECONNECT_SCHEDULED;
+    }
+
+    private static boolean shouldReconnectForConfigChange(LiveSessionState.Snapshot snapshot) {
+        return !snapshot.username().isBlank()
+                && (snapshot.state() == ConnectionLifecycleState.CONNECTED
+                || snapshot.state() == ConnectionLifecycleState.CONNECTING);
     }
 
     record LifecycleParams(

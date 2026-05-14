@@ -27,6 +27,8 @@ Settings change runtime behavior and are persisted to the client config.
 | `/reinodoce settings reconnect <seconds>` | integer ≥ 0 | `5` | Delay between reconnect attempts when the LIVE drops or is offline. `0` disables reconnect. |
 | `/reinodoce settings gui` | — | — | Opens the client settings screen. Save writes through the same config file and runtime update path as commands; Cancel or closing the screen leaves settings unchanged. |
 | `/reinodoce settings auto-connect <true\|false>` | boolean | `false` | When `true`, the client attempts one startup connection to the saved `lastUsername`. Blank or invalid saved usernames are ignored safely. |
+| `/reinodoce settings language` | — | `auto` | Shows whether language selection is automatic or overridden, plus the effective locale currently used by the mod. |
+| `/reinodoce settings language <locale\|auto>` | locale such as `en_us` or `pt_br`, or `auto` | `auto` | Overrides the language used for TikTok metadata requests and fixed synthetic phrases, or returns to Minecraft client language detection with `auto`. Invalid locale values are rejected. Active TikTok sessions reconnect when the effective language changes. |
 | `/reinodoce settings output <chat\|actionbar\|hud\|off>` | enum | `chat` | Selects where mirrored TikTok chat and synthetic events appear. `off` keeps the connection active but suppresses visible output. |
 | `/reinodoce settings hud-position <top-left\|top-right\|bottom-left\|bottom-right>` | enum | `top-left` | Selects the HUD anchor used by `output hud`. |
 | `/reinodoce settings hud-lines <lines>` | integer 1–12 | `6` | Maximum retained HUD lines used by `output hud`. |

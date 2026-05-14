@@ -22,6 +22,8 @@ from a TikTok LIVE inside the local Minecraft chat.
 - Mirrored output can be sent to chat, actionbar, a bounded local HUD, or
   suppressed while keeping the connection active with
   `/reinodoce settings output ...`.
+- Language defaults to the Minecraft client language, with an optional
+  override through `/reinodoce settings language <locale|auto>`.
 - This branch (`1.20.1`) targets Minecraft `1.20.1`, Forge `47.4.16`,
   Java `17`.
 
@@ -29,6 +31,7 @@ from a TikTok LIVE inside the local Minecraft chat.
 /reinodoce connect @yourusername
 /reinodoce settings gui
 /reinodoce settings auto-connect true
+/reinodoce settings language auto
 /reinodoce rule block-word add spam
 /reinodoce logging enabled true
 /reinodoce stats

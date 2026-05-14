@@ -2,6 +2,7 @@ package br.com.reinodoce.mctiktok.chat;
 
 import br.com.reinodoce.mctiktok.client.hud.HudMessageStore;
 import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
+import br.com.reinodoce.mctiktok.config.LanguageSetting;
 import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
@@ -58,7 +59,8 @@ public class MinecraftChatGateway implements ChatEventSink {
 
     @Override
     public void sendSyntheticGift(ReinodoceConfig config, String username, String giftName, int count) {
-        send(config, formatter.formatSyntheticGift(ChatMessageStyle.from(config), username, giftName, count));
+        ChatMessageStyle style = ChatMessageStyle.from(config);
+        send(config, formatter.formatSyntheticGift(style, username, giftName, count, fixedTextLanguage(config)));
     }
 
     @Override
@@ -68,32 +70,38 @@ public class MinecraftChatGateway implements ChatEventSink {
 
     @Override
     public void sendSyntheticFollow(ReinodoceConfig config, String username) {
-        send(config, formatter.formatSyntheticFollow(ChatMessageStyle.from(config), username));
+        ChatMessageStyle style = ChatMessageStyle.from(config);
+        send(config, formatter.formatSyntheticFollow(style, username, fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticFollow(ReinodoceConfig config, RichLiveMessage message) {
-        sendTracked(config, formatter.formatSyntheticFollow(ChatMessageStyle.from(config), message));
+        ChatMessageStyle style = ChatMessageStyle.from(config);
+        sendTracked(config, formatter.formatSyntheticFollow(style, message, fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticJoin(ReinodoceConfig config, String username) {
-        send(config, formatter.formatSyntheticJoin(ChatMessageStyle.from(config), username));
+        ChatMessageStyle style = ChatMessageStyle.from(config);
+        send(config, formatter.formatSyntheticJoin(style, username, fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticJoin(ReinodoceConfig config, RichLiveMessage message) {
-        sendTracked(config, formatter.formatSyntheticJoin(ChatMessageStyle.from(config), message));
+        ChatMessageStyle style = ChatMessageStyle.from(config);
+        sendTracked(config, formatter.formatSyntheticJoin(style, message, fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticMemberLevel(ReinodoceConfig config, String username, int memberLevel) {
-        send(config, formatter.formatSyntheticMemberLevel(ChatMessageStyle.from(config), username, memberLevel));
+        ChatMessageStyle style = ChatMessageStyle.from(config);
+        send(config, formatter.formatSyntheticMemberLevel(style, username, memberLevel, fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticMemberLevel(ReinodoceConfig config, RichLiveMessage message, int memberLevel) {
-        sendTracked(config, formatter.formatSyntheticMemberLevel(ChatMessageStyle.from(config), message, memberLevel));
+        ChatMessageStyle style = ChatMessageStyle.from(config);
+        sendTracked(config, formatter.formatSyntheticMemberLevel(style, message, memberLevel, fixedTextLanguage(config)));
     }
 
     @Override
@@ -139,5 +147,23 @@ public class MinecraftChatGateway implements ChatEventSink {
         }
 
         send(config, formatted.component());
+    }
+
+    private String effectiveLanguage(ReinodoceConfig config) {
+        String configuredLanguage = config == null ? LanguageSetting.AUTO : config.getLanguage();
+        return LanguageSetting.resolveEffective(configuredLanguage, platformBridge.selectedLanguageCode());
+    }
+
+    private String fixedTextLanguage(ReinodoceConfig config) {
+        String effectiveLanguage = effectiveLanguage(config);
+        return useRuntimeLanguage(config) ? FixedTextLanguage.runtime(effectiveLanguage) : effectiveLanguage;
+    }
+
+    private boolean useRuntimeLanguage(ReinodoceConfig config) {
+        String configuredLanguage = config == null ? LanguageSetting.AUTO : config.getLanguage();
+        return LanguageSetting.isAuto(configuredLanguage)
+                || LanguageSetting.normalizeLocale(platformBridge.selectedLanguageCode())
+                .filter(configuredLanguage::equals)
+                .isPresent();
     }
 }

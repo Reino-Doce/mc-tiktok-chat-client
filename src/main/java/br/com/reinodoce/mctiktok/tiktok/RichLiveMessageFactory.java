@@ -1,11 +1,14 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
 import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
+import br.com.reinodoce.mctiktok.config.LanguageSetting;
 import br.com.reinodoce.mctiktok.emoji.UnicodeEmojiParser;
 import br.com.reinodoce.mctiktok.i18n.Translations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 final class RichLiveMessageFactory {
     private static final String GIFT_PREFIX_KEY = "reinodoce.chat.gift_sent_prefix";
@@ -13,9 +16,25 @@ final class RichLiveMessageFactory {
     private static final String AUTHOR_SEPARATOR = " ";
 
     private final UnicodeEmojiParser unicodeEmojiParser;
+    private final Supplier<String> languageSupplier;
+    private final Supplier<Boolean> runtimeLanguageSupplier;
 
     RichLiveMessageFactory(UnicodeEmojiParser unicodeEmojiParser) {
-        this.unicodeEmojiParser = unicodeEmojiParser;
+        this(unicodeEmojiParser, () -> LanguageSetting.DEFAULT_LOCALE, () -> true);
+    }
+
+    RichLiveMessageFactory(UnicodeEmojiParser unicodeEmojiParser, Supplier<String> languageSupplier) {
+        this(unicodeEmojiParser, languageSupplier, () -> false);
+    }
+
+    RichLiveMessageFactory(
+            UnicodeEmojiParser unicodeEmojiParser,
+            Supplier<String> languageSupplier,
+            Supplier<Boolean> runtimeLanguageSupplier
+    ) {
+        this.unicodeEmojiParser = Objects.requireNonNull(unicodeEmojiParser, "unicodeEmojiParser");
+        this.languageSupplier = Objects.requireNonNull(languageSupplier, "languageSupplier");
+        this.runtimeLanguageSupplier = Objects.requireNonNull(runtimeLanguageSupplier, "runtimeLanguageSupplier");
     }
 
     RichLiveMessage richTextMessage(long messageId, String username, String avatarUrl, String bodyText) {
@@ -45,6 +64,10 @@ final class RichLiveMessageFactory {
                 unicodeEmojiParser.expandSegments(richMessage.bodySegments()));
     }
 
+    String translate(String key, Object... args) {
+        return Translations.trForLanguage(languageSupplier.get(), runtimeLanguageSupplier.get(), key, args);
+    }
+
     private List<RichLiveMessage.Segment> authorSegments(String username, String avatarUrl) {
         List<RichLiveMessage.Segment> segments = new ArrayList<>();
         segments.add(new RichLiveMessage.AvatarSegment(
@@ -57,14 +80,14 @@ final class RichLiveMessageFactory {
 
     private List<RichLiveMessage.Segment> giftSegments(String giftName, String giftIconUrl, int count) {
         List<RichLiveMessage.Segment> segments = new ArrayList<>();
-        segments.add(new RichLiveMessage.TextSegment(Translations.tr(GIFT_PREFIX_KEY)));
+        segments.add(new RichLiveMessage.TextSegment(translate(GIFT_PREFIX_KEY)));
         if (giftIconUrl != null && !giftIconUrl.isBlank()) {
             segments.add(new RichLiveMessage.GiftIconSegment(giftName, giftIconUrl, ""));
             segments.add(new RichLiveMessage.TextSegment(AUTHOR_SEPARATOR));
         }
         segments.addAll(unicodeEmojiParser.parseText(giftName));
         segments.add(new RichLiveMessage.TextSegment(
-                Translations.tr(GIFT_SUFFIX_KEY, Math.max(1, count))));
+                translate(GIFT_SUFFIX_KEY, Math.max(1, count))));
         return segments;
     }
 }

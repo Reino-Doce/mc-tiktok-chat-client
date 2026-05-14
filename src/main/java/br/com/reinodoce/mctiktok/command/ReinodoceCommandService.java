@@ -92,6 +92,21 @@ public interface ReinodoceCommandService {
     CommandResult setHudLines(int lines);
 
     /**
+     * Returns language setting status lines.
+     *
+     * @return language status lines
+     */
+    List<String> languageLines();
+
+    /**
+     * Updates the language override.
+     *
+     * @param language {@code auto} or locale
+     * @return command result
+     */
+    CommandResult setLanguage(String language);
+
+    /**
      * Opens the client settings GUI when available.
      *
      * @return command result

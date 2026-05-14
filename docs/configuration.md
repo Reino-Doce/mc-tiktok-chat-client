@@ -48,6 +48,7 @@ through `/reinodoce …` or the client settings screen opened with
 | `chatFormat` | string | current layout | Template used to arrange mirrored lines. Must include `{prefix}`, `{username}`, and `{message}`; unknown tokens or blank values revert to the default. |
 | `chatEmotesEnabled` | boolean | `true` | Render TikTok chat emotes inline in Minecraft chat. |
 | `chatLogEnabled` | boolean | `false` | Write mirrored TikTok chat and synthetic event lines through Minecraft's chat logger. System/status/error lines remain logged. |
+| `language` | string | `"auto"` | `auto` follows the Minecraft client language. A locale such as `"pt_br"` overrides the language used for TikTok metadata requests and fixed synthetic phrases. Invalid values fall back to `"auto"` on load. |
 | `sessionLoggingEnabled` | boolean | `false` | Write accepted mirrored LIVE events to local session files under `logs/reinodoce/`. Opt-in because files may contain TikTok usernames and chat content. |
 | `sessionLoggingFormat` | string | `"jsonl"` | One of `"jsonl"` or `"text"`. Unknown values fall back to `"jsonl"`. |
 

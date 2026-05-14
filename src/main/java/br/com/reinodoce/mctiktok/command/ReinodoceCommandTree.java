@@ -12,6 +12,7 @@ import br.com.reinodoce.mctiktok.command.handlers.StatsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.StatusCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.SyntheticCommandHandler;
 import br.com.reinodoce.mctiktok.config.HudPosition;
+import br.com.reinodoce.mctiktok.config.LanguageSetting;
 import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
@@ -39,6 +40,7 @@ public final class ReinodoceCommandTree {
     private static final String ARG_MODE = "mode";
     private static final String ARG_POSITION = "position";
     private static final String ARG_LINES = "lines";
+    private static final String ARG_LOCALE = "locale";
 
     private ReinodoceCommandTree() {
     }
@@ -108,6 +110,7 @@ public final class ReinodoceCommandTree {
                                         service,
                                         ctx.getSource(),
                                         BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(languageBranch(service))
                 .then(outputBranch(service))
                 .then(hudPositionBranch(service))
                 .then(hudLinesBranch(service))
@@ -148,6 +151,18 @@ public final class ReinodoceCommandTree {
                                 service,
                                 ctx.getSource(),
                                 StringArgumentType.getString(ctx, ARG_MODE))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> languageBranch(ReinodoceCommandService service) {
+        return Commands.literal("language")
+                .executes(ctx -> SettingsCommandHandler.language(service, ctx.getSource()))
+                .then(Commands.argument(ARG_LOCALE, StringArgumentType.string())
+                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                LanguageSetting.suggestions(), builder))
+                        .executes(ctx -> SettingsCommandHandler.language(
+                                service,
+                                ctx.getSource(),
+                                StringArgumentType.getString(ctx, ARG_LOCALE))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> hudPositionBranch(ReinodoceCommandService service) {
