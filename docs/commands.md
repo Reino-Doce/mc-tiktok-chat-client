@@ -25,7 +25,7 @@ Settings change runtime behavior and are persisted to the client config.
 | Command | Argument | Default | Effect |
 | ------- | -------- | ------- | ------ |
 | `/reinodoce settings reconnect <seconds>` | integer ≥ 0 | `5` | Delay between reconnect attempts when the LIVE drops or is offline. `0` disables reconnect. |
-| `/reinodoce settings gui` | — | — | Opens the client settings screen. Save writes through the same config file and runtime update path as commands; Cancel or closing the screen leaves settings unchanged. |
+| `/reinodoce settings gui` | — | — | Opens the client settings index with domain submenus for connection, output/HUD, chat formatting, rules, synthetic events, alerts, session logging, and language. Save on the top-level screen writes through the same config file and runtime update path as commands; Cancel or closing any screen leaves settings unchanged. |
 | `/reinodoce settings auto-connect <true\|false>` | boolean | `false` | When `true`, the client attempts one startup connection to the saved `lastUsername`. Blank or invalid saved usernames are ignored safely. |
 | `/reinodoce settings language` | — | `auto` | Shows whether language selection is automatic or overridden, plus the effective locale currently used by the mod. |
 | `/reinodoce settings language <locale\|auto>` | locale such as `en_us` or `pt_br`, or `auto` | `auto` | Overrides the language used for TikTok metadata requests and fixed synthetic phrases, or returns to Minecraft client language detection with `auto`. Invalid locale values are rejected. Active TikTok sessions reconnect when the effective language changes. |
