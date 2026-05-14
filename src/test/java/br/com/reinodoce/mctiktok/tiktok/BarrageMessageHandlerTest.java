@@ -35,6 +35,43 @@ class BarrageMessageHandlerTest {
     }
 
     @Test
+    void fansLevelUpgradeIgnoresInvalidCurrentGrade() {
+        RecordingSink sink = new RecordingSink();
+        BarrageMessageHandler handler = newHandler(enabledConfig(), sink);
+
+        handler.dispatch(sampleFansLevelUpgradePayload(4000, UPGRADED_MEMBER_LEVEL));
+
+        assertEquals(0, sink.memberLevelEvents());
+    }
+
+    @Test
+    void commonBarrageDoesNotUseUserGradeParamAsMemberLevel() {
+        BarrageMessageHandler handler = newHandler(enabledConfig(), new RecordingSink());
+
+        int memberLevel = handler.resolveBarrageMemberLevel(
+                io.github.jwdeveloper.tiktok.data.models.users.User.map(rawUser()),
+                rawUser(),
+                commonBarrageWithUserGrade(4000));
+
+        assertEquals(0, memberLevel);
+    }
+
+    @Test
+    void commonBarrageUsesExistingCachedValidMemberLevel() {
+        RecordingSink sink = new RecordingSink();
+        MemberLevelResolver resolver = new MemberLevelResolver();
+        resolver.updateLevel(USER_ID, USERNAME, "avatar://alice", CURRENT_MEMBER_LEVEL);
+        BarrageMessageHandler handler = newHandler(enabledConfig(), sink, resolver);
+
+        int memberLevel = handler.resolveBarrageMemberLevel(
+                io.github.jwdeveloper.tiktok.data.models.users.User.map(rawUser()),
+                rawUser(),
+                commonBarrageWithUserGrade(4000));
+
+        assertEquals(CURRENT_MEMBER_LEVEL, memberLevel);
+    }
+
+    @Test
     void fansLevelEntranceDoesNotEmitMemberLevelOutput() {
         RecordingSink sink = new RecordingSink();
         BarrageMessageHandler handler = newHandler(enabledConfig(), sink);
@@ -95,9 +132,17 @@ class BarrageMessageHandlerTest {
     }
 
     private static BarrageMessageHandler newHandler(ReinodoceConfig config, RecordingSink sink) {
+        return newHandler(config, sink, new MemberLevelResolver());
+    }
+
+    private static BarrageMessageHandler newHandler(
+            ReinodoceConfig config,
+            RecordingSink sink,
+            MemberLevelResolver resolver
+    ) {
         return new BarrageMessageHandler(
                 new TikTokRichMessageParser(),
-                new MemberLevelResolver(),
+                resolver,
                 MemberLevelEmitterTestFactory.create(config, sink),
                 null);
     }
@@ -106,6 +151,15 @@ class BarrageMessageHandlerTest {
         return WebcastBarrageMessage.newBuilder()
                 .setMsgType(BarrageType.FANSLEVELUPGRADE)
                 .setFansLevelParam(fansLevelParam(currentLevel, upgradedLevel))
+                .build();
+    }
+
+    private static WebcastBarrageMessage commonBarrageWithUserGrade(int currentGrade) {
+        return WebcastBarrageMessage.newBuilder()
+                .setMsgType(BarrageType.COMMONBARRAGE)
+                .setUserGradeParam(BarrageTypeUserGradeParam.newBuilder()
+                        .setCurrentGrade(currentGrade)
+                        .setUser(rawUser()))
                 .build();
     }
 

@@ -2,13 +2,8 @@ package br.com.reinodoce.mctiktok.tiktok;
 
 import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.util.InlineMediaUrls;
-import io.github.jwdeveloper.tiktok.data.models.badges.Badge;
-import io.github.jwdeveloper.tiktok.data.models.badges.CombineBadge;
-import io.github.jwdeveloper.tiktok.data.models.badges.StringBadge;
-import io.github.jwdeveloper.tiktok.data.models.badges.TextBadge;
 import io.github.jwdeveloper.tiktok.data.models.users.User;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -19,6 +14,8 @@ import java.util.regex.Pattern;
  */
 public class MemberLevelResolver {
     private static final Pattern NUMBER_PATTERN = Pattern.compile("(\\d+)");
+    private static final int MIN_FAN_LEVEL = 1;
+    private static final int MAX_FAN_LEVEL = 50;
 
     private final Map<Long, Integer> levels = new ConcurrentHashMap<>();
     private final Map<Long, String> usernames = new ConcurrentHashMap<>();
@@ -41,13 +38,9 @@ public class MemberLevelResolver {
             return cached;
         }
 
-        int inferred = inferFromBadges(user.getBadges());
-        if (inferred > 0) {
-            levels.put(userId, inferred);
-        }
         usernames.putIfAbsent(userId, chooseUserName(user));
         avatarUrls.putIfAbsent(userId, TikTokMediaResolver.resolveUserAvatarUrl(user));
-        return inferred;
+        return 0;
     }
 
     /**
@@ -59,16 +52,20 @@ public class MemberLevelResolver {
      * @param newLevel newly observed level
      * @return update summary
      */
-    public LevelUpdate updateLevel(long userId, String username, String avatarUrl, int newLevel) {
-        if (userId <= 0 || newLevel < 0) {
+    public LevelUpdate updateLevel(long userId, String username, String avatarUrl, long newLevel) {
+        if (userId <= 0) {
             return new LevelUpdate(userId, chooseUserName(userId, username), chooseAvatarUrl(userId, avatarUrl), 0, 0);
         }
 
         String display = chooseUserName(userId, username);
         String displayAvatar = chooseAvatarUrl(userId, avatarUrl);
         int previous = levels.getOrDefault(userId, 0);
-        int effective = Math.max(previous, newLevel);
+        int normalizedLevel = normalizeLevel(newLevel);
+        if (normalizedLevel == 0) {
+            return new LevelUpdate(userId, display, displayAvatar, previous, previous);
+        }
 
+        int effective = Math.max(previous, normalizedLevel);
         levels.put(userId, effective);
         usernames.put(userId, display);
         avatarUrls.put(userId, displayAvatar);
@@ -120,7 +117,7 @@ public class MemberLevelResolver {
         Matcher matcher = NUMBER_PATTERN.matcher(text);
         if (matcher.find()) {
             try {
-                return Integer.parseInt(matcher.group(1));
+                return normalizeLevel(Long.parseLong(matcher.group(1)));
             } catch (NumberFormatException ignored) {
                 return 0;
             }
@@ -128,29 +125,36 @@ public class MemberLevelResolver {
         return 0;
     }
 
-    private int inferFromBadges(List<Badge> badges) {
-        if (badges == null || badges.isEmpty()) {
+    /**
+     * Normalizes a raw TikTok fan-club level.
+     *
+     * @param value raw fan-level candidate
+     * @return a valid fan level, or zero when unknown or invalid
+     */
+    public static int normalizeLevel(long value) {
+        return value >= MIN_FAN_LEVEL && value <= MAX_FAN_LEVEL ? (int) value : 0;
+    }
+
+    /**
+     * Resolves a fan level from fan-club-specific raw user fields.
+     *
+     * @param rawUser TikTok protobuf user
+     * @return resolved fan level, or zero when unknown or invalid
+     */
+    public static int resolveRawUserLevel(io.github.jwdeveloper.tiktok.messages.data.User rawUser) {
+        if (rawUser == null) {
             return 0;
         }
-
-        int maxLevel = 0;
-        for (Badge badge : badges) {
-            int level = 0;
-            if (badge instanceof TextBadge textBadge) {
-                level = extractLevelFromText(textBadge.getText());
-            } else if (badge instanceof StringBadge stringBadge) {
-                level = extractLevelFromText(stringBadge.getText());
-            } else if (badge instanceof CombineBadge combineBadge) {
-                level = Math.max(
-                        extractLevelFromText(combineBadge.getText()),
-                        extractLevelFromText(combineBadge.getSubText())
-                );
-            }
-            if (level > maxLevel) {
-                maxLevel = level;
+        if (rawUser.hasFansClubInfo()) {
+            int fansClubInfoLevel = normalizeLevel(rawUser.getFansClubInfo().getFansLevel());
+            if (fansClubInfoLevel > 0) {
+                return fansClubInfoLevel;
             }
         }
-        return maxLevel;
+        if (rawUser.hasFansClub() && rawUser.getFansClub().hasData()) {
+            return normalizeLevel(rawUser.getFansClub().getData().getLevel());
+        }
+        return 0;
     }
 
     private String chooseUserName(User user) {
