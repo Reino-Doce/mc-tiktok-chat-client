@@ -16,10 +16,15 @@ automatically.
 
 ## [Unreleased]
 
+## [0.1.4]
+
 ### Fixed
 
 - Correct the synthetic event command branch spelling to `/reinodoce synthetic`.
 - Correct persisted synthetic-event config field names.
+- Make mirrored TikTok chat logging opt-in with `chatLogEnabled`.
+- Request TikTok event metadata using the Minecraft client language.
+- Emit synthetic member-level-up messages from TikTok member updates.
 
 ## [0.1.3]
 
