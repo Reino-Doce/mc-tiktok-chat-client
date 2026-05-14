@@ -2,6 +2,7 @@ package br.com.reinodoce.mctiktok.tiktok;
 
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
+import br.com.reinodoce.mctiktok.util.ReinodoceLogger;
 
 import java.util.function.Supplier;
 
@@ -21,11 +22,13 @@ final class MemberLevelEmitter {
     }
 
     boolean emit(MemberLevelResolver.LevelUpdate update) {
-        if (!update.isUpgrade() || update.newLevel() <= 0) {
+        if (!update.isLevelIncrease()) {
+            logSkipped("not-level-increase", update);
             return false;
         }
         ReinodoceConfig config = configSupplier.get();
-        if (!config.isSynteticMemberLevelEnabled()) {
+        if (!config.isSyntheticMemberLevelEnabled()) {
+            logSkipped("disabled", update);
             return false;
         }
         String username = TikTokUserNames.sanitizeUserName(update.username());
@@ -38,5 +41,14 @@ final class MemberLevelEmitter {
         }
         chatGateway.sendSyntheticMemberLevel(config, username, update.newLevel());
         return true;
+    }
+
+    private static void logSkipped(String reason, MemberLevelResolver.LevelUpdate update) {
+        ReinodoceLogger.LOGGER.debug(
+                "Member-level synthetic message skipped reason={} userId={} previousLevel={} newLevel={}",
+                reason,
+                update.userId(),
+                update.previousLevel(),
+                update.newLevel());
     }
 }

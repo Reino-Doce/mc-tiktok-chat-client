@@ -36,6 +36,18 @@ public final class SettingsCommandHandler {
     }
 
     /**
+     * Updates mirrored chat log settings.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param enabled whether mirrored TikTok lines should be logged
+     * @return Brigadier command result code
+     */
+    public static int chatLog(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
+        return CommandFeedback.sendResult(source, service.setChatLogEnabled(enabled));
+    }
+
+    /**
      * Updates the visible LIVE chat prefix.
      *
      * @param service command service boundary

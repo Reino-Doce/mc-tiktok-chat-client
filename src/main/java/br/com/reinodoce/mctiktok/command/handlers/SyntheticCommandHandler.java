@@ -5,10 +5,10 @@ import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
 import net.minecraft.commands.CommandSourceStack;
 
 /**
- * Handles `/reinodoce syntetic ...` command execution.
+ * Handles `/reinodoce synthetic ...` command execution.
  */
-public final class SynteticCommandHandler {
-    private SynteticCommandHandler() {
+public final class SyntheticCommandHandler {
+    private SyntheticCommandHandler() {
     }
 
     /**
@@ -20,7 +20,7 @@ public final class SynteticCommandHandler {
      * @return Brigadier command result code
      */
     public static int gift(ReinodoceCommandService service, CommandSourceStack source, int value) {
-        return CommandFeedback.sendResult(source, service.setSynteticGift(value));
+        return CommandFeedback.sendResult(source, service.setSyntheticGift(value));
     }
 
     /**
@@ -32,7 +32,7 @@ public final class SynteticCommandHandler {
      * @return Brigadier command result code
      */
     public static int giftCombo(ReinodoceCommandService service, CommandSourceStack source, String mode) {
-        return CommandFeedback.sendResult(source, service.setSynteticGiftComboMode(mode));
+        return CommandFeedback.sendResult(source, service.setSyntheticGiftComboMode(mode));
     }
 
     /**
@@ -44,7 +44,7 @@ public final class SynteticCommandHandler {
      * @return Brigadier command result code
      */
     public static int follow(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
-        return CommandFeedback.sendResult(source, service.setSynteticFollow(enabled));
+        return CommandFeedback.sendResult(source, service.setSyntheticFollow(enabled));
     }
 
     /**
@@ -56,7 +56,7 @@ public final class SynteticCommandHandler {
      * @return Brigadier command result code
      */
     public static int join(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
-        return CommandFeedback.sendResult(source, service.setSynteticJoin(enabled));
+        return CommandFeedback.sendResult(source, service.setSyntheticJoin(enabled));
     }
 
     /**
@@ -68,6 +68,6 @@ public final class SynteticCommandHandler {
      * @return Brigadier command result code
      */
     public static int memberLevel(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
-        return CommandFeedback.sendResult(source, service.setSynteticMemberLevel(enabled));
+        return CommandFeedback.sendResult(source, service.setSyntheticMemberLevel(enabled));
     }
 }

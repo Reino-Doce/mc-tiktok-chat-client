@@ -29,16 +29,18 @@ public class TikTokClientFacade {
      * @param ruleEngine message rule engine
      * @param memberLevelResolver member-level resolver
      * @param giftDeduplicator gift deduplicator
+     * @param languageSupplier selected client language supplier
      */
     public TikTokClientFacade(
             Supplier<ReinodoceConfig> configSupplier,
             ChatEventSink chatGateway,
             MessageRuleEngine ruleEngine,
             MemberLevelResolver memberLevelResolver,
-            MessageDeduplicator giftDeduplicator
+            MessageDeduplicator giftDeduplicator,
+            Supplier<String> languageSupplier
     ) {
         TikTokFacadeWiring wiring = TikTokFacadeWiring.assemble(
-                configSupplier, chatGateway, ruleEngine, memberLevelResolver, giftDeduplicator);
+                configSupplier, chatGateway, ruleEngine, memberLevelResolver, giftDeduplicator, languageSupplier);
         wiring.bindFacade(this);
         this.sessionState = wiring.sessionState();
         this.lifecycle = wiring.lifecycle();

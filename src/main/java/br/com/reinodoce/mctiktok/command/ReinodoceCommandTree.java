@@ -6,7 +6,7 @@ import br.com.reinodoce.mctiktok.command.handlers.ReloadCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.RuleCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.SettingsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.StatusCommandHandler;
-import br.com.reinodoce.mctiktok.command.handlers.SynteticCommandHandler;
+import br.com.reinodoce.mctiktok.command.handlers.SyntheticCommandHandler;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -44,7 +44,7 @@ public final class ReinodoceCommandTree {
                 .then(statusBranch(commandService))
                 .then(settingsBranch(commandService))
                 .then(ruleBranch(commandService))
-                .then(synteticBranch(commandService))
+                .then(syntheticBranch(commandService))
                 .then(reloadBranch(commandService));
     }
 
@@ -81,6 +81,12 @@ public final class ReinodoceCommandTree {
                                         service,
                                         ctx.getSource(),
                                         BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal("chat-log")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> SettingsCommandHandler.chatLog(
+                                        service,
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
                 .then(Commands.literal("prefix")
                         .then(Commands.argument(ARG_VALUE, StringArgumentType.greedyString())
                                 .executes(ctx -> SettingsCommandHandler.prefix(
@@ -111,11 +117,11 @@ public final class ReinodoceCommandTree {
                                         IntegerArgumentType.getInteger(ctx, "level")))));
     }
 
-    private static LiteralArgumentBuilder<CommandSourceStack> synteticBranch(ReinodoceCommandService service) {
-        return Commands.literal("syntetic")
+    private static LiteralArgumentBuilder<CommandSourceStack> syntheticBranch(ReinodoceCommandService service) {
+        return Commands.literal("synthetic")
                 .then(Commands.literal("gift")
                         .then(Commands.argument(ARG_VALUE, IntegerArgumentType.integer(0))
-                                .executes(ctx -> SynteticCommandHandler.gift(
+                                .executes(ctx -> SyntheticCommandHandler.gift(
                                         service,
                                         ctx.getSource(),
                                         IntegerArgumentType.getInteger(ctx, ARG_VALUE)))))
@@ -123,13 +129,13 @@ public final class ReinodoceCommandTree {
                         .then(Commands.argument("mode", StringArgumentType.string())
                                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                         GiftComboMode.ids(), builder))
-                                .executes(ctx -> SynteticCommandHandler.giftCombo(
+                                .executes(ctx -> SyntheticCommandHandler.giftCombo(
                                         service,
                                         ctx.getSource(),
                                         StringArgumentType.getString(ctx, "mode")))))
-                .then(syntheticToggle(service, "follow", SynteticCommandHandler::follow))
-                .then(syntheticToggle(service, "join", SynteticCommandHandler::join))
-                .then(syntheticToggle(service, "member-level", SynteticCommandHandler::memberLevel));
+                .then(syntheticToggle(service, "follow", SyntheticCommandHandler::follow))
+                .then(syntheticToggle(service, "join", SyntheticCommandHandler::join))
+                .then(syntheticToggle(service, "member-level", SyntheticCommandHandler::memberLevel));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> syntheticToggle(

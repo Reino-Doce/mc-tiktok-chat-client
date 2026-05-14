@@ -12,12 +12,13 @@ public class ReinodoceConfig {
     private int reconnectSeconds = DEFAULT_RECONNECT_SECONDS;
     private boolean ruleFollowerOnly;
     private int ruleMinMemberLevel;
-    private int synteticGiftMinValue = DEFAULT_SYNTHETIC_GIFT_MIN_VALUE;
-    private String synteticGiftComboMode = DEFAULT_GIFT_COMBO_MODE;
-    private boolean synteticFollowEnabled;
-    private boolean synteticJoinEnabled;
-    private boolean synteticMemberLevelEnabled;
+    private int syntheticGiftMinValue = DEFAULT_SYNTHETIC_GIFT_MIN_VALUE;
+    private String syntheticGiftComboMode = DEFAULT_GIFT_COMBO_MODE;
+    private boolean syntheticFollowEnabled;
+    private boolean syntheticJoinEnabled;
+    private boolean syntheticMemberLevelEnabled;
     private boolean chatEmotesEnabled = true;
+    private boolean chatLogEnabled = false;
     private String chatPrefix = DEFAULT_CHAT_PREFIX;
 
     public static ReinodoceConfig defaults() {
@@ -30,12 +31,13 @@ public class ReinodoceConfig {
         copy.setReconnectSeconds(reconnectSeconds);
         copy.setRuleFollowerOnly(ruleFollowerOnly);
         copy.setRuleMinMemberLevel(ruleMinMemberLevel);
-        copy.setSynteticGiftMinValue(synteticGiftMinValue);
-        copy.setSynteticGiftComboMode(synteticGiftComboMode);
-        copy.setSynteticFollowEnabled(synteticFollowEnabled);
-        copy.setSynteticJoinEnabled(synteticJoinEnabled);
-        copy.setSynteticMemberLevelEnabled(synteticMemberLevelEnabled);
+        copy.setSyntheticGiftMinValue(syntheticGiftMinValue);
+        copy.setSyntheticGiftComboMode(syntheticGiftComboMode);
+        copy.setSyntheticFollowEnabled(syntheticFollowEnabled);
+        copy.setSyntheticJoinEnabled(syntheticJoinEnabled);
+        copy.setSyntheticMemberLevelEnabled(syntheticMemberLevelEnabled);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
+        copy.setChatLogEnabled(chatLogEnabled);
         copy.setChatPrefix(chatPrefix);
         return copy;
     }
@@ -72,44 +74,44 @@ public class ReinodoceConfig {
         this.ruleMinMemberLevel = Math.max(0, ruleMinMemberLevel);
     }
 
-    public int getSynteticGiftMinValue() {
-        return synteticGiftMinValue;
+    public int getSyntheticGiftMinValue() {
+        return syntheticGiftMinValue;
     }
 
-    public void setSynteticGiftMinValue(int synteticGiftMinValue) {
-        this.synteticGiftMinValue = Math.max(0, synteticGiftMinValue);
+    public void setSyntheticGiftMinValue(int syntheticGiftMinValue) {
+        this.syntheticGiftMinValue = Math.max(0, syntheticGiftMinValue);
     }
 
-    public String getSynteticGiftComboMode() {
-        return synteticGiftComboMode;
+    public String getSyntheticGiftComboMode() {
+        return syntheticGiftComboMode;
     }
 
-    public void setSynteticGiftComboMode(String synteticGiftComboMode) {
-        this.synteticGiftComboMode = normalizedGiftComboMode(synteticGiftComboMode);
+    public void setSyntheticGiftComboMode(String syntheticGiftComboMode) {
+        this.syntheticGiftComboMode = normalizedGiftComboMode(syntheticGiftComboMode);
     }
 
-    public boolean isSynteticFollowEnabled() {
-        return synteticFollowEnabled;
+    public boolean isSyntheticFollowEnabled() {
+        return syntheticFollowEnabled;
     }
 
-    public void setSynteticFollowEnabled(boolean synteticFollowEnabled) {
-        this.synteticFollowEnabled = synteticFollowEnabled;
+    public void setSyntheticFollowEnabled(boolean syntheticFollowEnabled) {
+        this.syntheticFollowEnabled = syntheticFollowEnabled;
     }
 
-    public boolean isSynteticJoinEnabled() {
-        return synteticJoinEnabled;
+    public boolean isSyntheticJoinEnabled() {
+        return syntheticJoinEnabled;
     }
 
-    public void setSynteticJoinEnabled(boolean synteticJoinEnabled) {
-        this.synteticJoinEnabled = synteticJoinEnabled;
+    public void setSyntheticJoinEnabled(boolean syntheticJoinEnabled) {
+        this.syntheticJoinEnabled = syntheticJoinEnabled;
     }
 
-    public boolean isSynteticMemberLevelEnabled() {
-        return synteticMemberLevelEnabled;
+    public boolean isSyntheticMemberLevelEnabled() {
+        return syntheticMemberLevelEnabled;
     }
 
-    public void setSynteticMemberLevelEnabled(boolean synteticMemberLevelEnabled) {
-        this.synteticMemberLevelEnabled = synteticMemberLevelEnabled;
+    public void setSyntheticMemberLevelEnabled(boolean syntheticMemberLevelEnabled) {
+        this.syntheticMemberLevelEnabled = syntheticMemberLevelEnabled;
     }
 
     public boolean isChatEmotesEnabled() {
@@ -118,6 +120,14 @@ public class ReinodoceConfig {
 
     public void setChatEmotesEnabled(boolean chatEmotesEnabled) {
         this.chatEmotesEnabled = chatEmotesEnabled;
+    }
+
+    public boolean isChatLogEnabled() {
+        return chatLogEnabled;
+    }
+
+    public void setChatLogEnabled(boolean chatLogEnabled) {
+        this.chatLogEnabled = chatLogEnabled;
     }
 
     public String getChatPrefix() {

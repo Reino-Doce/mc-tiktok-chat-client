@@ -23,6 +23,14 @@ The Minecraft client selects the locale automatically based on the
 player's language setting and falls back to `en_us` when a key is
 missing.
 
+TikTok LIVE connections also use the selected Minecraft language code
+when requesting event metadata from TikTok. Fixed synthetic phrases such
+as joins, follows, gifts, and member-level messages come from the mod's
+Minecraft lang files. Gift names are preferred from TikTok's localized
+payload for the requested language; if TikTok does not provide one, the
+mod falls back to the gift name supplied by TikTok or the localized
+`reinodoce.chat.gift_unknown` placeholder.
+
 ## Adding a new locale
 
 1. Copy `en_us.json` to a new file named after the target locale (for

@@ -20,8 +20,10 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 /**
  * Core command service that owns configuration, connection lifecycle, and operator-facing state.
@@ -41,6 +43,21 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
      * @param configRepository persisted configuration repository
      */
     public ReinodoceCoreService(ChatEventSink chatEventSink, ReinodoceConfigRepository configRepository) {
+        this(chatEventSink, configRepository, () -> Locale.getDefault().toLanguageTag());
+    }
+
+    /**
+     * Creates the core service.
+     *
+     * @param chatEventSink chat sink used for rendered TikTok events
+     * @param configRepository persisted configuration repository
+     * @param languageSupplier selected client language supplier
+     */
+    public ReinodoceCoreService(
+            ChatEventSink chatEventSink,
+            ReinodoceConfigRepository configRepository,
+            Supplier<String> languageSupplier
+    ) {
         this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
         this.settingsState = new RuntimeSettingsState();
         MessageRuleEngine ruleEngine = new MessageRuleEngine();
@@ -51,7 +68,8 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
                 Objects.requireNonNull(chatEventSink, "chatEventSink"),
                 ruleEngine,
                 memberLevelResolver,
-                deduplicator
+                deduplicator,
+                Objects.requireNonNull(languageSupplier, "languageSupplier")
         );
         this.initialized = new AtomicBoolean(false);
     }
@@ -105,14 +123,15 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.reconnect_attempts", snapshot.reconnectAttempts()));
         lines.add(Translations.tr("reinodoce.status.rule_follower", config.isRuleFollowerOnly()));
         lines.add(Translations.tr("reinodoce.status.rule_min_member_level", config.getRuleMinMemberLevel()));
-        lines.add(Translations.tr("reinodoce.status.syntetic_gift", config.getSynteticGiftMinValue()));
-        lines.add(Translations.tr("reinodoce.status.syntetic_gift_combo", config.getSynteticGiftComboMode()));
-        lines.add(Translations.tr("reinodoce.status.syntetic_follow", config.isSynteticFollowEnabled()));
-        lines.add(Translations.tr("reinodoce.status.syntetic_join", config.isSynteticJoinEnabled()));
-        lines.add(Translations.tr("reinodoce.status.syntetic_member_level", config.isSynteticMemberLevelEnabled()));
+        lines.add(Translations.tr("reinodoce.status.synthetic_gift", config.getSyntheticGiftMinValue()));
+        lines.add(Translations.tr("reinodoce.status.synthetic_gift_combo", config.getSyntheticGiftComboMode()));
+        lines.add(Translations.tr("reinodoce.status.synthetic_follow", config.isSyntheticFollowEnabled()));
+        lines.add(Translations.tr("reinodoce.status.synthetic_join", config.isSyntheticJoinEnabled()));
+        lines.add(Translations.tr("reinodoce.status.synthetic_member_level", config.isSyntheticMemberLevelEnabled()));
         lines.add(Translations.tr("reinodoce.status.chat_prefix", config.getChatPrefix()));
         lines.add(Translations.tr("reinodoce.status.chat_format", config.getChatFormat()));
         lines.add(Translations.tr("reinodoce.status.chat_emotes", config.isChatEmotesEnabled()));
+        lines.add(Translations.tr("reinodoce.status.chat_log", config.isChatLogEnabled()));
         if (snapshot.reconnectAt() != null) {
             lines.add(Translations.tr("reinodoce.status.next_reconnect", formatter.format(snapshot.reconnectAt())));
         }
@@ -148,49 +167,49 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     }
 
     @Override
-    public CommandResult setSynteticGift(int value) {
+    public CommandResult setSyntheticGift(int value) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
-        config.setSynteticGiftMinValue(value);
+        config.setSyntheticGiftMinValue(value);
         persist(config);
-        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_gift", config.getSynteticGiftMinValue()));
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_gift", config.getSyntheticGiftMinValue()));
     }
 
     @Override
-    public CommandResult setSynteticGiftComboMode(String mode) {
+    public CommandResult setSyntheticGiftComboMode(String mode) {
         ensureInitialized();
         GiftComboMode parsed = GiftComboMode.fromString(mode);
         ReinodoceConfig config = settingsState.getSnapshot();
-        config.setSynteticGiftComboMode(parsed.id());
+        config.setSyntheticGiftComboMode(parsed.id());
         persist(config);
-        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_gift_combo", parsed.id()));
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_gift_combo", parsed.id()));
     }
 
     @Override
-    public CommandResult setSynteticFollow(boolean enabled) {
+    public CommandResult setSyntheticFollow(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
-        config.setSynteticFollowEnabled(enabled);
+        config.setSyntheticFollowEnabled(enabled);
         persist(config);
-        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_follow", enabled));
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_follow", enabled));
     }
 
     @Override
-    public CommandResult setSynteticJoin(boolean enabled) {
+    public CommandResult setSyntheticJoin(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
-        config.setSynteticJoinEnabled(enabled);
+        config.setSyntheticJoinEnabled(enabled);
         persist(config);
-        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_join", enabled));
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_join", enabled));
     }
 
     @Override
-    public CommandResult setSynteticMemberLevel(boolean enabled) {
+    public CommandResult setSyntheticMemberLevel(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
-        config.setSynteticMemberLevelEnabled(enabled);
+        config.setSyntheticMemberLevelEnabled(enabled);
         persist(config);
-        return CommandResult.ok(Translations.tr("reinodoce.command.set.syntetic_member_level", enabled));
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_member_level", enabled));
     }
 
     @Override
@@ -200,6 +219,15 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         config.setChatEmotesEnabled(enabled);
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.set.chat_emotes", enabled));
+    }
+
+    @Override
+    public CommandResult setChatLogEnabled(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setChatLogEnabled(enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.chat_log", enabled));
     }
 
     @Override

@@ -198,5 +198,14 @@ public class MemberLevelResolver {
         public boolean isUpgrade() {
             return previousLevel > 0 && newLevel > previousLevel;
         }
+
+        /**
+         * Reports whether this update increased the effective known level, including first explicit observations.
+         *
+         * @return true when the new level is positive and greater than the previous known level
+         */
+        public boolean isLevelIncrease() {
+            return newLevel > 0 && newLevel > previousLevel;
+        }
     }
 }

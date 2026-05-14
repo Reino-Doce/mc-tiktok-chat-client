@@ -32,67 +32,67 @@ public class MinecraftChatGateway implements ChatEventSink {
 
     @Override
     public void sendLiveComment(ReinodoceConfig config, String username, String message) {
-        send(formatter.formatLiveComment(ChatMessageStyle.from(config), username, message));
+        send(formatter.formatLiveComment(ChatMessageStyle.from(config), username, message), config.isChatLogEnabled());
     }
 
     @Override
     public void sendLiveComment(ReinodoceConfig config, RichLiveMessage message) {
-        sendTracked(formatter.formatLiveComment(ChatMessageStyle.from(config), message));
+        sendTracked(config, formatter.formatLiveComment(ChatMessageStyle.from(config), message));
     }
 
     @Override
     public void sendStarComment(ReinodoceConfig config, String username, String message) {
-        send(formatter.formatStarComment(ChatMessageStyle.from(config), username, message));
+        send(formatter.formatStarComment(ChatMessageStyle.from(config), username, message), config.isChatLogEnabled());
     }
 
     @Override
     public void sendStarComment(ReinodoceConfig config, RichLiveMessage message) {
-        sendTracked(formatter.formatStarComment(ChatMessageStyle.from(config), message));
+        sendTracked(config, formatter.formatStarComment(ChatMessageStyle.from(config), message));
     }
 
     @Override
     public void sendSyntheticGift(ReinodoceConfig config, String username, String giftName, int count) {
-        send(formatter.formatSyntheticGift(ChatMessageStyle.from(config), username, giftName, count));
+        send(formatter.formatSyntheticGift(ChatMessageStyle.from(config), username, giftName, count), config.isChatLogEnabled());
     }
 
     @Override
     public void sendSyntheticGift(ReinodoceConfig config, RichLiveMessage message) {
-        sendTracked(formatter.formatSyntheticGift(ChatMessageStyle.from(config), message));
+        sendTracked(config, formatter.formatSyntheticGift(ChatMessageStyle.from(config), message));
     }
 
     @Override
     public void sendSyntheticFollow(ReinodoceConfig config, String username) {
-        send(formatter.formatSyntheticFollow(ChatMessageStyle.from(config), username));
+        send(formatter.formatSyntheticFollow(ChatMessageStyle.from(config), username), config.isChatLogEnabled());
     }
 
     @Override
     public void sendSyntheticFollow(ReinodoceConfig config, RichLiveMessage message) {
-        sendTracked(formatter.formatSyntheticFollow(ChatMessageStyle.from(config), message));
+        sendTracked(config, formatter.formatSyntheticFollow(ChatMessageStyle.from(config), message));
     }
 
     @Override
     public void sendSyntheticJoin(ReinodoceConfig config, String username) {
-        send(formatter.formatSyntheticJoin(ChatMessageStyle.from(config), username));
+        send(formatter.formatSyntheticJoin(ChatMessageStyle.from(config), username), config.isChatLogEnabled());
     }
 
     @Override
     public void sendSyntheticJoin(ReinodoceConfig config, RichLiveMessage message) {
-        sendTracked(formatter.formatSyntheticJoin(ChatMessageStyle.from(config), message));
+        sendTracked(config, formatter.formatSyntheticJoin(ChatMessageStyle.from(config), message));
     }
 
     @Override
     public void sendSyntheticMemberLevel(ReinodoceConfig config, String username, int memberLevel) {
-        send(formatter.formatSyntheticMemberLevel(ChatMessageStyle.from(config), username, memberLevel));
+        send(formatter.formatSyntheticMemberLevel(ChatMessageStyle.from(config), username, memberLevel), config.isChatLogEnabled());
     }
 
     @Override
     public void sendSyntheticMemberLevel(ReinodoceConfig config, RichLiveMessage message, int memberLevel) {
-        sendTracked(formatter.formatSyntheticMemberLevel(ChatMessageStyle.from(config), message, memberLevel));
+        sendTracked(config, formatter.formatSyntheticMemberLevel(ChatMessageStyle.from(config), message, memberLevel));
     }
 
     @Override
     public void sendSystem(String message, boolean success) {
-        send(formatter.formatSystem(message, success));
+        send(formatter.formatSystem(message, success), true);
     }
 
     /**
@@ -101,10 +101,14 @@ public class MinecraftChatGateway implements ChatEventSink {
      * @param component component to add to chat
      */
     public void send(Component component) {
-        platformBridge.runOnClientThread(() -> platformBridge.addChatMessage(component));
+        send(component, true);
     }
 
-    private void sendTracked(FormattedLiveComment formatted) {
+    private void send(Component component, boolean logToChat) {
+        platformBridge.runOnClientThread(() -> platformBridge.addChatMessage(component, logToChat));
+    }
+
+    private void sendTracked(ReinodoceConfig config, FormattedLiveComment formatted) {
         if (formatted == null) {
             return;
         }
@@ -114,6 +118,6 @@ public class MinecraftChatGateway implements ChatEventSink {
             inlineMediaCache.prefetch(richMessage);
         }
 
-        platformBridge.runOnClientThread(() -> platformBridge.addChatMessage(formatted.component()));
+        send(formatted.component(), config.isChatLogEnabled());
     }
 }

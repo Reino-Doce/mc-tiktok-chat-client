@@ -38,7 +38,8 @@ public class ReinodoceClientService implements ReinodoceCommandService {
                         new LiveMessageFormatter(inlineMediaTokenRegistry),
                         inlineMediaCache
                 ),
-                new ReinodoceConfigRepository()
+                new ReinodoceConfigRepository(),
+                platformBridge::selectedLanguageCode
         );
     }
 
@@ -96,33 +97,38 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     }
 
     @Override
-    public CommandResult setSynteticGift(int value) {
-        return coreService.setSynteticGift(value);
+    public CommandResult setSyntheticGift(int value) {
+        return coreService.setSyntheticGift(value);
     }
 
     @Override
-    public CommandResult setSynteticGiftComboMode(String mode) {
-        return coreService.setSynteticGiftComboMode(mode);
+    public CommandResult setSyntheticGiftComboMode(String mode) {
+        return coreService.setSyntheticGiftComboMode(mode);
     }
 
     @Override
-    public CommandResult setSynteticFollow(boolean enabled) {
-        return coreService.setSynteticFollow(enabled);
+    public CommandResult setSyntheticFollow(boolean enabled) {
+        return coreService.setSyntheticFollow(enabled);
     }
 
     @Override
-    public CommandResult setSynteticJoin(boolean enabled) {
-        return coreService.setSynteticJoin(enabled);
+    public CommandResult setSyntheticJoin(boolean enabled) {
+        return coreService.setSyntheticJoin(enabled);
     }
 
     @Override
-    public CommandResult setSynteticMemberLevel(boolean enabled) {
-        return coreService.setSynteticMemberLevel(enabled);
+    public CommandResult setSyntheticMemberLevel(boolean enabled) {
+        return coreService.setSyntheticMemberLevel(enabled);
     }
 
     @Override
     public CommandResult setChatEmotesEnabled(boolean enabled) {
         return coreService.setChatEmotesEnabled(enabled);
+    }
+
+    @Override
+    public CommandResult setChatLogEnabled(boolean enabled) {
+        return coreService.setChatLogEnabled(enabled);
     }
 
     @Override

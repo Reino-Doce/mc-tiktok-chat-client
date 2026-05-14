@@ -23,6 +23,7 @@ Settings change runtime behavior and are persisted to the client config.
 | ------- | -------- | ------- | ------ |
 | `/reinodoce settings reconnect <seconds>` | integer ≥ 0 | `5` | Delay between reconnect attempts when the LIVE drops or is offline. `0` disables reconnect. |
 | `/reinodoce settings chat-emotes <true\|false>` | boolean | `true` | When `true`, TikTok chat emotes are rendered inline in the Minecraft chat HUD. |
+| `/reinodoce settings chat-log <true\|false>` | boolean | `false` | When `true`, mirrored TikTok lines are written through Minecraft's chat logger. System/status/error lines remain logged either way. |
 | `/reinodoce settings prefix <value>` | text | `"[LIVE]"` | Prefix rendered on every mirrored TikTok line. Blank values fall back to the default. |
 | `/reinodoce settings format <template>` | text containing `{prefix}`, `{username}`, and `{message}` | current layout | Template used to arrange mirrored TikTok lines. Unknown tokens or templates missing a required token fall back to the default. |
 
@@ -58,11 +59,11 @@ joins, member-level changes) into visible `[LIVE]`-prefixed chat lines.
 
 | Command | Argument | Default | Effect |
 | ------- | -------- | ------- | ------ |
-| `/reinodoce syntetic gift <value>` | integer ≥ 0 | `1` | Minimum gift diamond cost to surface. `0` disables gift announcements; `1` surfaces every gift. |
-| `/reinodoce syntetic gift-combo <ignore\|single\|bulk>` | enum | `bulk` | How gift combos are folded. `ignore` skips combo updates; `single` emits one line per combo step; `bulk` emits one summary line per combo. |
-| `/reinodoce syntetic follow <true\|false>` | boolean | `false` | Surface new-follower events. |
-| `/reinodoce syntetic join <true\|false>` | boolean | `false` | Surface viewer-join events. |
-| `/reinodoce syntetic member-level <true\|false>` | boolean | `false` | Surface member-level-up events. |
+| `/reinodoce synthetic gift <value>` | integer ≥ 0 | `1` | Minimum gift diamond cost to surface. `0` disables gift announcements; `1` surfaces every gift. |
+| `/reinodoce synthetic gift-combo <ignore\|single\|bulk>` | enum | `bulk` | How gift combos are folded. `ignore` skips combo updates; `single` emits one line per combo step; `bulk` emits one summary line per combo. |
+| `/reinodoce synthetic follow <true\|false>` | boolean | `false` | Surface new-follower events. |
+| `/reinodoce synthetic join <true\|false>` | boolean | `false` | Surface viewer-join events. |
+| `/reinodoce synthetic member-level <true\|false>` | boolean | `false` | Surface member-level-up events. |
 
 ## Quick example
 
@@ -70,7 +71,7 @@ joins, member-level changes) into visible `[LIVE]`-prefixed chat lines.
 /reinodoce settings reconnect 5
 /reinodoce rule follower true
 /reinodoce rule min-member-level 1
-/reinodoce syntetic gift-combo bulk
+/reinodoce synthetic gift-combo bulk
 /reinodoce connect @yourusername
 /reinodoce status
 ```
