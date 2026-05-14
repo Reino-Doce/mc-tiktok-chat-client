@@ -7,12 +7,12 @@ import io.github.jwdeveloper.tiktok.models.ConnectionState;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,6 +26,7 @@ class TikTokLiveJavaIntegrationTest {
     private static final String CONNECT_TIMEOUT_PROPERTY = "reinodoce.tiktok.live.connectTimeoutSeconds";
     private static final long DEFAULT_HTTP_TIMEOUT_SECONDS = 15L;
     private static final long DEFAULT_CONNECT_TIMEOUT_SECONDS = 45L;
+    private static final long CONNECT_POLL_MILLIS = 100L;
     private static final long SHUTDOWN_TIMEOUT_SECONDS = 2L;
     private static final long MINIMUM_TIMEOUT_SECONDS = 1L;
     private static final String LANGUAGE_CODE = "pt-BR";
@@ -38,7 +39,8 @@ class TikTokLiveJavaIntegrationTest {
 
         long httpTimeoutSeconds = configuredPositiveLong(HTTP_TIMEOUT_PROPERTY, DEFAULT_HTTP_TIMEOUT_SECONDS);
         long connectTimeoutSeconds = configuredPositiveLong(CONNECT_TIMEOUT_PROPERTY, DEFAULT_CONNECT_TIMEOUT_SECONDS);
-        LiveClient client = buildClient(username, httpTimeoutSeconds);
+        CountDownLatch connected = new CountDownLatch(1);
+        LiveClient client = buildClient(username, httpTimeoutSeconds, connected);
         ExecutorService executor = Executors.newSingleThreadExecutor(command -> {
             Thread thread = new Thread(command, "tiktok-live-java-integration");
             thread.setDaemon(true);
@@ -47,7 +49,7 @@ class TikTokLiveJavaIntegrationTest {
 
         try {
             Future<?> future = executor.submit(client::connect);
-            awaitConnect(username, connectTimeoutSeconds, future);
+            awaitConnect(username, connectTimeoutSeconds, connected, future);
             assertTrue(
                     client.getRoomInfo().getConnectionState() == ConnectionState.CONNECTED,
                     () -> "TikTokLiveJava did not reach CONNECTED for @" + username);
@@ -58,7 +60,7 @@ class TikTokLiveJavaIntegrationTest {
         }
     }
 
-    private static LiveClient buildClient(String username, long httpTimeoutSeconds) {
+    private static LiveClient buildClient(String username, long httpTimeoutSeconds, CountDownLatch connected) {
         return TikTokLive.newClient(username)
                 .configure(settings -> {
                     settings.setRetryOnConnectionFailure(false);
@@ -67,16 +69,39 @@ class TikTokLiveJavaIntegrationTest {
                     settings.setClientLanguage(LANGUAGE_CODE);
                     settings.getHttpSettings().setTimeout(Duration.ofSeconds(httpTimeoutSeconds));
                 })
+                .onConnected((liveClient, event) -> connected.countDown())
                 .build();
     }
 
-    private static void awaitConnect(String username, long connectTimeoutSeconds, Future<?> future) {
+    private static void awaitConnect(
+            String username,
+            long connectTimeoutSeconds,
+            CountDownLatch connected,
+            Future<?> future
+    ) {
+        long timeoutAtNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(connectTimeoutSeconds);
         try {
-            future.get(connectTimeoutSeconds, TimeUnit.SECONDS);
-        } catch (TimeoutException exception) {
-            future.cancel(true);
-            fail("TikTokLiveJava did not finish connecting to @" + username
-                    + " within " + connectTimeoutSeconds + "s", exception);
+            while (!connected.await(CONNECT_POLL_MILLIS, TimeUnit.MILLISECONDS)) {
+                failIfConnectTaskFinished(username, future);
+                if (System.nanoTime() >= timeoutAtNanos) {
+                    future.cancel(true);
+                    fail("TikTokLiveJava did not reach CONNECTED for @" + username
+                            + " within " + connectTimeoutSeconds + "s");
+                }
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            fail("Interrupted while waiting for TikTokLiveJava to connect to @" + username, exception);
+        }
+    }
+
+    private static void failIfConnectTaskFinished(String username, Future<?> future) {
+        if (!future.isDone()) {
+            return;
+        }
+        try {
+            future.get();
+            fail("TikTokLiveJava connect() returned before CONNECTED for @" + username);
         } catch (ExecutionException exception) {
             fail("TikTokLiveJava failed to connect to @" + username + ": " + describe(exception.getCause()),
                     exception.getCause());
