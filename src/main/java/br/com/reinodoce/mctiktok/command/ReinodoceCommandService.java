@@ -92,6 +92,13 @@ public interface ReinodoceCommandService {
     CommandResult setHudLines(int lines);
 
     /**
+     * Opens the client settings GUI when available.
+     *
+     * @return command result
+     */
+    CommandResult openSettingsGui();
+
+    /**
      * Updates follower-only comment filtering.
      *
      * @param enabled whether follower-only mode is enabled

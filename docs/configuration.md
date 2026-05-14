@@ -10,7 +10,8 @@ config/reinodoce-mc-tiktok-client.json
 stores its config).
 
 The file is read on mod startup and rewritten whenever a setting changes
-through `/reinodoce …`. You can also edit it by hand and run
+through `/reinodoce …` or the client settings screen opened with
+`/reinodoce settings gui`. You can also edit it by hand and run
 `/reinodoce reload` to pick up the changes without restarting the client.
 
 ## Fields

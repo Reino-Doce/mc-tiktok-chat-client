@@ -39,6 +39,7 @@ class ReinodoceCommandTreeTest {
         assertNotNull(settings.getChild("output").getChild(MODE_ARGUMENT));
         assertNotNull(settings.getChild("hud-position").getChild(POSITION_ARGUMENT));
         assertNotNull(settings.getChild("hud-lines").getChild(LINES_ARGUMENT));
+        assertNotNull(settings.getChild("gui").getCommand());
         assertNotNull(settings.getChild("chat-emotes").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("chat-log").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("prefix").getChild(VALUE_ARGUMENT));
@@ -141,6 +142,11 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setHudLines(int lines) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult openSettingsGui() {
             return unsupported();
         }
 

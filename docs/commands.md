@@ -25,6 +25,7 @@ Settings change runtime behavior and are persisted to the client config.
 | Command | Argument | Default | Effect |
 | ------- | -------- | ------- | ------ |
 | `/reinodoce settings reconnect <seconds>` | integer ≥ 0 | `5` | Delay between reconnect attempts when the LIVE drops or is offline. `0` disables reconnect. |
+| `/reinodoce settings gui` | — | — | Opens the client settings screen. Save writes through the same config file and runtime update path as commands; Cancel or closing the screen leaves settings unchanged. |
 | `/reinodoce settings auto-connect <true\|false>` | boolean | `false` | When `true`, the client attempts one startup connection to the saved `lastUsername`. Blank or invalid saved usernames are ignored safely. |
 | `/reinodoce settings output <chat\|actionbar\|hud\|off>` | enum | `chat` | Selects where mirrored TikTok chat and synthetic events appear. `off` keeps the connection active but suppresses visible output. |
 | `/reinodoce settings hud-position <top-left\|top-right\|bottom-left\|bottom-right>` | enum | `top-left` | Selects the HUD anchor used by `output hud`. |

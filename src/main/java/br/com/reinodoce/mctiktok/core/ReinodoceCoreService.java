@@ -149,6 +149,19 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         return settingsState.getSnapshot();
     }
 
+    /**
+     * Replaces configuration from a validated client settings GUI draft.
+     *
+     * @param config updated configuration
+     * @return command result
+     */
+    public CommandResult replaceConfig(ReinodoceConfig config) {
+        ensureInitialized();
+        persist(Objects.requireNonNull(config, "config"));
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr("reinodoce.command.settings_gui.saved"));
+    }
+
     @Override
     public CommandResult connect(String username) {
         ensureInitialized();
@@ -319,6 +332,12 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         config.setHudLines(lines);
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.set.hud_lines", config.getHudLines()));
+    }
+
+    @Override
+    public CommandResult openSettingsGui() {
+        ensureInitialized();
+        return CommandResult.error(Translations.tr("reinodoce.command.settings_gui.client_only"));
     }
 
     @Override
