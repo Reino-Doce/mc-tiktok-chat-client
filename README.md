@@ -5,6 +5,8 @@ from a TikTok LIVE inside the local Minecraft chat.
 
 - Works in singleplayer and multiplayer.
 - No plugin, mod, or datapack required on the server.
+- Uses a 15-second TikTok LIVE HTTP timeout before reconnecting, which
+  avoids short transient connect stalls on slower routes.
 - Every mirrored line is rendered with a visible `[LIVE]` prefix so the
   external origin stays identifiable. See
   [docs/threading.md](docs/threading.md).

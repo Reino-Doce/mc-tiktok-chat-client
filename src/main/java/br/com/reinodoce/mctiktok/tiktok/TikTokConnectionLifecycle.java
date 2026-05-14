@@ -17,6 +17,7 @@ import io.github.jwdeveloper.tiktok.exceptions.TikTokLiveUnknownHostException;
 import io.github.jwdeveloper.tiktok.live.LiveClient;
 import io.github.jwdeveloper.tiktok.live.builder.LiveClientBuilder;
 
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
@@ -26,6 +27,7 @@ import java.util.logging.Level;
 
 final class TikTokConnectionLifecycle {
     private static final String LANGUAGE_CODE = "pt-BR";
+    private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(15L);
 
     private final LifecycleParams params;
     private final AtomicLong lifecycleToken = new AtomicLong();
@@ -162,6 +164,7 @@ final class TikTokConnectionLifecycle {
                     settings.setPrintToConsole(false);
                     settings.setLogLevel(Level.SEVERE);
                     settings.setClientLanguage(LANGUAGE_CODE);
+                    settings.getHttpSettings().setTimeout(HTTP_TIMEOUT);
                 })
                 .onConnected((liveClient, event) -> handleConnected(token, username, liveClient))
                 .onDisconnected((liveClient, event) -> handleDisconnected(token, username, event))

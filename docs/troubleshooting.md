@@ -35,6 +35,12 @@ Tune the reconnect interval with
 `/reinodoce settings reconnect <seconds>`. `0` disables reconnect; the
 default is `5`.
 
+**HTTP connect timed out.**
+The mod gives TikTokLiveJava HTTP requests up to 15 seconds before
+classifying the attempt as failed and scheduling a reconnect. Persistent
+timeouts usually mean the launcher host cannot reach TikTok's LIVE HTTP
+endpoints reliably from that network.
+
 **Comments are filtered out.**
 Check `/reinodoce status` for active filters, then relax `rule follower`
 or `rule min-member-level`. See [commands.md](commands.md).
