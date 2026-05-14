@@ -38,7 +38,8 @@ public class ReinodoceClientService implements ReinodoceCommandService {
                         new LiveMessageFormatter(inlineMediaTokenRegistry),
                         inlineMediaCache
                 ),
-                new ReinodoceConfigRepository()
+                new ReinodoceConfigRepository(),
+                platformBridge::selectedLanguageCode
         );
     }
 

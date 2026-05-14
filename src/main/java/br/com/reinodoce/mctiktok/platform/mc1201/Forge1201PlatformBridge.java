@@ -44,6 +44,18 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
         return minecraft != null && minecraft.gui != null;
     }
 
+    @Override
+    public String selectedLanguageCode() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.getLanguageManager() == null) {
+            return MinecraftPlatformBridge.super.selectedLanguageCode();
+        }
+        String selected = minecraft.getLanguageManager().getSelected();
+        return selected == null || selected.isBlank()
+                ? MinecraftPlatformBridge.super.selectedLanguageCode()
+                : selected;
+    }
+
     private static Method findSilentAddMessageMethod() {
         for (Method method : ChatComponent.class.getDeclaredMethods()) {
             if (isSilentAddMessageMethod(method)) {

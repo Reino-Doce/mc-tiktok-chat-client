@@ -20,8 +20,10 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 /**
  * Core command service that owns configuration, connection lifecycle, and operator-facing state.
@@ -41,6 +43,21 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
      * @param configRepository persisted configuration repository
      */
     public ReinodoceCoreService(ChatEventSink chatEventSink, ReinodoceConfigRepository configRepository) {
+        this(chatEventSink, configRepository, () -> Locale.getDefault().toLanguageTag());
+    }
+
+    /**
+     * Creates the core service.
+     *
+     * @param chatEventSink chat sink used for rendered TikTok events
+     * @param configRepository persisted configuration repository
+     * @param languageSupplier selected client language supplier
+     */
+    public ReinodoceCoreService(
+            ChatEventSink chatEventSink,
+            ReinodoceConfigRepository configRepository,
+            Supplier<String> languageSupplier
+    ) {
         this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
         this.settingsState = new RuntimeSettingsState();
         MessageRuleEngine ruleEngine = new MessageRuleEngine();
@@ -51,7 +68,8 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
                 Objects.requireNonNull(chatEventSink, "chatEventSink"),
                 ruleEngine,
                 memberLevelResolver,
-                deduplicator
+                deduplicator,
+                Objects.requireNonNull(languageSupplier, "languageSupplier")
         );
         this.initialized = new AtomicBoolean(false);
     }

@@ -27,4 +27,13 @@ public interface MinecraftPlatformBridge {
      * @return true when chat can be written safely
      */
     boolean isClientReady();
+
+    /**
+     * Reports the selected Minecraft language code.
+     *
+     * @return Minecraft language code such as {@code en_us}
+     */
+    default String selectedLanguageCode() {
+        return "en_us";
+    }
 }

@@ -26,7 +26,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 
 final class TikTokConnectionLifecycle {
-    private static final String LANGUAGE_CODE = "pt-BR";
     private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(15L);
 
     private final LifecycleParams params;
@@ -163,7 +162,7 @@ final class TikTokConnectionLifecycle {
                     settings.setRetryOnConnectionFailure(false);
                     settings.setPrintToConsole(false);
                     settings.setLogLevel(Level.SEVERE);
-                    settings.setClientLanguage(LANGUAGE_CODE);
+                    settings.setClientLanguage(TikTokLanguageResolver.resolve(params.clientLanguageSupplier().get()));
                     settings.getHttpSettings().setTimeout(HTTP_TIMEOUT);
                 })
                 .onConnected((liveClient, event) -> handleConnected(token, username, liveClient))
@@ -308,7 +307,8 @@ final class TikTokConnectionLifecycle {
             ScheduledExecutorService scheduler,
             NoticeThrottler errorNoticeThrottler,
             NoticeThrottler reconnectNoticeThrottler,
-            Runnable onReset
+            Runnable onReset,
+            Supplier<String> clientLanguageSupplier
     ) {
     }
 }

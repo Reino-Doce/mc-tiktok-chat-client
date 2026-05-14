@@ -34,10 +34,11 @@ record TikTokFacadeWiring(
             ChatEventSink chatGateway,
             MessageRuleEngine ruleEngine,
             MemberLevelResolver memberLevelResolver,
-            MessageDeduplicator giftDeduplicator
+            MessageDeduplicator giftDeduplicator,
+            Supplier<String> languageSupplier
     ) {
         AssemblyContext context = new AssemblyContext(
-                configSupplier, chatGateway, ruleEngine, memberLevelResolver, giftDeduplicator);
+                configSupplier, chatGateway, ruleEngine, memberLevelResolver, giftDeduplicator, languageSupplier);
         return context.assemble();
     }
 
@@ -56,6 +57,7 @@ record TikTokFacadeWiring(
         private final MessageRuleEngine ruleEngine;
         private final MemberLevelResolver memberLevelResolver;
         private final MessageDeduplicator giftDeduplicator;
+        private final Supplier<String> languageSupplier;
         private final MessageDeduplicator commentDeduplicator;
         private final LiveSessionState sessionState;
         private final SharedExecutors executors;
@@ -65,13 +67,15 @@ record TikTokFacadeWiring(
                 ChatEventSink chatGateway,
                 MessageRuleEngine ruleEngine,
                 MemberLevelResolver memberLevelResolver,
-                MessageDeduplicator giftDeduplicator
+                MessageDeduplicator giftDeduplicator,
+                Supplier<String> languageSupplier
         ) {
             this.configSupplier = configSupplier;
             this.chatGateway = chatGateway;
             this.ruleEngine = ruleEngine;
             this.memberLevelResolver = memberLevelResolver;
             this.giftDeduplicator = giftDeduplicator;
+            this.languageSupplier = languageSupplier;
             this.commentDeduplicator = new MessageDeduplicator(
                     Duration.ofMinutes(COMMENT_DEDUPLICATION_WINDOW_MINUTES));
             this.sessionState = new LiveSessionState();
@@ -126,7 +130,8 @@ record TikTokFacadeWiring(
                     executors.ioExecutor(), executors.scheduler(),
                     new NoticeThrottler(Duration.ofSeconds(ERROR_NOTICE_COOLDOWN_SECONDS)),
                     new NoticeThrottler(Duration.ofSeconds(RECONNECT_NOTICE_COOLDOWN_SECONDS)),
-                    reset);
+                    reset,
+                    languageSupplier);
             return new LifecycleHookBinding(params);
         }
 
