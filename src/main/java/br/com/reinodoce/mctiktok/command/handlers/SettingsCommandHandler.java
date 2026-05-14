@@ -36,6 +36,42 @@ public final class SettingsCommandHandler {
     }
 
     /**
+     * Updates mirrored output mode.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param mode output mode identifier
+     * @return Brigadier command result code
+     */
+    public static int output(ReinodoceCommandService service, CommandSourceStack source, String mode) {
+        return CommandFeedback.sendResult(source, service.setOutputMode(mode));
+    }
+
+    /**
+     * Updates HUD position.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param position HUD position identifier
+     * @return Brigadier command result code
+     */
+    public static int hudPosition(ReinodoceCommandService service, CommandSourceStack source, String position) {
+        return CommandFeedback.sendResult(source, service.setHudPosition(position));
+    }
+
+    /**
+     * Updates retained HUD line count.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param lines HUD line count
+     * @return Brigadier command result code
+     */
+    public static int hudLines(ReinodoceCommandService service, CommandSourceStack source, int lines) {
+        return CommandFeedback.sendResult(source, service.setHudLines(lines));
+    }
+
+    /**
      * Updates chat inline-emote rendering settings.
      *
      * @param service command service boundary

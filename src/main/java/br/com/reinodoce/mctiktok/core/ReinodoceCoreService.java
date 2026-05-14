@@ -8,6 +8,8 @@ import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
+import br.com.reinodoce.mctiktok.config.HudPosition;
+import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
 import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
@@ -37,7 +39,7 @@ import java.util.function.Supplier;
  * Core command service that owns configuration, connection lifecycle, and operator-facing state.
  */
 // Command facade intentionally exposes one method per public command action.
-@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.CyclomaticComplexity", "PMD.TooManyMethods"})
 public class ReinodoceCoreService implements ReinodoceCommandService {
     private static final int DEDUPLICATION_WINDOW_MINUTES = 3;
     private static final Path DEFAULT_SESSION_LOG_DIRECTORY = Path.of("logs", "reinodoce");
@@ -137,6 +139,16 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         autoConnectIfConfigured(loaded);
     }
 
+    /**
+     * Returns the current runtime configuration snapshot.
+     *
+     * @return current configuration
+     */
+    public ReinodoceConfig currentConfig() {
+        ensureInitialized();
+        return settingsState.getSnapshot();
+    }
+
     @Override
     public CommandResult connect(String username) {
         ensureInitialized();
@@ -185,6 +197,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
                 snapshot.lastError().isBlank() ? emptyValue : snapshot.lastError()));
         lines.add(Translations.tr("reinodoce.status.reconnect_seconds", config.getReconnectSeconds()));
         lines.add(Translations.tr("reinodoce.status.auto_connect", config.isAutoConnectOnStart()));
+        addOutputStatusLines(lines, config);
         lines.add(Translations.tr("reinodoce.status.reconnect_attempts", snapshot.reconnectAttempts()));
         lines.add(Translations.tr("reinodoce.status.rule_follower", config.isRuleFollowerOnly()));
         lines.add(Translations.tr("reinodoce.status.rule_min_member_level", config.getRuleMinMemberLevel()));
@@ -277,6 +290,35 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         config.setAutoConnectOnStart(enabled);
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.set.auto_connect", enabled));
+    }
+
+    @Override
+    public CommandResult setOutputMode(String mode) {
+        ensureInitialized();
+        OutputMode parsed = OutputMode.fromString(mode);
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setOutputMode(parsed.id());
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.output_mode", parsed.id()));
+    }
+
+    @Override
+    public CommandResult setHudPosition(String position) {
+        ensureInitialized();
+        HudPosition parsed = HudPosition.fromString(position);
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setHudPosition(parsed.id());
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.hud_position", parsed.id()));
+    }
+
+    @Override
+    public CommandResult setHudLines(int lines) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setHudLines(lines);
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.hud_lines", config.getHudLines()));
     }
 
     @Override
@@ -565,5 +607,11 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
             lines.addAll(values);
         }
         return lines;
+    }
+
+    private static void addOutputStatusLines(List<String> lines, ReinodoceConfig config) {
+        lines.add(Translations.tr("reinodoce.status.output_mode", config.getOutputMode()));
+        lines.add(Translations.tr("reinodoce.status.hud_position", config.getHudPosition()));
+        lines.add(Translations.tr("reinodoce.status.hud_lines", config.getHudLines()));
     }
 }

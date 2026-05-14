@@ -43,6 +43,14 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
     }
 
     @Override
+    public void showActionBarMessage(Component component) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft != null && minecraft.gui != null) {
+            minecraft.gui.setOverlayMessage(component, false);
+        }
+    }
+
+    @Override
     public void playAlertSound() {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft != null && minecraft.getSoundManager() != null) {

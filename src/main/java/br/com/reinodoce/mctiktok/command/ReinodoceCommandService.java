@@ -68,6 +68,30 @@ public interface ReinodoceCommandService {
     CommandResult setAutoConnectOnStart(boolean enabled);
 
     /**
+     * Updates local mirrored output mode.
+     *
+     * @param mode output mode identifier
+     * @return command result
+     */
+    CommandResult setOutputMode(String mode);
+
+    /**
+     * Updates local HUD anchor.
+     *
+     * @param position HUD position identifier
+     * @return command result
+     */
+    CommandResult setHudPosition(String position);
+
+    /**
+     * Updates retained local HUD line count.
+     *
+     * @param lines HUD line count
+     * @return command result
+     */
+    CommandResult setHudLines(int lines);
+
+    /**
      * Updates follower-only comment filtering.
      *
      * @param enabled whether follower-only mode is enabled

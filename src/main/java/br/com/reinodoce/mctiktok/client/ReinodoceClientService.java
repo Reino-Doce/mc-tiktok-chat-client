@@ -6,12 +6,17 @@ import br.com.reinodoce.mctiktok.chat.LiveMessageFormatter;
 import br.com.reinodoce.mctiktok.chat.MinecraftChatGateway;
 import br.com.reinodoce.mctiktok.client.font.InlineMediaFontHooks;
 import br.com.reinodoce.mctiktok.client.font.InlineMediaTokenRegistry;
+import br.com.reinodoce.mctiktok.client.hud.HudMessageStore;
+import br.com.reinodoce.mctiktok.client.hud.LocalHudOverlay;
 import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
+import br.com.reinodoce.mctiktok.config.HudPosition;
+import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
 import br.com.reinodoce.mctiktok.core.ReinodoceCoreService;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
+import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +29,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     private final ReinodoceCoreService coreService;
     private final InlineMediaCache inlineMediaCache;
     private final InlineMediaTokenRegistry inlineMediaTokenRegistry;
+    private final LocalHudOverlay localHudOverlay;
 
     /**
      * Creates a client service for the supplied Minecraft platform adapter.
@@ -34,12 +40,15 @@ public class ReinodoceClientService implements ReinodoceCommandService {
         MinecraftPlatformBridge safePlatformBridge = Objects.requireNonNull(platformBridge, "platformBridge");
         this.inlineMediaCache = new InlineMediaCache();
         this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
+        HudMessageStore hudMessageStore = new HudMessageStore();
+        this.localHudOverlay = new LocalHudOverlay(hudMessageStore);
         InlineMediaFontHooks.installRegistry(inlineMediaTokenRegistry);
         this.coreService = new ReinodoceCoreService(
                 new MinecraftChatGateway(
                         safePlatformBridge,
                         new LiveMessageFormatter(inlineMediaTokenRegistry),
-                        inlineMediaCache
+                        inlineMediaCache,
+                        hudMessageStore
                 ),
                 new MinecraftAlertGateway(safePlatformBridge),
                 new ReinodoceConfigRepository(),
@@ -53,6 +62,23 @@ public class ReinodoceClientService implements ReinodoceCommandService {
      */
     public void initialize() {
         coreService.initialize();
+    }
+
+    /**
+     * Renders the local HUD output overlay.
+     *
+     * @param graphics GUI graphics context
+     * @param screenWidth current screen width
+     * @param screenHeight current screen height
+     */
+    public void renderHud(GuiGraphics graphics, int screenWidth, int screenHeight) {
+        ReinodoceConfig config = coreService.currentConfig();
+        localHudOverlay.render(
+                graphics,
+                screenWidth,
+                screenHeight,
+                HudPosition.fromString(config.getHudPosition()),
+                config.getHudLines());
     }
 
     @Override
@@ -109,6 +135,21 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     @Override
     public CommandResult setAutoConnectOnStart(boolean enabled) {
         return coreService.setAutoConnectOnStart(enabled);
+    }
+
+    @Override
+    public CommandResult setOutputMode(String mode) {
+        return coreService.setOutputMode(mode);
+    }
+
+    @Override
+    public CommandResult setHudPosition(String position) {
+        return coreService.setHudPosition(position);
+    }
+
+    @Override
+    public CommandResult setHudLines(int lines) {
+        return coreService.setHudLines(lines);
     }
 
     @Override

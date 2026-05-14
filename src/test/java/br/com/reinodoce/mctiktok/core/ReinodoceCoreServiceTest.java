@@ -16,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ReinodoceCoreServiceTest {
+    private static final String EN_US = "en_us";
+
     @TempDir
     Path tempDir;
 
@@ -24,7 +26,7 @@ class ReinodoceCoreServiceTest {
         ReinodoceCoreService service = new ReinodoceCoreService(
                 ChatEventSink.noop(),
                 new ReinodoceConfigRepository(tempDir.resolve("missing.json")),
-                () -> "en_us");
+                () -> EN_US);
 
         CommandResult result = service.connectLast();
 
@@ -36,7 +38,7 @@ class ReinodoceCoreServiceTest {
     void autoConnectSettingPersists() {
         Path configFile = tempDir.resolve("config.json");
         ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
-        ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> "en_us");
+        ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> EN_US);
 
         CommandResult result = service.setAutoConnectOnStart(true);
         ReinodoceConfig loaded = repository.load();
@@ -49,7 +51,7 @@ class ReinodoceCoreServiceTest {
     void alertSettingsPersist() {
         Path configFile = tempDir.resolve("alerts.json");
         ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
-        ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> "en_us");
+        ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> EN_US);
 
         CommandResult soundResult = service.setAlertSound(AlertEventType.GIFT, true);
         CommandResult toastResult = service.setAlertToast(AlertEventType.FOLLOW, true);
@@ -62,5 +64,24 @@ class ReinodoceCoreServiceTest {
         assertTrue(loaded.isAlertSoundEnabled(AlertEventType.GIFT));
         assertTrue(loaded.isAlertToastEnabled(AlertEventType.FOLLOW));
         assertEquals(100, loaded.getAlertGiftMinValue());
+    }
+
+    @Test
+    void outputSettingsPersist() {
+        Path configFile = tempDir.resolve("output.json");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> EN_US);
+
+        CommandResult modeResult = service.setOutputMode("hud");
+        CommandResult positionResult = service.setHudPosition("bottom-right");
+        CommandResult linesResult = service.setHudLines(4);
+        ReinodoceConfig loaded = repository.load();
+
+        assertTrue(modeResult.success());
+        assertTrue(positionResult.success());
+        assertTrue(linesResult.success());
+        assertEquals("hud", loaded.getOutputMode());
+        assertEquals("bottom-right", loaded.getHudPosition());
+        assertEquals(4, loaded.getHudLines());
     }
 }
