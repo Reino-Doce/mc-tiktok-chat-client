@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ReinodoceConfigRepositoryTest {
     private static final String ALICE = "alice";
     private static final String BOB = "bob";
+    private static final String UNKNOWN = "unknown";
     private static final List<String> BLOCKED_USERS = List.of(ALICE, BOB);
     private static final List<String> BLOCKED_WORDS = List.of("spam", "ads");
 
@@ -44,6 +45,9 @@ class ReinodoceConfigRepositoryTest {
         assertFalse(loaded.isSyntheticJoinEnabled());
         assertFalse(loaded.isSyntheticMemberLevelEnabled());
         assertDefaultAlerts(loaded);
+        assertEquals("chat", loaded.getOutputMode());
+        assertEquals("top-left", loaded.getHudPosition());
+        assertEquals(6, loaded.getHudLines());
         assertTrue(loaded.isChatEmotesEnabled());
         assertFalse(loaded.isChatLogEnabled());
         assertFalse(loaded.isSessionLoggingEnabled());
@@ -63,9 +67,12 @@ class ReinodoceConfigRepositoryTest {
         config.setRuleMaxMessageLength(-4);
         config.setRuleDuplicateCooldownSeconds(-5);
         config.setSyntheticGiftMinValue(-3);
-        config.setSyntheticGiftComboMode("unknown");
+        config.setSyntheticGiftComboMode(UNKNOWN);
         config.setAlertGiftMinValue(-7);
-        config.setSessionLoggingFormat("unknown");
+        config.setOutputMode(UNKNOWN);
+        config.setHudPosition(UNKNOWN);
+        config.setHudLines(99);
+        config.setSessionLoggingFormat(UNKNOWN);
         config.setChatPrefix("   ");
         config.setChatFormat("{username}: {message}");
 
@@ -79,6 +86,9 @@ class ReinodoceConfigRepositoryTest {
         assertEquals(0, config.getSyntheticGiftMinValue());
         assertEquals("bulk", config.getSyntheticGiftComboMode());
         assertEquals(0, config.getAlertGiftMinValue());
+        assertEquals("chat", config.getOutputMode());
+        assertEquals("top-left", config.getHudPosition());
+        assertEquals(12, config.getHudLines());
         assertEquals("jsonl", config.getSessionLoggingFormat());
         assertEquals("[LIVE]", config.getChatPrefix());
         assertEquals("{prefix}  <{username}> {message}", config.getChatFormat());
@@ -108,6 +118,9 @@ class ReinodoceConfigRepositoryTest {
         assertRoundTripRules(loaded);
         assertRoundTripSyntheticSettings(loaded);
         assertRoundTripAlertSettings(loaded);
+        assertEquals("hud", loaded.getOutputMode());
+        assertEquals("bottom-right", loaded.getHudPosition());
+        assertEquals(4, loaded.getHudLines());
         assertEquals("[RD]", loaded.getChatPrefix());
         assertEquals("{prefix} {username}: {message}", loaded.getChatFormat());
         assertFalse(loaded.isChatEmotesEnabled());
@@ -137,6 +150,9 @@ class ReinodoceConfigRepositoryTest {
         config.setAlertToastEnabled(AlertEventType.FOLLOW, true);
         config.setAlertSoundEnabled(AlertEventType.JOIN, true);
         config.setAlertToastEnabled(AlertEventType.MEMBER_LEVEL, true);
+        config.setOutputMode("hud");
+        config.setHudPosition("bottom-right");
+        config.setHudLines(4);
         config.setChatPrefix("[RD]");
         config.setChatFormat("{prefix} {username}: {message}");
         config.setChatEmotesEnabled(false);
@@ -201,5 +217,8 @@ class ReinodoceConfigRepositoryTest {
         assertTrue(savedJson.contains("\"alertFollowToastEnabled\""));
         assertTrue(savedJson.contains("\"alertJoinSoundEnabled\""));
         assertTrue(savedJson.contains("\"alertMemberLevelToastEnabled\""));
+        assertTrue(savedJson.contains("\"outputMode\""));
+        assertTrue(savedJson.contains("\"hudPosition\""));
+        assertTrue(savedJson.contains("\"hudLines\""));
     }
 }

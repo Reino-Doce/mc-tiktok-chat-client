@@ -11,6 +11,9 @@ import br.com.reinodoce.mctiktok.command.handlers.SettingsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.StatsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.StatusCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.SyntheticCommandHandler;
+import br.com.reinodoce.mctiktok.config.HudPosition;
+import br.com.reinodoce.mctiktok.config.OutputMode;
+import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -33,6 +36,9 @@ public final class ReinodoceCommandTree {
     private static final String ARG_VALUE = "value";
     private static final String ARG_USERNAME = "username";
     private static final String ARG_SECONDS = "seconds";
+    private static final String ARG_MODE = "mode";
+    private static final String ARG_POSITION = "position";
+    private static final String ARG_LINES = "lines";
 
     private ReinodoceCommandTree() {
     }
@@ -102,6 +108,9 @@ public final class ReinodoceCommandTree {
                                         service,
                                         ctx.getSource(),
                                         BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(outputBranch(service))
+                .then(hudPositionBranch(service))
+                .then(hudLinesBranch(service))
                 .then(Commands.literal("chat-emotes")
                         .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
                                 .executes(ctx -> SettingsCommandHandler.chatEmotes(
@@ -126,6 +135,37 @@ public final class ReinodoceCommandTree {
                                         service,
                                         ctx.getSource(),
                                         StringArgumentType.getString(ctx, ARG_TEMPLATE)))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> outputBranch(ReinodoceCommandService service) {
+        return Commands.literal("output")
+                .then(Commands.argument(ARG_MODE, StringArgumentType.string())
+                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                OutputMode.ids(), builder))
+                        .executes(ctx -> SettingsCommandHandler.output(
+                                service,
+                                ctx.getSource(),
+                                StringArgumentType.getString(ctx, ARG_MODE))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> hudPositionBranch(ReinodoceCommandService service) {
+        return Commands.literal("hud-position")
+                .then(Commands.argument(ARG_POSITION, StringArgumentType.string())
+                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                HudPosition.ids(), builder))
+                        .executes(ctx -> SettingsCommandHandler.hudPosition(
+                                service,
+                                ctx.getSource(),
+                                StringArgumentType.getString(ctx, ARG_POSITION))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> hudLinesBranch(ReinodoceCommandService service) {
+        return Commands.literal("hud-lines")
+                .then(Commands.argument(ARG_LINES, IntegerArgumentType.integer(1, ReinodoceConfig.MAX_HUD_LINES))
+                        .executes(ctx -> SettingsCommandHandler.hudLines(
+                                service,
+                                ctx.getSource(),
+                                IntegerArgumentType.getInteger(ctx, ARG_LINES))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> ruleBranch(ReinodoceCommandService service) {

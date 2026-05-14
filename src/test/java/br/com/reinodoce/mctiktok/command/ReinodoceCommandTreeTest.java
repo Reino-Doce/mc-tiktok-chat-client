@@ -17,6 +17,9 @@ class ReinodoceCommandTreeTest {
     private static final String VALUE_ARGUMENT = "value";
     private static final String SOUND_LITERAL = "sound";
     private static final String TOAST_LITERAL = "toast";
+    private static final String MODE_ARGUMENT = "mode";
+    private static final String POSITION_ARGUMENT = "position";
+    private static final String LINES_ARGUMENT = "lines";
 
     @Test
     void commandTreeExposesDocumentedPublicSurface() {
@@ -33,6 +36,9 @@ class ReinodoceCommandTreeTest {
         CommandNode<CommandSourceStack> settings = root.getChild("settings");
         assertNotNull(settings.getChild("reconnect").getChild(SECONDS_ARGUMENT));
         assertNotNull(settings.getChild("auto-connect").getChild(ENABLED_ARGUMENT));
+        assertNotNull(settings.getChild("output").getChild(MODE_ARGUMENT));
+        assertNotNull(settings.getChild("hud-position").getChild(POSITION_ARGUMENT));
+        assertNotNull(settings.getChild("hud-lines").getChild(LINES_ARGUMENT));
         assertNotNull(settings.getChild("chat-emotes").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("chat-log").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("prefix").getChild(VALUE_ARGUMENT));
@@ -120,6 +126,21 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setAutoConnectOnStart(boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setOutputMode(String mode) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setHudPosition(String position) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setHudLines(int lines) {
             return unsupported();
         }
 

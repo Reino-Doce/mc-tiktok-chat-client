@@ -24,6 +24,14 @@ public interface MinecraftPlatformBridge {
     void addChatMessage(Component component, boolean logToChat);
 
     /**
+     * Shows a local actionbar message.
+     *
+     * @param component actionbar component
+     */
+    default void showActionBarMessage(Component component) {
+    }
+
+    /**
      * Plays a local alert sound.
      */
     default void playAlertSound() {

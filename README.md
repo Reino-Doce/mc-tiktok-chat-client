@@ -19,6 +19,9 @@ from a TikTok LIVE inside the local Minecraft chat.
 - Optional local alerts can play sounds or show toasts for surfaced
   gifts, follows, joins, and member-level events; enable them with
   `/reinodoce alert ...`.
+- Mirrored output can be sent to chat, actionbar, a bounded local HUD, or
+  suppressed while keeping the connection active with
+  `/reinodoce settings output ...`.
 - This branch (`1.20.1`) targets Minecraft `1.20.1`, Forge `47.4.16`,
   Java `17`.
 

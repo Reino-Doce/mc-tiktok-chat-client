@@ -26,6 +26,9 @@ Settings change runtime behavior and are persisted to the client config.
 | ------- | -------- | ------- | ------ |
 | `/reinodoce settings reconnect <seconds>` | integer ≥ 0 | `5` | Delay between reconnect attempts when the LIVE drops or is offline. `0` disables reconnect. |
 | `/reinodoce settings auto-connect <true\|false>` | boolean | `false` | When `true`, the client attempts one startup connection to the saved `lastUsername`. Blank or invalid saved usernames are ignored safely. |
+| `/reinodoce settings output <chat\|actionbar\|hud\|off>` | enum | `chat` | Selects where mirrored TikTok chat and synthetic events appear. `off` keeps the connection active but suppresses visible output. |
+| `/reinodoce settings hud-position <top-left\|top-right\|bottom-left\|bottom-right>` | enum | `top-left` | Selects the HUD anchor used by `output hud`. |
+| `/reinodoce settings hud-lines <lines>` | integer 1–12 | `6` | Maximum retained HUD lines used by `output hud`. |
 | `/reinodoce settings chat-emotes <true\|false>` | boolean | `true` | When `true`, TikTok chat emotes are rendered inline in the Minecraft chat HUD. |
 | `/reinodoce settings chat-log <true\|false>` | boolean | `false` | When `true`, mirrored TikTok lines are written through Minecraft's chat logger. System/status/error lines remain logged either way. |
 | `/reinodoce settings prefix <value>` | text | `"[LIVE]"` | Prefix rendered on every mirrored TikTok line. Blank values fall back to the default. |
@@ -120,6 +123,7 @@ above. They never send packets or chat messages to the server.
 /reinodoce logging enabled true
 /reinodoce synthetic gift-combo bulk
 /reinodoce alert gift toast true
+/reinodoce settings output hud
 /reinodoce connect @yourusername
 /reinodoce settings auto-connect true
 /reinodoce status

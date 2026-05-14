@@ -28,6 +28,10 @@ public class ReinodoceConfig {
     public static final String DEFAULT_CHAT_PREFIX = "[LIVE]";
     /** Default template preserving the existing LIVE chat line layout. */
     public static final String DEFAULT_CHAT_FORMAT = "{prefix}  <{username}> {message}";
+    /** Default HUD line count. */
+    public static final int DEFAULT_HUD_LINES = 6;
+    /** Maximum retained HUD line count. */
+    public static final int MAX_HUD_LINES = 12;
     private static final int DEFAULT_RECONNECT_SECONDS = 5;
     private static final int DEFAULT_SYNTHETIC_GIFT_MIN_VALUE = 1;
     private static final int DEFAULT_ALERT_GIFT_MIN_VALUE = 1;
@@ -56,6 +60,9 @@ public class ReinodoceConfig {
     private boolean alertJoinToastEnabled = false;
     private boolean alertMemberLevelSoundEnabled = false;
     private boolean alertMemberLevelToastEnabled = false;
+    private String outputMode = OutputMode.CHAT.id();
+    private String hudPosition = HudPosition.TOP_LEFT.id();
+    private int hudLines = DEFAULT_HUD_LINES;
     private String chatPrefix = DEFAULT_CHAT_PREFIX;
     private String chatFormat = DEFAULT_CHAT_FORMAT;
     private boolean chatEmotesEnabled = true;
@@ -102,6 +109,9 @@ public class ReinodoceConfig {
         copy.setAlertToastEnabled(AlertEventType.JOIN, alertJoinToastEnabled);
         copy.setAlertSoundEnabled(AlertEventType.MEMBER_LEVEL, alertMemberLevelSoundEnabled);
         copy.setAlertToastEnabled(AlertEventType.MEMBER_LEVEL, alertMemberLevelToastEnabled);
+        copy.setOutputMode(outputMode);
+        copy.setHudPosition(hudPosition);
+        copy.setHudLines(hudLines);
         copy.setChatPrefix(chatPrefix);
         copy.setChatFormat(chatFormat);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
@@ -475,6 +485,60 @@ public class ReinodoceConfig {
 
     private static AlertEventType requireAlertEventType(AlertEventType eventType) {
         return Objects.requireNonNull(eventType, ALERT_EVENT_TYPE_ARGUMENT);
+    }
+
+    /**
+     * Returns the local output mode identifier.
+     *
+     * @return output mode id
+     */
+    public String getOutputMode() {
+        return outputMode;
+    }
+
+    /**
+     * Sets the local output mode.
+     *
+     * @param outputMode output mode identifier
+     */
+    public void setOutputMode(String outputMode) {
+        this.outputMode = OutputMode.fromString(outputMode).id();
+    }
+
+    /**
+     * Returns the local HUD anchor identifier.
+     *
+     * @return HUD position id
+     */
+    public String getHudPosition() {
+        return hudPosition;
+    }
+
+    /**
+     * Sets the local HUD anchor.
+     *
+     * @param hudPosition HUD position identifier
+     */
+    public void setHudPosition(String hudPosition) {
+        this.hudPosition = HudPosition.fromString(hudPosition).id();
+    }
+
+    /**
+     * Returns retained local HUD line count.
+     *
+     * @return HUD line count
+     */
+    public int getHudLines() {
+        return hudLines;
+    }
+
+    /**
+     * Sets retained local HUD line count.
+     *
+     * @param hudLines HUD line count, clamped to supported bounds
+     */
+    public void setHudLines(int hudLines) {
+        this.hudLines = Math.max(1, Math.min(MAX_HUD_LINES, hudLines));
     }
 
     /**
