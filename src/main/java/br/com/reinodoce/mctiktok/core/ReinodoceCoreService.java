@@ -50,6 +50,7 @@ import java.util.function.Supplier;
 public class ReinodoceCoreService implements ReinodoceCommandService {
     private static final int DEDUPLICATION_WINDOW_MINUTES = 3;
     private static final Path DEFAULT_SESSION_LOG_DIRECTORY = Path.of("logs", "reinodoce");
+    private static final String DEFAULT_DISPLAY_VALUE = "default";
 
     private final ReinodoceConfigRepository configRepository;
     private final RuntimeSettingsState settingsState;
@@ -559,6 +560,54 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     }
 
     @Override
+    public CommandResult setAlertToastTemplate(AlertEventType eventType, String template) {
+        ensureInitialized();
+        String normalized = template == null ? "" : template.trim();
+        if (DEFAULT_DISPLAY_VALUE.equalsIgnoreCase(normalized)) {
+            normalized = ReinodoceConfig.DEFAULT_ALERT_TOAST_TEMPLATE;
+        } else if (!ReinodoceConfig.isValidAlertToastTemplate(normalized)) {
+            return CommandResult.error(Translations.tr(
+                    "reinodoce.command.alert_template.invalid",
+                    template == null ? "" : template));
+        }
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setAlertToastTemplate(eventType, normalized);
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.alert_template",
+                eventType.id(),
+                displayDefault(config.getAlertToastTemplate(eventType))));
+    }
+
+    @Override
+    public CommandResult setAlertMediaMode(AlertEventType eventType, String mediaMode) {
+        ensureInitialized();
+        String parsed = ReinodoceConfig.parseAlertMediaModeId(mediaMode).orElse("");
+        if (parsed.isBlank()) {
+            return CommandResult.error(Translations.tr(
+                    "reinodoce.command.alert_media_mode.invalid",
+                    mediaMode == null ? "" : mediaMode));
+        }
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setAlertMediaMode(eventType, parsed);
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.alert_media_mode", eventType.id(), config.getAlertMediaMode(eventType)));
+    }
+
+    @Override
+    public CommandResult setAlertCustomImage(AlertEventType eventType, String customImage) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setAlertCustomImage(eventType, customImage);
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.alert_custom_image",
+                eventType.id(),
+                displayDefault(config.getAlertCustomImage(eventType))));
+    }
+
+    @Override
     public CommandResult setAlertGiftMinValue(int value) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -717,6 +766,10 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         return lines;
     }
 
+    private static String displayDefault(String value) {
+        return value == null || value.isBlank() ? DEFAULT_DISPLAY_VALUE : value;
+    }
+
     private void addOutputStatusLines(List<String> lines, ReinodoceConfig config) {
         lines.add(Translations.tr("reinodoce.status.language", config.getLanguage(), effectiveLanguage(config)));
         lines.add(Translations.tr("reinodoce.status.output_mode", config.getOutputMode()));
@@ -730,6 +783,9 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
                 config.isAlertSoundEnabled(AlertEventType.GIFT),
                 config.getAlertSoundId(AlertEventType.GIFT),
                 config.isAlertToastEnabled(AlertEventType.GIFT),
+                config.getAlertMediaMode(AlertEventType.GIFT),
+                displayDefault(config.getAlertToastTemplate(AlertEventType.GIFT)),
+                displayDefault(config.getAlertCustomImage(AlertEventType.GIFT)),
                 config.getAlertGiftMinValue()));
         lines.add(alertStatusLine("reinodoce.status.alert_follow", config, AlertEventType.FOLLOW));
         lines.add(alertStatusLine("reinodoce.status.alert_join", config, AlertEventType.JOIN));
@@ -741,6 +797,9 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
                 translationKey,
                 config.isAlertSoundEnabled(eventType),
                 config.getAlertSoundId(eventType),
-                config.isAlertToastEnabled(eventType));
+                config.isAlertToastEnabled(eventType),
+                config.getAlertMediaMode(eventType),
+                displayDefault(config.getAlertToastTemplate(eventType)),
+                displayDefault(config.getAlertCustomImage(eventType)));
     }
 }

@@ -259,6 +259,33 @@ public interface ReinodoceCommandService {
     CommandResult setAlertToast(AlertEventType eventType, boolean enabled);
 
     /**
+     * Updates the toast text template for an event type.
+     *
+     * @param eventType alert event type
+     * @param template toast message template, or {@code default} for built-in text
+     * @return command result
+     */
+    CommandResult setAlertToastTemplate(AlertEventType eventType, String template);
+
+    /**
+     * Updates the toast media mode for an event type.
+     *
+     * @param eventType alert event type
+     * @param mediaMode media mode identifier
+     * @return command result
+     */
+    CommandResult setAlertMediaMode(AlertEventType eventType, String mediaMode);
+
+    /**
+     * Updates the configured custom toast image for an event type.
+     *
+     * @param eventType alert event type
+     * @param customImage image reference, or {@code default} to clear
+     * @return command result
+     */
+    CommandResult setAlertCustomImage(AlertEventType eventType, String customImage);
+
+    /**
      * Updates minimum gift value for local gift alerts.
      *
      * @param value minimum gift value

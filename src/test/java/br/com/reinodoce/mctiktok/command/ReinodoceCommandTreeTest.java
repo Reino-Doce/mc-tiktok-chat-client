@@ -19,6 +19,9 @@ class ReinodoceCommandTreeTest {
     private static final String SOUND_LITERAL = "sound";
     private static final String SOUND_ID_LITERAL = "sound-id";
     private static final String TOAST_LITERAL = "toast";
+    private static final String TEMPLATE_LITERAL = "template";
+    private static final String MEDIA_MODE_LITERAL = "media-mode";
+    private static final String CUSTOM_IMAGE_LITERAL = "custom-image";
     private static final String GIFT_LITERAL = "gift";
     private static final String FOLLOW_LITERAL = "follow";
     private static final String JOIN_LITERAL = "join";
@@ -27,6 +30,7 @@ class ReinodoceCommandTreeTest {
     private static final String POSITION_ARGUMENT = "position";
     private static final String LINES_ARGUMENT = "lines";
     private static final String LOCALE_ARGUMENT = "locale";
+    private static final String CUSTOM_IMAGE_ARGUMENT = "customImage";
 
     @Test
     void commandTreeExposesDocumentedPublicSurface() {
@@ -73,16 +77,29 @@ class ReinodoceCommandTreeTest {
         assertNotNull(alert.getChild(GIFT_LITERAL).getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
         assertNotNull(alert.getChild(GIFT_LITERAL).getChild(SOUND_ID_LITERAL).getChild(SOUND_ID_ARGUMENT));
         assertNotNull(alert.getChild(GIFT_LITERAL).getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(GIFT_LITERAL).getChild(TEMPLATE_LITERAL).getChild(TEMPLATE_LITERAL));
+        assertNotNull(alert.getChild(GIFT_LITERAL).getChild(MEDIA_MODE_LITERAL).getChild(MODE_ARGUMENT));
+        assertNotNull(alert.getChild(GIFT_LITERAL).getChild(CUSTOM_IMAGE_LITERAL).getChild(CUSTOM_IMAGE_ARGUMENT));
         assertNotNull(alert.getChild("gift-min-value").getChild(VALUE_ARGUMENT));
         assertNotNull(alert.getChild(FOLLOW_LITERAL).getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
         assertNotNull(alert.getChild(FOLLOW_LITERAL).getChild(SOUND_ID_LITERAL).getChild(SOUND_ID_ARGUMENT));
         assertNotNull(alert.getChild(FOLLOW_LITERAL).getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(FOLLOW_LITERAL).getChild(TEMPLATE_LITERAL).getChild(TEMPLATE_LITERAL));
+        assertNotNull(alert.getChild(FOLLOW_LITERAL).getChild(MEDIA_MODE_LITERAL).getChild(MODE_ARGUMENT));
+        assertNotNull(alert.getChild(FOLLOW_LITERAL).getChild(CUSTOM_IMAGE_LITERAL).getChild(CUSTOM_IMAGE_ARGUMENT));
         assertNotNull(alert.getChild(JOIN_LITERAL).getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
         assertNotNull(alert.getChild(JOIN_LITERAL).getChild(SOUND_ID_LITERAL).getChild(SOUND_ID_ARGUMENT));
         assertNotNull(alert.getChild(JOIN_LITERAL).getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(JOIN_LITERAL).getChild(TEMPLATE_LITERAL).getChild(TEMPLATE_LITERAL));
+        assertNotNull(alert.getChild(JOIN_LITERAL).getChild(MEDIA_MODE_LITERAL).getChild(MODE_ARGUMENT));
+        assertNotNull(alert.getChild(JOIN_LITERAL).getChild(CUSTOM_IMAGE_LITERAL).getChild(CUSTOM_IMAGE_ARGUMENT));
         assertNotNull(alert.getChild(MEMBER_LEVEL_LITERAL).getChild(SOUND_LITERAL).getChild(ENABLED_ARGUMENT));
         assertNotNull(alert.getChild(MEMBER_LEVEL_LITERAL).getChild(SOUND_ID_LITERAL).getChild(SOUND_ID_ARGUMENT));
         assertNotNull(alert.getChild(MEMBER_LEVEL_LITERAL).getChild(TOAST_LITERAL).getChild(ENABLED_ARGUMENT));
+        assertNotNull(alert.getChild(MEMBER_LEVEL_LITERAL).getChild(TEMPLATE_LITERAL).getChild(TEMPLATE_LITERAL));
+        assertNotNull(alert.getChild(MEMBER_LEVEL_LITERAL).getChild(MEDIA_MODE_LITERAL).getChild(MODE_ARGUMENT));
+        assertNotNull(alert.getChild(MEMBER_LEVEL_LITERAL).getChild(CUSTOM_IMAGE_LITERAL)
+                .getChild(CUSTOM_IMAGE_ARGUMENT));
     }
 
     private static CommandNode<CommandSourceStack> root() {
@@ -264,6 +281,21 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setAlertToast(AlertEventType eventType, boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setAlertToastTemplate(AlertEventType eventType, String template) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setAlertMediaMode(AlertEventType eventType, String mediaMode) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setAlertCustomImage(AlertEventType eventType, String customImage) {
             return unsupported();
         }
 

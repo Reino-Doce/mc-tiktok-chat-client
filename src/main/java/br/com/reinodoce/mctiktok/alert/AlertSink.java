@@ -36,6 +36,17 @@ public interface AlertSink {
     void showAlertToast(String title, String message);
 
     /**
+     * Shows a local toast alert with optional media hints.
+     *
+     * @param payload rendered toast payload
+     */
+    default void showAlertToast(AlertToastPayload payload) {
+        if (payload != null) {
+            showAlertToast(payload.title(), payload.message());
+        }
+    }
+
+    /**
      * No-op sink used by tests and non-Minecraft contexts.
      */
     final class NoopAlertSink implements AlertSink {
@@ -54,6 +65,10 @@ public interface AlertSink {
 
         @Override
         public void showAlertToast(String title, String message) {
+        }
+
+        @Override
+        public void showAlertToast(AlertToastPayload payload) {
         }
     }
 }

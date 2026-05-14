@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.platform;
 
+import br.com.reinodoce.mctiktok.alert.AlertToastPayload;
 import net.minecraft.network.chat.Component;
 
 import java.nio.file.Path;
@@ -53,6 +54,18 @@ public interface MinecraftPlatformBridge {
      * @param message toast message
      */
     default void showAlertToast(Component title, Component message) {
+    }
+
+    /**
+     * Shows a local alert toast with optional media hints. Platforms without custom image toast rendering should
+     * safely fall back to the standard title/message toast.
+     *
+     * @param title toast title
+     * @param message toast message
+     * @param payload rendered toast payload and media hints
+     */
+    default void showAlertToast(Component title, Component message, AlertToastPayload payload) {
+        showAlertToast(title, message);
     }
 
     /**

@@ -1,6 +1,7 @@
 package br.com.reinodoce.mctiktok.platform.mc1201;
 
 import br.com.reinodoce.mctiktok.alert.AlertSoundId;
+import br.com.reinodoce.mctiktok.alert.AlertToastPayload;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
 import br.com.reinodoce.mctiktok.util.ReinodoceLogger;
 import net.minecraft.client.GuiMessageTag;
@@ -31,6 +32,7 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
     private static final float ALERT_SOUND_PITCH = 1.0F;
     private static final float ALERT_SOUND_VOLUME = 1.0F;
     private static final Method SILENT_ADD_MESSAGE = findSilentAddMessageMethod();
+    private final AlertToastPresenter alertToastPresenter = new AlertToastPresenter();
 
     @Override
     public void runOnClientThread(Runnable runnable) {
@@ -126,6 +128,13 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
                     SystemToast.SystemToastIds.PERIODIC_NOTIFICATION,
                     title,
                     message);
+        }
+    }
+
+    @Override
+    public void showAlertToast(Component title, Component message, AlertToastPayload payload) {
+        if (!alertToastPresenter.show(title, message, payload)) {
+            showAlertToast(title, message);
         }
     }
 

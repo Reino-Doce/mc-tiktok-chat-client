@@ -52,7 +52,7 @@ final class MemberLevelEmitter {
         }
         sessionEventLogger.log(SessionLogEvent.memberLevel(username, update.newLevel()));
         statsTracker.recordMemberLevel();
-        alertService.memberLevel(config, username, update.newLevel());
+        alertService.memberLevel(config, username, update.newLevel(), update.avatarUrl());
         return true;
     }
 

@@ -1,6 +1,7 @@
 package br.com.reinodoce.mctiktok.alert;
 
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
+import br.com.reinodoce.mctiktok.util.InlineMediaUrls;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -18,6 +19,8 @@ class AlertServiceTest {
     private static final String ALICE = "alice";
     private static final String ROSE = "Rose";
     private static final String CUSTOM_SOUND_ID = "minecraft:entity.experience_orb.pickup";
+    private static final String PROFILE_IMAGE = "https://cdn.example/alice.png";
+    private static final String GIFT_IMAGE = "https://cdn.example/rose.png";
 
     @Test
     void defaultsDoNotEmitAlerts() {
@@ -88,6 +91,55 @@ class AlertServiceTest {
     }
 
     @Test
+    void toastTemplateRendersEventTokensAndMediaPayload() {
+        RecordingAlertSink sink = new RecordingAlertSink();
+        AlertService service = new AlertService(sink, new MutableClock(START));
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.setAlertToastEnabled(AlertEventType.GIFT, true);
+        config.setAlertToastTemplate(AlertEventType.GIFT, "{username} gave {giftName} x{count} for {diamonds}");
+        config.setAlertMediaMode(AlertEventType.GIFT, "gift");
+
+        service.gift(config, ALICE, ROSE, 3, 15, new AlertMediaReferences(PROFILE_IMAGE, GIFT_IMAGE));
+
+        assertEquals("alice gave Rose x3 for 45", sink.message());
+        assertEquals(AlertToastMediaMode.GIFT, sink.payload().mediaMode());
+        assertEquals(GIFT_IMAGE, sink.payload().mediaSource());
+        assertEquals(PROFILE_IMAGE, sink.payload().profileImageUrl());
+    }
+
+    @Test
+    void missingMediaFallsBackToTextOnlyPayloadWithoutThrowing() {
+        RecordingAlertSink sink = new RecordingAlertSink();
+        AlertService service = new AlertService(sink, new MutableClock(START));
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.setAlertToastEnabled(AlertEventType.FOLLOW, true);
+        config.setAlertMediaMode(AlertEventType.FOLLOW, "profile");
+
+        service.follow(config, ALICE, InlineMediaUrls.defaultAvatarUrl());
+
+        assertEquals(1, sink.toasts());
+        assertEquals(AlertToastMediaMode.PROFILE, sink.payload().mediaMode());
+        assertEquals("", sink.payload().mediaSource());
+        assertEquals("", sink.payload().profileImageUrl());
+        assertTrue(sink.message().contains(ALICE) || sink.message().contains("reinodoce.alert.follow"));
+    }
+
+    @Test
+    void profileCustomModeFallsBackToCustomImageWhenProfileIsOnlyDefaultAvatar() {
+        RecordingAlertSink sink = new RecordingAlertSink();
+        AlertService service = new AlertService(sink, new MutableClock(START));
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.setAlertToastEnabled(AlertEventType.FOLLOW, true);
+        config.setAlertMediaMode(AlertEventType.FOLLOW, "profile-custom");
+        config.setAlertCustomImage(AlertEventType.FOLLOW, "reinodoce_mctiktok:textures/gui/no_user_image.png");
+
+        service.follow(config, ALICE, InlineMediaUrls.defaultAvatarUrl());
+
+        assertEquals(config.getAlertCustomImage(AlertEventType.FOLLOW), sink.payload().mediaSource());
+        assertEquals("", sink.payload().profileImageUrl());
+    }
+
+    @Test
     void joinAlertsUseGlobalCooldown() {
         RecordingAlertSink sink = new RecordingAlertSink();
         MutableClock clock = new MutableClock(START);
@@ -129,6 +181,7 @@ class AlertServiceTest {
         private int recordedSounds;
         private int recordedToasts;
         private String recordedMessage = "";
+        private AlertToastPayload recordedPayload;
         private final List<String> recordedSoundIds = new ArrayList<>();
 
         @Override
@@ -148,6 +201,13 @@ class AlertServiceTest {
             recordedMessage = message;
         }
 
+        @Override
+        public void showAlertToast(AlertToastPayload payload) {
+            recordedToasts++;
+            recordedPayload = payload;
+            recordedMessage = payload.message();
+        }
+
         int sounds() {
             return recordedSounds;
         }
@@ -158,6 +218,10 @@ class AlertServiceTest {
 
         String message() {
             return recordedMessage;
+        }
+
+        AlertToastPayload payload() {
+            return recordedPayload;
         }
 
         List<String> soundIds() {

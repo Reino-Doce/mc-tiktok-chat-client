@@ -73,8 +73,8 @@ final class TikTokEventDispatcher {
         if (!tokenCheck.test(token) || !config.isSyntheticFollowEnabled()) {
             return;
         }
-        String username = sendSyntheticAuthorNotice(SyntheticAuthorKind.FOLLOW, config, event.getUser());
-        dependencies.alertService().follow(config, username);
+        SyntheticAuthorNotice notice = sendSyntheticAuthorNotice(SyntheticAuthorKind.FOLLOW, config, event.getUser());
+        dependencies.alertService().follow(config, notice.username(), notice.avatarUrl());
         dependencies.statsTracker().recordFollow();
     }
 
@@ -83,8 +83,8 @@ final class TikTokEventDispatcher {
         if (!tokenCheck.test(token) || !config.isSyntheticJoinEnabled()) {
             return;
         }
-        String username = sendSyntheticAuthorNotice(SyntheticAuthorKind.JOIN, config, event.getUser());
-        dependencies.alertService().join(config, username);
+        SyntheticAuthorNotice notice = sendSyntheticAuthorNotice(SyntheticAuthorKind.JOIN, config, event.getUser());
+        dependencies.alertService().join(config, notice.username(), notice.avatarUrl());
         dependencies.statsTracker().recordJoin();
     }
 
@@ -124,17 +124,21 @@ final class TikTokEventDispatcher {
         }
     }
 
-    private String sendSyntheticAuthorNotice(SyntheticAuthorKind kind, ReinodoceConfig config, User user) {
+    private SyntheticAuthorNotice sendSyntheticAuthorNotice(SyntheticAuthorKind kind, ReinodoceConfig config, User user) {
         String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user));
+        String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(user);
         if (config.isChatEmotesEnabled()) {
             RichLiveMessage rich = dependencies.messageFactory().richAuthorOnlyMessage(
-                    username, TikTokMediaResolver.resolveUserAvatarUrl(user));
+                    username, avatarUrl);
             kind.sendRich(dependencies.chatGateway(), config, rich);
         } else {
             kind.sendPlain(dependencies.chatGateway(), config, username);
         }
         dependencies.sessionEventLogger().log(kind.logEvent(username));
-        return username;
+        return new SyntheticAuthorNotice(username, avatarUrl);
+    }
+
+    private record SyntheticAuthorNotice(String username, String avatarUrl) {
     }
 
     private enum SyntheticAuthorKind {

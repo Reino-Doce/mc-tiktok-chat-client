@@ -35,16 +35,28 @@ through `/reinodoce …` or the client settings screen opened with
 | `alertGiftSoundEnabled` | boolean | `false` | Play a local client-only sound for surfaced gifts that pass `alertGiftMinValue`. |
 | `alertGiftSoundId` | string | `"default"` | Sound used for enabled gift sound alerts. `"default"` maps to `minecraft:ui.toast.in`; custom values must be namespaced Minecraft resource ids such as `minecraft:entity.experience_orb.pickup`. Malformed values fall back to `"default"` on load; unavailable sounds fall back to the default at playback. |
 | `alertGiftToastEnabled` | boolean | `false` | Show a local client-only toast for surfaced gifts that pass `alertGiftMinValue`. |
+| `alertGiftToastTemplate` | string | `""` | Gift toast message template. Blank means built-in localized text. Supported tokens: `{username}`, `{giftName}`, `{count}`, `{diamonds}`, `{memberLevel}`, `{profileImage}`, `{giftImage}`. Unknown tokens fall back to blank on load. |
+| `alertGiftMediaMode` | string | `"none"` | Gift toast media mode. One of `"none"`, `"profile"`, `"custom"`, `"profile-custom"`, `"gift"`, or `"inline"`. `"gift"` uses the TikTok gift image when available. Invalid values fall back to `"none"`. |
+| `alertGiftCustomImage` | string | `""` | Custom image reference for gift toasts. Blank or `"default"` clears it. Supports `https://...`, `resource://namespace/path`, or a namespaced resource id such as `reinodoce_mctiktok:textures/gui/no_user_image.png`. Missing or failed media falls back safely. |
 | `alertGiftMinValue` | integer | `1` | Minimum single-gift diamond value for gift alerts. Clamped to >= 0. |
 | `alertFollowSoundEnabled` | boolean | `false` | Play a local sound for surfaced follow events. |
 | `alertFollowSoundId` | string | `"default"` | Sound used for enabled follow sound alerts. Malformed values fall back to `"default"` on load; unavailable sounds fall back to the default at playback. |
 | `alertFollowToastEnabled` | boolean | `false` | Show a local toast for surfaced follow events. |
+| `alertFollowToastTemplate` | string | `""` | Follow toast message template. Blank means built-in localized text. |
+| `alertFollowMediaMode` | string | `"none"` | Follow toast media mode. `"profile"` uses the TikTok profile image when available. Invalid values fall back to `"none"`. |
+| `alertFollowCustomImage` | string | `""` | Custom image reference for follow toasts. Blank or `"default"` clears it. |
 | `alertJoinSoundEnabled` | boolean | `false` | Play a local sound for surfaced join events. Join alerts are throttled. |
 | `alertJoinSoundId` | string | `"default"` | Sound used for enabled join sound alerts. Malformed values fall back to `"default"` on load; unavailable sounds fall back to the default at playback. |
 | `alertJoinToastEnabled` | boolean | `false` | Show a local toast for surfaced join events. Join alerts are throttled. |
+| `alertJoinToastTemplate` | string | `""` | Join toast message template. Blank means built-in localized text. |
+| `alertJoinMediaMode` | string | `"none"` | Join toast media mode. Invalid values fall back to `"none"`. |
+| `alertJoinCustomImage` | string | `""` | Custom image reference for join toasts. Blank or `"default"` clears it. |
 | `alertMemberLevelSoundEnabled` | boolean | `false` | Play a local sound for surfaced member-level-up events. |
 | `alertMemberLevelSoundId` | string | `"default"` | Sound used for enabled member-level sound alerts. Malformed values fall back to `"default"` on load; unavailable sounds fall back to the default at playback. |
 | `alertMemberLevelToastEnabled` | boolean | `false` | Show a local toast for surfaced member-level-up events. |
+| `alertMemberLevelToastTemplate` | string | `""` | Member-level toast message template. Blank means built-in localized text. |
+| `alertMemberLevelMediaMode` | string | `"none"` | Member-level toast media mode. Invalid values fall back to `"none"`. |
+| `alertMemberLevelCustomImage` | string | `""` | Custom image reference for member-level toasts. Blank or `"default"` clears it. |
 | `outputMode` | string | `"chat"` | One of `"chat"`, `"actionbar"`, `"hud"`, or `"off"`. Unknown values fall back to `"chat"`. |
 | `hudPosition` | string | `"top-left"` | One of `"top-left"`, `"top-right"`, `"bottom-left"`, or `"bottom-right"`. Unknown values fall back to `"top-left"`. |
 | `hudLines` | integer | `6` | Maximum retained HUD lines. Clamped to 1–12. |
@@ -69,6 +81,14 @@ client can keep starting safely.
   emotes and gift icons when enabled.
 
 See [commands.md](commands.md) for the command that drives each field.
+
+Alert toast templates use the same brace-token style. Supported tokens
+are `{username}`, `{giftName}`, `{count}`, `{diamonds}`, `{memberLevel}`,
+`{profileImage}`, and `{giftImage}`. Tokens that are not relevant to the
+current event render as blank. Default settings preserve the standard
+text toast behavior; media modes render the selected profile, gift, or
+custom image when available and fall back to safe placeholders on failed
+loads.
 
 ## Session log files
 
