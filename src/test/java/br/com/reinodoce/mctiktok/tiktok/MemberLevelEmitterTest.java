@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import br.com.reinodoce.mctiktok.alert.AlertService;
 import br.com.reinodoce.mctiktok.alert.AlertSink;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
@@ -34,6 +35,20 @@ class MemberLevelEmitterTest {
     }
 
     @Test
+    void emittedLevelIncreaseTriggersEnabledSoundAlert() {
+        ReinodoceConfig config = enabledConfig();
+        config.setAlertSoundEnabled(AlertEventType.MEMBER_LEVEL, true);
+        RecordingAlertSink alertSink = new RecordingAlertSink();
+        MemberLevelEmitter emitter = newEmitter(config, new RecordingSink(), alertSink);
+
+        assertTrue(emitter.emit(new MemberLevelResolver.LevelUpdate(
+                1L, USERNAME, AVATAR_URL, 0, 2)));
+
+        assertEquals(1, alertSink.sounds());
+        assertEquals(0, alertSink.toasts());
+    }
+
+    @Test
     void skipsRepeatedLevelsAndDisabledConfig() {
         ReinodoceConfig disabled = ReinodoceConfig.defaults();
         RecordingSink sink = new RecordingSink();
@@ -52,12 +67,16 @@ class MemberLevelEmitterTest {
     }
 
     private static MemberLevelEmitter newEmitter(ReinodoceConfig config, RecordingSink sink) {
+        return newEmitter(config, sink, AlertSink.noop());
+    }
+
+    private static MemberLevelEmitter newEmitter(ReinodoceConfig config, RecordingSink sink, AlertSink alertSink) {
         return new MemberLevelEmitter(
                 () -> config,
                 new TikTokRuntimeServices(
                         sink,
                         new SessionEventLogger(Path.of("build/test-session-logs")),
-                        new AlertService(AlertSink.noop())),
+                        new AlertService(alertSink)),
                 new RichLiveMessageFactory(new UnicodeEmojiParser()),
                 new SessionStatsTracker());
     }
@@ -128,6 +147,29 @@ class MemberLevelEmitterTest {
 
         int memberLevel() {
             return recordedMemberLevel;
+        }
+    }
+
+    private static final class RecordingAlertSink implements AlertSink {
+        private int recordedSounds;
+        private int recordedToasts;
+
+        @Override
+        public void playAlertSound() {
+            recordedSounds++;
+        }
+
+        @Override
+        public void showAlertToast(String title, String message) {
+            recordedToasts++;
+        }
+
+        int sounds() {
+            return recordedSounds;
+        }
+
+        int toasts() {
+            return recordedToasts;
         }
     }
 }

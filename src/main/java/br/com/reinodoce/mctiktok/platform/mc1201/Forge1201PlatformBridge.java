@@ -7,9 +7,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.components.toasts.SystemToast;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MessageSignature;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -24,6 +26,9 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
     private static final int SILENT_ADD_MESSAGE_PARAMETER_COUNT = 5;
     private static final int GUI_TAG_PARAMETER_INDEX = 3;
     private static final int REFRESH_PARAMETER_INDEX = 4;
+    private static final float ALERT_SOUND_PITCH = 1.0F;
+    private static final float ALERT_SOUND_VOLUME = 1.0F;
+    private static final ResourceLocation ALERT_SOUND_LOCATION = ResourceLocation.withDefaultNamespace("ui.toast.in");
     private static final Method SILENT_ADD_MESSAGE = findSilentAddMessageMethod();
 
     @Override
@@ -53,9 +58,33 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
     @Override
     public void playAlertSound() {
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft != null && minecraft.getSoundManager() != null) {
-            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_TOAST_IN, 1.0F, 1.0F));
+        if (!minecraft.isSameThread()) {
+            minecraft.execute(this::playAlertSound);
+            return;
         }
+        playAlertSound(minecraft);
+    }
+
+    private static void playAlertSound(Minecraft minecraft) {
+        if (minecraft.getSoundManager() != null) {
+            minecraft.getSoundManager().play(createAlertSoundInstance());
+        }
+    }
+
+    static SoundInstance createAlertSoundInstance() {
+        return new SimpleSoundInstance(
+                ALERT_SOUND_LOCATION,
+                SoundSource.MASTER,
+                ALERT_SOUND_VOLUME,
+                ALERT_SOUND_PITCH,
+                SoundInstance.createUnseededRandom(),
+                false,
+                0,
+                SoundInstance.Attenuation.NONE,
+                0.0D,
+                0.0D,
+                0.0D,
+                true);
     }
 
     @Override
