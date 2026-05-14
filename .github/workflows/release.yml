@@ -200,8 +200,8 @@ jobs:
         with:
           name: ${{ steps.vars.outputs.artifact_base }} v${{ steps.vars.outputs.mod_version }} (MC ${{ steps.vars.outputs.mc_version }})
           tag_name: ${{ github.ref_name }}
+          body_path: release-notes.md
           files: release-assets/*
-          generate_release_notes: true
           draft: false
           prerelease: ${{ steps.vars.outputs.prerelease == 'true' }}
           fail_on_unmatched_files: true
