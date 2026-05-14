@@ -16,6 +16,35 @@ automatically.
 
 ## [Unreleased]
 
+## [0.2.0]
+
+### Added
+
+- Add `/reinodoce connect` without arguments to reconnect to the saved
+  TikTok username, plus startup auto-connect support.
+- Add `/reinodoce stats` with live session counters for messages,
+  chatters, follows, joins, gifts, diamonds, member-level events, and
+  top gifter.
+- Add moderation rules for follower-only chat, minimum member level,
+  blocked words and users, maximum message length, and duplicate
+  cooldowns.
+- Add optional local session logs under `logs/reinodoce/` in JSONL or
+  text format.
+- Add optional local sound and toast alerts for surfaced gifts, follows,
+  joins, and member-level events.
+- Add selectable local output modes for chat, actionbar, HUD, or hidden
+  output, including HUD position and line-count settings.
+- Add an in-game client settings screen from `/reinodoce settings gui`
+  and the Forge mod-list config entry point.
+
+### Fixed
+
+- Correct gift combo edge cases in session stats.
+- Apply moderation filters accurately across incoming chat events.
+- Clear duplicate-message cooldown state when the rule is disabled.
+- Serialize session log queue updates and open session logs only after
+  the connection reaches the connected state.
+
 ## [0.1.4]
 
 ### Fixed
