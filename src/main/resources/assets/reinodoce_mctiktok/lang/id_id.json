@@ -30,6 +30,7 @@
   "reinodoce.command.connect.auto_skipped_invalid": "Auto-connect skipped invalid saved username: @%s.",
   "reinodoce.command.disconnect.already": "Sudah terputus.",
   "reinodoce.command.disconnect.in_progress": "Memutuskan koneksi...",
+  "reinodoce.command.stats.reset": "Session stats reset.",
   "reinodoce.command.set.reconnect": "Reconnect diperbarui menjadi %ss.",
   "reinodoce.command.set.auto_connect": "Auto-connect = %s.",
   "reinodoce.command.set.follower": "Rule follower = %s.",
@@ -44,6 +45,18 @@
   "reinodoce.command.set.chat_prefix": "Prefiks chat = %s.",
   "reinodoce.command.set.chat_format": "Format chat = %s.",
   "reinodoce.command.reload.ok": "Konfigurasi dimuat ulang.",
+
+
+  "reinodoce.stats.title": "Session stats",
+  "reinodoce.stats.messages": "Messages: %s",
+  "reinodoce.stats.unique_chatters": "Unique chatters: %s",
+  "reinodoce.stats.follows": "Follows: %s",
+  "reinodoce.stats.joins": "Joins: %s",
+  "reinodoce.stats.gifts": "Gifts: %s",
+  "reinodoce.stats.diamonds": "Diamonds: %s",
+  "reinodoce.stats.member_levels": "Member levels: %s",
+  "reinodoce.stats.top_gifter": "Top gifter: %s",
+  "reinodoce.stats.top_gifter_value": "%s (%s diamonds)",
 
   "reinodoce.status.state": "Status: %s",
   "reinodoce.status.username": "Username saat ini: %s",
@@ -63,5 +76,6 @@
   "reinodoce.status.chat_format": "Format chat: %s",
   "reinodoce.status.chat_emotes": "Chat emotes: %s",
   "reinodoce.status.chat_log": "Chat log: %s",
+  "reinodoce.status.session_stats": "Session stats: messages=%s chatters=%s gifts=%s diamonds=%s",
   "reinodoce.status.next_reconnect": "Reconnect berikutnya: %s"
 }

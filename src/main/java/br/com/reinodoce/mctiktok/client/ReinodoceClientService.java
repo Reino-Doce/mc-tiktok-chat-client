@@ -87,6 +87,16 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     }
 
     @Override
+    public List<String> statsLines() {
+        return coreService.statsLines();
+    }
+
+    @Override
+    public CommandResult resetStats() {
+        return coreService.resetStats();
+    }
+
+    @Override
     public CommandResult setReconnectSeconds(int seconds) {
         return coreService.setReconnectSeconds(seconds);
     }

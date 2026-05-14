@@ -30,6 +30,7 @@
   "reinodoce.command.connect.auto_skipped_invalid": "Auto-connect skipped invalid saved username: @%s.",
   "reinodoce.command.disconnect.already": "Đã ngắt kết nối rồi.",
   "reinodoce.command.disconnect.in_progress": "Đang ngắt kết nối...",
+  "reinodoce.command.stats.reset": "Session stats reset.",
   "reinodoce.command.set.reconnect": "Reconnect cập nhật thành %ss.",
   "reinodoce.command.set.auto_connect": "Auto-connect = %s.",
   "reinodoce.command.set.follower": "Rule follower = %s.",
@@ -44,6 +45,18 @@
   "reinodoce.command.set.chat_prefix": "Tiền tố chat = %s.",
   "reinodoce.command.set.chat_format": "Định dạng chat = %s.",
   "reinodoce.command.reload.ok": "Đã tải lại cấu hình.",
+
+
+  "reinodoce.stats.title": "Session stats",
+  "reinodoce.stats.messages": "Messages: %s",
+  "reinodoce.stats.unique_chatters": "Unique chatters: %s",
+  "reinodoce.stats.follows": "Follows: %s",
+  "reinodoce.stats.joins": "Joins: %s",
+  "reinodoce.stats.gifts": "Gifts: %s",
+  "reinodoce.stats.diamonds": "Diamonds: %s",
+  "reinodoce.stats.member_levels": "Member levels: %s",
+  "reinodoce.stats.top_gifter": "Top gifter: %s",
+  "reinodoce.stats.top_gifter_value": "%s (%s diamonds)",
 
   "reinodoce.status.state": "Trạng thái: %s",
   "reinodoce.status.username": "Username hiện tại: %s",
@@ -63,5 +76,6 @@
   "reinodoce.status.chat_format": "Định dạng chat: %s",
   "reinodoce.status.chat_emotes": "Chat emotes: %s",
   "reinodoce.status.chat_log": "Chat log: %s",
+  "reinodoce.status.session_stats": "Session stats: messages=%s chatters=%s gifts=%s diamonds=%s",
   "reinodoce.status.next_reconnect": "Lần kết nối lại kế tiếp: %s"
 }

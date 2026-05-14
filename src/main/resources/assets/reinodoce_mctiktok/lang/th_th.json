@@ -30,6 +30,7 @@
   "reinodoce.command.connect.auto_skipped_invalid": "Auto-connect skipped invalid saved username: @%s.",
   "reinodoce.command.disconnect.already": "ตัดการเชื่อมต่ออยู่แล้ว.",
   "reinodoce.command.disconnect.in_progress": "กำลังตัดการเชื่อมต่อ...",
+  "reinodoce.command.stats.reset": "Session stats reset.",
   "reinodoce.command.set.reconnect": "อัปเดต Reconnect เป็น %ss.",
   "reinodoce.command.set.auto_connect": "Auto-connect = %s.",
   "reinodoce.command.set.follower": "Rule follower = %s.",
@@ -44,6 +45,18 @@
   "reinodoce.command.set.chat_prefix": "คำนำหน้าแชต = %s.",
   "reinodoce.command.set.chat_format": "รูปแบบแชต = %s.",
   "reinodoce.command.reload.ok": "โหลดการตั้งค่าใหม่แล้ว.",
+
+
+  "reinodoce.stats.title": "Session stats",
+  "reinodoce.stats.messages": "Messages: %s",
+  "reinodoce.stats.unique_chatters": "Unique chatters: %s",
+  "reinodoce.stats.follows": "Follows: %s",
+  "reinodoce.stats.joins": "Joins: %s",
+  "reinodoce.stats.gifts": "Gifts: %s",
+  "reinodoce.stats.diamonds": "Diamonds: %s",
+  "reinodoce.stats.member_levels": "Member levels: %s",
+  "reinodoce.stats.top_gifter": "Top gifter: %s",
+  "reinodoce.stats.top_gifter_value": "%s (%s diamonds)",
 
   "reinodoce.status.state": "สถานะ: %s",
   "reinodoce.status.username": "ชื่อผู้ใช้ปัจจุบัน: %s",
@@ -63,5 +76,6 @@
   "reinodoce.status.chat_format": "รูปแบบแชต: %s",
   "reinodoce.status.chat_emotes": "Chat emotes: %s",
   "reinodoce.status.chat_log": "Chat log: %s",
+  "reinodoce.status.session_stats": "Session stats: messages=%s chatters=%s gifts=%s diamonds=%s",
   "reinodoce.status.next_reconnect": "Reconnect ครั้งถัดไป: %s"
 }

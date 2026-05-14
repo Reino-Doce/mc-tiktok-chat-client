@@ -14,6 +14,8 @@ Bare `/reinodoce` (no subcommand) is equivalent to `/reinodoce status`.
 | `/reinodoce connect` | — | Starts the TikTok LIVE connection for the saved `lastUsername`. Prints a clear error when no username has been saved yet. |
 | `/reinodoce disconnect` | — | Closes the active connection and cancels any pending reconnect. |
 | `/reinodoce status` | — | Prints connection state, target username, reconnect timing, active rules, last error (if any), inline media renderer state, token count, cache stats, download counters, and cache eviction counters. |
+| `/reinodoce stats` | — | Prints counters for the current LIVE session, including messages, unique chatters, follows, joins, gifts, diamonds, member-level events, and the top gifter. |
+| `/reinodoce stats reset` | — | Clears the current session counters without disconnecting. |
 | `/reinodoce reload` | — | Re-reads `config/reinodoce-mc-tiktok-client.json` from disk and propagates the new values to the active TikTok session. Use it after editing the file by hand. |
 
 ## Settings

@@ -22,6 +22,7 @@ class ReinodoceCommandTreeTest {
         assertNotNull(connect.getChild("username"));
         assertNotNull(root.getChild("disconnect"));
         assertNotNull(root.getChild("status"));
+        assertNotNull(root.getChild("stats").getChild("reset"));
         assertNotNull(root.getChild("reload"));
 
         CommandNode<CommandSourceStack> settings = root.getChild("settings");
@@ -63,6 +64,16 @@ class ReinodoceCommandTreeTest {
         @Override
         public List<String> statusLines() {
             return List.of();
+        }
+
+        @Override
+        public List<String> statsLines() {
+            return List.of();
+        }
+
+        @Override
+        public CommandResult resetStats() {
+            return unsupported();
         }
 
         @Override

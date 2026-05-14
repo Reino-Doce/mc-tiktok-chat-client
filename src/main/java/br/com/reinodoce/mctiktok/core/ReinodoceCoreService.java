@@ -11,6 +11,7 @@ import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
 import br.com.reinodoce.mctiktok.state.LiveSessionState;
 import br.com.reinodoce.mctiktok.state.RuntimeSettingsState;
 import br.com.reinodoce.mctiktok.tiktok.MemberLevelResolver;
+import br.com.reinodoce.mctiktok.tiktok.SessionStatsTracker;
 import br.com.reinodoce.mctiktok.tiktok.TikTokClientFacade;
 import br.com.reinodoce.mctiktok.util.MessageDeduplicator;
 import br.com.reinodoce.mctiktok.util.UsernameValidator;
@@ -147,10 +148,43 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.chat_format", config.getChatFormat()));
         lines.add(Translations.tr("reinodoce.status.chat_emotes", config.isChatEmotesEnabled()));
         lines.add(Translations.tr("reinodoce.status.chat_log", config.isChatLogEnabled()));
+        SessionStatsTracker.Snapshot stats = tikTokClientFacade.stats();
+        lines.add(Translations.tr("reinodoce.status.session_stats",
+                stats.messages(), stats.uniqueChatters(), stats.gifts(), stats.diamonds()));
         if (snapshot.reconnectAt() != null) {
             lines.add(Translations.tr("reinodoce.status.next_reconnect", formatter.format(snapshot.reconnectAt())));
         }
         return lines;
+    }
+
+    @Override
+    public List<String> statsLines() {
+        ensureInitialized();
+        SessionStatsTracker.Snapshot stats = tikTokClientFacade.stats();
+        String emptyValue = Translations.tr("reinodoce.status.empty_value");
+        String topGifter = stats.topGifter().isBlank()
+                ? emptyValue
+                : Translations.tr("reinodoce.stats.top_gifter_value",
+                        stats.topGifter(), stats.topGifterDiamonds());
+
+        List<String> lines = new ArrayList<>();
+        lines.add(Translations.tr("reinodoce.stats.title"));
+        lines.add(Translations.tr("reinodoce.stats.messages", stats.messages()));
+        lines.add(Translations.tr("reinodoce.stats.unique_chatters", stats.uniqueChatters()));
+        lines.add(Translations.tr("reinodoce.stats.follows", stats.follows()));
+        lines.add(Translations.tr("reinodoce.stats.joins", stats.joins()));
+        lines.add(Translations.tr("reinodoce.stats.gifts", stats.gifts()));
+        lines.add(Translations.tr("reinodoce.stats.diamonds", stats.diamonds()));
+        lines.add(Translations.tr("reinodoce.stats.member_levels", stats.memberLevels()));
+        lines.add(Translations.tr("reinodoce.stats.top_gifter", topGifter));
+        return lines;
+    }
+
+    @Override
+    public CommandResult resetStats() {
+        ensureInitialized();
+        tikTokClientFacade.resetStats();
+        return CommandResult.ok(Translations.tr("reinodoce.command.stats.reset"));
     }
 
     @Override

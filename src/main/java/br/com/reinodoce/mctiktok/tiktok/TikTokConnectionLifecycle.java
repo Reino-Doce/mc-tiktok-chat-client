@@ -179,6 +179,7 @@ final class TikTokConnectionLifecycle {
         }
         reconnectScheduler.cancel();
         liveClient = client;
+        params.onConnected().run();
         LiveSessionState sessionState = params.sessionState();
         sessionState.setState(ConnectionLifecycleState.CONNECTED);
         sessionState.setUsername(username);
@@ -308,6 +309,7 @@ final class TikTokConnectionLifecycle {
             NoticeThrottler errorNoticeThrottler,
             NoticeThrottler reconnectNoticeThrottler,
             Runnable onReset,
+            Runnable onConnected,
             Supplier<String> clientLanguageSupplier
     ) {
     }

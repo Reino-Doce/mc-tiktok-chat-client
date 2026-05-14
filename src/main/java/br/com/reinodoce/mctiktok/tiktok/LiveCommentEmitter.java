@@ -17,21 +17,16 @@ final class LiveCommentEmitter {
     private final MessageDeduplicator commentDeduplicator;
     private final RenderedCommentTracker renderedTracker;
     private final RichLiveMessageFactory messageFactory;
+    private final SessionStatsTracker statsTracker;
 
-    LiveCommentEmitter(
-            Supplier<ReinodoceConfig> configSupplier,
-            ChatEventSink chatGateway,
-            MessageRuleEngine ruleEngine,
-            MessageDeduplicator commentDeduplicator,
-            RenderedCommentTracker renderedTracker,
-            RichLiveMessageFactory messageFactory
-    ) {
-        this.configSupplier = configSupplier;
-        this.chatGateway = chatGateway;
-        this.ruleEngine = ruleEngine;
-        this.commentDeduplicator = commentDeduplicator;
-        this.renderedTracker = renderedTracker;
-        this.messageFactory = messageFactory;
+    LiveCommentEmitter(Dependencies dependencies) {
+        this.configSupplier = dependencies.configSupplier();
+        this.chatGateway = dependencies.chatGateway();
+        this.ruleEngine = dependencies.ruleEngine();
+        this.commentDeduplicator = dependencies.commentDeduplicator();
+        this.renderedTracker = dependencies.renderedTracker();
+        this.messageFactory = dependencies.messageFactory();
+        this.statsTracker = dependencies.statsTracker();
     }
 
     void emit(EmissionContext context) {
@@ -45,6 +40,7 @@ final class LiveCommentEmitter {
         }
         renderedTracker.remember(context.username(), plainText);
         sendComment(config, context, plainText);
+        statsTracker.recordComment(TikTokUserNames.resolveUserId(context.user()), context.username());
     }
 
     private boolean shouldEmit(ReinodoceConfig config, EmissionContext context, String plainText) {
@@ -92,6 +88,17 @@ final class LiveCommentEmitter {
             int memberLevel,
             RichLiveMessage richMessage,
             boolean starComment
+    ) {
+    }
+
+    record Dependencies(
+            Supplier<ReinodoceConfig> configSupplier,
+            ChatEventSink chatGateway,
+            MessageRuleEngine ruleEngine,
+            MessageDeduplicator commentDeduplicator,
+            RenderedCommentTracker renderedTracker,
+            RichLiveMessageFactory messageFactory,
+            SessionStatsTracker statsTracker
     ) {
     }
 }

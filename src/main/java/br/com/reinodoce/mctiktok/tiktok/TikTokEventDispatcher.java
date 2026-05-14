@@ -18,25 +18,11 @@ import java.util.function.LongPredicate;
 import java.util.function.Supplier;
 
 final class TikTokEventDispatcher {
-    private final Supplier<ReinodoceConfig> configSupplier;
-    private final ChatEventSink chatGateway;
-    private final MessageRuleEngine ruleEngine;
-    private final MemberLevelResolver memberLevelResolver;
-    private final RenderedCommentTracker renderedTracker;
-    private final RichLiveMessageFactory messageFactory;
-    private final TikTokGiftEmitter giftEmitter;
-    private final GiftComboAggregator giftComboAggregator;
+    private final Dependencies dependencies;
     private final LongPredicate tokenCheck;
 
     TikTokEventDispatcher(Dependencies dependencies, LongPredicate tokenCheck) {
-        this.configSupplier = dependencies.configSupplier();
-        this.chatGateway = dependencies.chatGateway();
-        this.ruleEngine = dependencies.ruleEngine();
-        this.memberLevelResolver = dependencies.memberLevelResolver();
-        this.renderedTracker = dependencies.renderedTracker();
-        this.messageFactory = dependencies.messageFactory();
-        this.giftEmitter = dependencies.giftEmitter();
-        this.giftComboAggregator = dependencies.giftComboAggregator();
+        this.dependencies = dependencies;
         this.tokenCheck = tokenCheck;
     }
 
@@ -48,7 +34,8 @@ final class TikTokEventDispatcher {
             RenderedCommentTracker renderedTracker,
             RichLiveMessageFactory messageFactory,
             TikTokGiftEmitter giftEmitter,
-            GiftComboAggregator giftComboAggregator
+            GiftComboAggregator giftComboAggregator,
+            SessionStatsTracker statsTracker
     ) {
     }
 
@@ -57,71 +44,77 @@ final class TikTokEventDispatcher {
         if (!tokenCheck.test(token) || message.isBlank()) {
             return;
         }
-        ReinodoceConfig config = configSupplier.get();
+        ReinodoceConfig config = dependencies.configSupplier().get();
         User user = event.getUser();
         String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user));
-        if (!ruleEngine.shouldDisplayComment(config, user, memberLevelResolver.resolveLevel(user))
-                || renderedTracker.wasRecentlyRendered(username, message)) {
+        if (!dependencies.ruleEngine().shouldDisplayComment(
+                config, user, dependencies.memberLevelResolver().resolveLevel(user))
+                || dependencies.renderedTracker().wasRecentlyRendered(username, message)) {
             return;
         }
-        renderedTracker.remember(username, message);
+        dependencies.renderedTracker().remember(username, message);
         sendComment(config, username, user, message);
+        dependencies.statsTracker().recordComment(TikTokUserNames.resolveUserId(user), username);
     }
 
     void onFollow(long token, TikTokFollowEvent event) {
-        ReinodoceConfig config = configSupplier.get();
+        ReinodoceConfig config = dependencies.configSupplier().get();
         if (!tokenCheck.test(token) || !config.isSyntheticFollowEnabled()) {
             return;
         }
         sendSyntheticAuthorNotice(SyntheticAuthorKind.FOLLOW, config, event.getUser());
+        dependencies.statsTracker().recordFollow();
     }
 
     void onJoin(long token, TikTokJoinEvent event) {
-        ReinodoceConfig config = configSupplier.get();
+        ReinodoceConfig config = dependencies.configSupplier().get();
         if (!tokenCheck.test(token) || !config.isSyntheticJoinEnabled()) {
             return;
         }
         sendSyntheticAuthorNotice(SyntheticAuthorKind.JOIN, config, event.getUser());
+        dependencies.statsTracker().recordJoin();
     }
 
     void onGift(long token, TikTokGiftEvent event) {
-        ReinodoceConfig config = configSupplier.get();
-        if (!tokenCheck.test(token) || !ruleEngine.shouldEmitGift(config, event.getGift())) {
+        ReinodoceConfig config = dependencies.configSupplier().get();
+        if (!tokenCheck.test(token) || !dependencies.ruleEngine().shouldEmitGift(config, event.getGift())) {
             return;
         }
         GiftComboMode mode = GiftComboMode.fromString(config.getSyntheticGiftComboMode());
-        giftEmitter.emit(giftComboAggregator.handleGift(mode, giftEmitter.toSnapshot(event)));
+        dependencies.giftEmitter().emit(dependencies.giftComboAggregator().handleGift(
+                mode, dependencies.giftEmitter().toSnapshot(event)));
     }
 
     void onGiftCombo(long token, TikTokGiftComboEvent event) {
-        ReinodoceConfig config = configSupplier.get();
-        if (!tokenCheck.test(token) || !ruleEngine.shouldEmitGift(config, event.getGift())) {
+        ReinodoceConfig config = dependencies.configSupplier().get();
+        if (!tokenCheck.test(token) || !dependencies.ruleEngine().shouldEmitGift(config, event.getGift())) {
             return;
         }
         GiftComboMode mode = GiftComboMode.fromString(config.getSyntheticGiftComboMode());
         boolean finished = event.getComboState() == GiftComboStateType.Finished;
-        giftEmitter.emit(giftComboAggregator.handleCombo(mode, giftEmitter.toSnapshot(event), finished));
+        dependencies.giftEmitter().emit(dependencies.giftComboAggregator().handleCombo(
+                mode, dependencies.giftEmitter().toSnapshot(event), finished));
     }
 
     private void sendComment(ReinodoceConfig config, String username, User user, String message) {
         if (config.isChatEmotesEnabled()) {
-            chatGateway.sendLiveComment(
+            dependencies.chatGateway().sendLiveComment(
                     config,
-                    messageFactory.richTextMessage(
+                    dependencies.messageFactory().richTextMessage(
                             0L, username, TikTokMediaResolver.resolveUserAvatarUrl(user), message));
         } else {
-            chatGateway.sendLiveComment(config, username, message);
+            dependencies.chatGateway().sendLiveComment(config, username, message);
         }
     }
 
     private void sendSyntheticAuthorNotice(SyntheticAuthorKind kind, ReinodoceConfig config, User user) {
         String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user));
         if (config.isChatEmotesEnabled()) {
-            RichLiveMessage rich = messageFactory.richAuthorOnlyMessage(
+            RichLiveMessage rich = dependencies.messageFactory().richAuthorOnlyMessage(
                     username, TikTokMediaResolver.resolveUserAvatarUrl(user));
-            kind.sendRich(chatGateway, config, rich);
+            kind.sendRich(dependencies.chatGateway(), config, rich);
         } else {
-            kind.sendPlain(chatGateway, config, username);
+            kind.sendPlain(dependencies.chatGateway(), config, username);
         }
     }
 
