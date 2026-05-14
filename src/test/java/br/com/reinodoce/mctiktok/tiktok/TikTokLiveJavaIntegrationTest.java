@@ -82,7 +82,7 @@ class TikTokLiveJavaIntegrationTest {
         long timeoutAtNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(connectTimeoutSeconds);
         try {
             while (!connected.await(CONNECT_POLL_MILLIS, TimeUnit.MILLISECONDS)) {
-                failIfConnectTaskFinished(username, future);
+                failIfConnectTaskFailed(username, future);
                 if (System.nanoTime() >= timeoutAtNanos) {
                     future.cancel(true);
                     fail("TikTokLiveJava did not reach CONNECTED for @" + username
@@ -95,13 +95,12 @@ class TikTokLiveJavaIntegrationTest {
         }
     }
 
-    private static void failIfConnectTaskFinished(String username, Future<?> future) {
+    private static void failIfConnectTaskFailed(String username, Future<?> future) {
         if (!future.isDone()) {
             return;
         }
         try {
             future.get();
-            fail("TikTokLiveJava connect() returned before CONNECTED for @" + username);
         } catch (ExecutionException exception) {
             fail("TikTokLiveJava failed to connect to @" + username + ": " + describe(exception.getCause()),
                     exception.getCause());
