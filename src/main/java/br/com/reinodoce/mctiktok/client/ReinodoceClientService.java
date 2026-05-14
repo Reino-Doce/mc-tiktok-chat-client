@@ -13,6 +13,7 @@ import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
 import br.com.reinodoce.mctiktok.config.HudPosition;
+import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
 import br.com.reinodoce.mctiktok.core.ReinodoceCoreService;
@@ -32,6 +33,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     private final ReinodoceCoreService coreService;
     private final InlineMediaCache inlineMediaCache;
     private final InlineMediaTokenRegistry inlineMediaTokenRegistry;
+    private final HudMessageStore hudMessageStore;
     private final LocalHudOverlay localHudOverlay;
     private final MinecraftPlatformBridge platformBridge;
 
@@ -45,7 +47,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
         this.platformBridge = safePlatformBridge;
         this.inlineMediaCache = new InlineMediaCache();
         this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
-        HudMessageStore hudMessageStore = new HudMessageStore();
+        this.hudMessageStore = new HudMessageStore();
         this.localHudOverlay = new LocalHudOverlay(hudMessageStore);
         InlineMediaFontHooks.installRegistry(inlineMediaTokenRegistry);
         this.coreService = new ReinodoceCoreService(
@@ -60,6 +62,19 @@ public class ReinodoceClientService implements ReinodoceCommandService {
                 safePlatformBridge::selectedLanguageCode,
                 safePlatformBridge.logsDirectory().resolve("reinodoce")
         );
+    }
+
+    ReinodoceClientService(
+            MinecraftPlatformBridge platformBridge,
+            ReinodoceCoreService coreService,
+            HudMessageStore hudMessageStore
+    ) {
+        this.platformBridge = Objects.requireNonNull(platformBridge, "platformBridge");
+        this.inlineMediaCache = new InlineMediaCache();
+        this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
+        this.hudMessageStore = Objects.requireNonNull(hudMessageStore, "hudMessageStore");
+        this.localHudOverlay = new LocalHudOverlay(this.hudMessageStore);
+        this.coreService = Objects.requireNonNull(coreService, "coreService");
     }
 
     /**
@@ -78,6 +93,9 @@ public class ReinodoceClientService implements ReinodoceCommandService {
      */
     public void renderHud(GuiGraphics graphics, int screenWidth, int screenHeight) {
         ReinodoceConfig config = coreService.currentConfig();
+        if (OutputMode.fromString(config.getOutputMode()) != OutputMode.HUD) {
+            return;
+        }
         localHudOverlay.render(
                 graphics,
                 screenWidth,
@@ -93,7 +111,11 @@ public class ReinodoceClientService implements ReinodoceCommandService {
      * @return command result
      */
     public CommandResult saveSettingsDraft(ReinodoceConfig config) {
-        return coreService.replaceConfig(config);
+        CommandResult result = coreService.replaceConfig(config);
+        if (result.success()) {
+            clearHudMessagesIfOutputHidden(config.getOutputMode());
+        }
+        return result;
     }
 
     /**
@@ -163,7 +185,11 @@ public class ReinodoceClientService implements ReinodoceCommandService {
 
     @Override
     public CommandResult setOutputMode(String mode) {
-        return coreService.setOutputMode(mode);
+        CommandResult result = coreService.setOutputMode(mode);
+        if (result.success()) {
+            clearHudMessagesIfOutputHidden(mode);
+        }
+        return result;
     }
 
     @Override
@@ -307,6 +333,16 @@ public class ReinodoceClientService implements ReinodoceCommandService {
 
     @Override
     public CommandResult reload() {
-        return coreService.reload();
+        CommandResult result = coreService.reload();
+        if (result.success()) {
+            clearHudMessagesIfOutputHidden(coreService.currentConfig().getOutputMode());
+        }
+        return result;
+    }
+
+    private void clearHudMessagesIfOutputHidden(String outputMode) {
+        if (OutputMode.fromString(outputMode) != OutputMode.HUD) {
+            hudMessageStore.clear();
+        }
     }
 }
