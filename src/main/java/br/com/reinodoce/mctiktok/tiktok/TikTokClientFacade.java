@@ -29,19 +29,17 @@ public class TikTokClientFacade {
      * @param ruleEngine message rule engine
      * @param memberLevelResolver member-level resolver
      * @param giftDeduplicator gift deduplicator
-     * @param languageSupplier selected client language supplier
      */
     public TikTokClientFacade(
             Supplier<ReinodoceConfig> configSupplier,
             TikTokRuntimeServices runtimeServices,
             MessageRuleEngine ruleEngine,
             MemberLevelResolver memberLevelResolver,
-            MessageDeduplicator giftDeduplicator,
-            Supplier<String> languageSupplier
+            MessageDeduplicator giftDeduplicator
     ) {
         TikTokFacadeWiring wiring = TikTokFacadeWiring.assemble(
                 configSupplier, runtimeServices, ruleEngine, memberLevelResolver,
-                giftDeduplicator, languageSupplier);
+                giftDeduplicator);
         wiring.bindFacade(this);
         this.sessionState = wiring.sessionState();
         this.statsTracker = wiring.statsTracker();
@@ -109,6 +107,13 @@ public class TikTokClientFacade {
      */
     public void onConfigUpdated() {
         lifecycle.onConfigUpdated();
+    }
+
+    /**
+     * Reconnects an active session so settings applied during client creation take effect.
+     */
+    public void reconnectForConfigChange() {
+        lifecycle.reconnectForConfigChange();
     }
 
     static boolean shouldRetryConnectFailure(Throwable throwable) {

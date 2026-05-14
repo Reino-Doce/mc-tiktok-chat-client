@@ -203,6 +203,16 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     }
 
     @Override
+    public List<String> languageLines() {
+        return coreService.languageLines();
+    }
+
+    @Override
+    public CommandResult setLanguage(String language) {
+        return coreService.setLanguage(language);
+    }
+
+    @Override
     public CommandResult openSettingsGui() {
         platformBridge.runOnClientThread(() -> {
             Minecraft minecraft = Minecraft.getInstance();

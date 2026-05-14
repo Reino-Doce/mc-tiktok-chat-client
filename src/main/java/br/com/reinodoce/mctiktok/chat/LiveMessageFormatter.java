@@ -88,9 +88,24 @@ public class LiveMessageFormatter {
      * @return rendered component plus source message
      */
     public FormattedLiveComment formatSyntheticFollow(ChatMessageStyle style, RichLiveMessage message) {
+        return formatSyntheticFollow(style, message, "");
+    }
+
+    /**
+     * Formats a rich synthetic follow line.
+     *
+     * @param style configured chat style
+     * @param message rich user message
+     * @param language locale used for fixed synthetic text
+     * @return rendered component plus source message
+     */
+    public FormattedLiveComment formatSyntheticFollow(
+            ChatMessageStyle style, RichLiveMessage message, String language
+    ) {
         return formatRichLine(
                 style,
-                message.withBodySegments(List.of(new RichLiveMessage.TextSegment(translate("reinodoce.chat.follow")))),
+                message.withBodySegments(List.of(new RichLiveMessage.TextSegment(
+                        translate(language, "reinodoce.chat.follow")))),
                 ChatFormatting.GREEN
         );
     }
@@ -103,9 +118,24 @@ public class LiveMessageFormatter {
      * @return rendered component plus source message
      */
     public FormattedLiveComment formatSyntheticJoin(ChatMessageStyle style, RichLiveMessage message) {
+        return formatSyntheticJoin(style, message, "");
+    }
+
+    /**
+     * Formats a rich synthetic join line.
+     *
+     * @param style configured chat style
+     * @param message rich user message
+     * @param language locale used for fixed synthetic text
+     * @return rendered component plus source message
+     */
+    public FormattedLiveComment formatSyntheticJoin(
+            ChatMessageStyle style, RichLiveMessage message, String language
+    ) {
         return formatRichLine(
                 style,
-                message.withBodySegments(List.of(new RichLiveMessage.TextSegment(translate("reinodoce.chat.join")))),
+                message.withBodySegments(List.of(new RichLiveMessage.TextSegment(
+                        translate(language, "reinodoce.chat.join")))),
                 ChatFormatting.AQUA
         );
     }
@@ -119,9 +149,25 @@ public class LiveMessageFormatter {
      * @return rendered component plus source message
      */
     public FormattedLiveComment formatSyntheticMemberLevel(ChatMessageStyle style, RichLiveMessage message, int memberLevel) {
+        return formatSyntheticMemberLevel(style, message, memberLevel, "");
+    }
+
+    /**
+     * Formats a rich synthetic member-level line.
+     *
+     * @param style configured chat style
+     * @param message rich user message
+     * @param memberLevel resolved member level
+     * @param language locale used for fixed synthetic text
+     * @return rendered component plus source message
+     */
+    public FormattedLiveComment formatSyntheticMemberLevel(
+            ChatMessageStyle style, RichLiveMessage message, int memberLevel, String language
+    ) {
         return formatRichLine(
                 style,
-                message.withBodySegments(List.of(new RichLiveMessage.TextSegment(translate("reinodoce.chat.member_level", memberLevel)))),
+                message.withBodySegments(List.of(new RichLiveMessage.TextSegment(
+                        translate(language, "reinodoce.chat.member_level", memberLevel)))),
                 ChatFormatting.GOLD
         );
     }
@@ -150,12 +196,28 @@ public class LiveMessageFormatter {
      * @return rendered component
      */
     public Component formatSyntheticGift(ChatMessageStyle style, String username, String giftName, int count) {
+        return formatSyntheticGift(style, username, giftName, count, "");
+    }
+
+    /**
+     * Formats a plain synthetic gift line.
+     *
+     * @param style configured chat style
+     * @param username display name to show
+     * @param giftName gift display name
+     * @param count gift count or combo count
+     * @param language locale used for fixed synthetic text
+     * @return rendered component
+     */
+    public Component formatSyntheticGift(
+            ChatMessageStyle style, String username, String giftName, int count, String language
+    ) {
         return formatPlainLine(
                 style,
                 username,
-                translate("reinodoce.chat.gift_sent_prefix")
+                translate(language, "reinodoce.chat.gift_sent_prefix")
                         + giftName
-                        + translate("reinodoce.chat.gift_count_suffix", count),
+                        + translate(language, "reinodoce.chat.gift_count_suffix", count),
                 ChatFormatting.LIGHT_PURPLE,
                 false);
     }
@@ -168,7 +230,24 @@ public class LiveMessageFormatter {
      * @return rendered component
      */
     public Component formatSyntheticFollow(ChatMessageStyle style, String username) {
-        return formatPlainLine(style, username, translate("reinodoce.chat.follow"), ChatFormatting.GREEN, false);
+        return formatSyntheticFollow(style, username, "");
+    }
+
+    /**
+     * Formats a plain synthetic follow line.
+     *
+     * @param style configured chat style
+     * @param username display name to show
+     * @param language locale used for fixed synthetic text
+     * @return rendered component
+     */
+    public Component formatSyntheticFollow(ChatMessageStyle style, String username, String language) {
+        return formatPlainLine(
+                style,
+                username,
+                translate(language, "reinodoce.chat.follow"),
+                ChatFormatting.GREEN,
+                false);
     }
 
     /**
@@ -179,7 +258,24 @@ public class LiveMessageFormatter {
      * @return rendered component
      */
     public Component formatSyntheticJoin(ChatMessageStyle style, String username) {
-        return formatPlainLine(style, username, translate("reinodoce.chat.join"), ChatFormatting.AQUA, false);
+        return formatSyntheticJoin(style, username, "");
+    }
+
+    /**
+     * Formats a plain synthetic join line.
+     *
+     * @param style configured chat style
+     * @param username display name to show
+     * @param language locale used for fixed synthetic text
+     * @return rendered component
+     */
+    public Component formatSyntheticJoin(ChatMessageStyle style, String username, String language) {
+        return formatPlainLine(
+                style,
+                username,
+                translate(language, "reinodoce.chat.join"),
+                ChatFormatting.AQUA,
+                false);
     }
 
     /**
@@ -191,7 +287,27 @@ public class LiveMessageFormatter {
      * @return rendered component
      */
     public Component formatSyntheticMemberLevel(ChatMessageStyle style, String username, int memberLevel) {
-        return formatPlainLine(style, username, translate("reinodoce.chat.member_level", memberLevel), ChatFormatting.GOLD, false);
+        return formatSyntheticMemberLevel(style, username, memberLevel, "");
+    }
+
+    /**
+     * Formats a plain synthetic member-level line.
+     *
+     * @param style configured chat style
+     * @param username display name to show
+     * @param memberLevel resolved member level
+     * @param language locale used for fixed synthetic text
+     * @return rendered component
+     */
+    public Component formatSyntheticMemberLevel(
+            ChatMessageStyle style, String username, int memberLevel, String language
+    ) {
+        return formatPlainLine(
+                style,
+                username,
+                translate(language, "reinodoce.chat.member_level", memberLevel),
+                ChatFormatting.GOLD,
+                false);
     }
 
     /**
@@ -231,7 +347,8 @@ public class LiveMessageFormatter {
         return line;
     }
 
-    private String translate(String key, Object... args) {
-        return Translations.tr(key, args);
+    private String translate(String language, String key, Object... args) {
+        return Translations.trForLanguage(
+                FixedTextLanguage.locale(language), FixedTextLanguage.usesRuntime(language), key, args);
     }
 }

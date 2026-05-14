@@ -32,6 +32,8 @@ public class ReinodoceConfig {
     public static final int DEFAULT_HUD_LINES = 6;
     /** Maximum retained HUD line count. */
     public static final int MAX_HUD_LINES = 12;
+    /** Default language setting that follows the Minecraft client language. */
+    public static final String DEFAULT_LANGUAGE = LanguageSetting.AUTO;
     private static final int DEFAULT_RECONNECT_SECONDS = 5;
     private static final int DEFAULT_SYNTHETIC_GIFT_MIN_VALUE = 1;
     private static final int DEFAULT_ALERT_GIFT_MIN_VALUE = 1;
@@ -67,6 +69,7 @@ public class ReinodoceConfig {
     private String chatFormat = DEFAULT_CHAT_FORMAT;
     private boolean chatEmotesEnabled = true;
     private boolean chatLogEnabled = false;
+    private String language = DEFAULT_LANGUAGE;
     private boolean sessionLoggingEnabled = false;
     private String sessionLoggingFormat = SessionLogFormat.JSONL.id();
 
@@ -116,6 +119,7 @@ public class ReinodoceConfig {
         copy.setChatFormat(chatFormat);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
         copy.setChatLogEnabled(chatLogEnabled);
+        copy.setLanguage(language);
         copy.setSessionLoggingEnabled(sessionLoggingEnabled);
         copy.setSessionLoggingFormat(sessionLoggingFormat);
         return copy;
@@ -615,6 +619,24 @@ public class ReinodoceConfig {
      */
     public void setChatLogEnabled(boolean chatLogEnabled) {
         this.chatLogEnabled = chatLogEnabled;
+    }
+
+    /**
+     * Returns the configured language setting.
+     *
+     * @return {@code auto} or a normalized locale such as {@code pt_br}
+     */
+    public String getLanguage() {
+        return language;
+    }
+
+    /**
+     * Sets the language setting, falling back to auto when invalid.
+     *
+     * @param language language setting
+     */
+    public void setLanguage(String language) {
+        this.language = LanguageSetting.sanitize(language);
     }
 
     /**

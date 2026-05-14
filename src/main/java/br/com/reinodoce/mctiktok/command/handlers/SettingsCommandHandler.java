@@ -36,6 +36,32 @@ public final class SettingsCommandHandler {
     }
 
     /**
+     * Shows the active language setting.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @return Brigadier command result code
+     */
+    public static int language(ReinodoceCommandService service, CommandSourceStack source) {
+        for (String line : service.languageLines()) {
+            CommandFeedback.sendLine(source, line);
+        }
+        return 1;
+    }
+
+    /**
+     * Updates the language setting.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param language {@code auto} or locale
+     * @return Brigadier command result code
+     */
+    public static int language(ReinodoceCommandService service, CommandSourceStack source, String language) {
+        return CommandFeedback.sendResult(source, service.setLanguage(language));
+    }
+
+    /**
      * Updates mirrored output mode.
      *
      * @param service command service boundary

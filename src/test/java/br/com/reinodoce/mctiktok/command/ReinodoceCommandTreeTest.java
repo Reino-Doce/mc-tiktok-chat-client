@@ -20,6 +20,7 @@ class ReinodoceCommandTreeTest {
     private static final String MODE_ARGUMENT = "mode";
     private static final String POSITION_ARGUMENT = "position";
     private static final String LINES_ARGUMENT = "lines";
+    private static final String LOCALE_ARGUMENT = "locale";
 
     @Test
     void commandTreeExposesDocumentedPublicSurface() {
@@ -33,17 +34,7 @@ class ReinodoceCommandTreeTest {
         assertNotNull(root.getChild("stats").getChild("reset"));
         assertNotNull(root.getChild("reload"));
 
-        CommandNode<CommandSourceStack> settings = root.getChild("settings");
-        assertNotNull(settings.getChild("reconnect").getChild(SECONDS_ARGUMENT));
-        assertNotNull(settings.getChild("auto-connect").getChild(ENABLED_ARGUMENT));
-        assertNotNull(settings.getChild("output").getChild(MODE_ARGUMENT));
-        assertNotNull(settings.getChild("hud-position").getChild(POSITION_ARGUMENT));
-        assertNotNull(settings.getChild("hud-lines").getChild(LINES_ARGUMENT));
-        assertNotNull(settings.getChild("gui").getCommand());
-        assertNotNull(settings.getChild("chat-emotes").getChild(ENABLED_ARGUMENT));
-        assertNotNull(settings.getChild("chat-log").getChild(ENABLED_ARGUMENT));
-        assertNotNull(settings.getChild("prefix").getChild(VALUE_ARGUMENT));
-        assertNotNull(settings.getChild("format").getChild("template"));
+        assertSettingsSurface(root.getChild("settings"));
 
         CommandNode<CommandSourceStack> rule = root.getChild("rule");
         assertNotNull(rule.getChild("follower").getChild(ENABLED_ARGUMENT));
@@ -87,6 +78,22 @@ class ReinodoceCommandTreeTest {
     private static CommandNode<CommandSourceStack> root() {
         CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
         return dispatcher.register(ReinodoceCommandTree.build(new StubCommandService()));
+    }
+
+    private static void assertSettingsSurface(CommandNode<CommandSourceStack> settings) {
+        assertNotNull(settings);
+        assertNotNull(settings.getChild("reconnect").getChild(SECONDS_ARGUMENT));
+        assertNotNull(settings.getChild("auto-connect").getChild(ENABLED_ARGUMENT));
+        assertNotNull(settings.getChild("language").getCommand());
+        assertNotNull(settings.getChild("language").getChild(LOCALE_ARGUMENT));
+        assertNotNull(settings.getChild("output").getChild(MODE_ARGUMENT));
+        assertNotNull(settings.getChild("hud-position").getChild(POSITION_ARGUMENT));
+        assertNotNull(settings.getChild("hud-lines").getChild(LINES_ARGUMENT));
+        assertNotNull(settings.getChild("gui").getCommand());
+        assertNotNull(settings.getChild("chat-emotes").getChild(ENABLED_ARGUMENT));
+        assertNotNull(settings.getChild("chat-log").getChild(ENABLED_ARGUMENT));
+        assertNotNull(settings.getChild("prefix").getChild(VALUE_ARGUMENT));
+        assertNotNull(settings.getChild("format").getChild("template"));
     }
 
     private static final class StubCommandService implements ReinodoceCommandService {
@@ -142,6 +149,16 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setHudLines(int lines) {
+            return unsupported();
+        }
+
+        @Override
+        public List<String> languageLines() {
+            return List.of();
+        }
+
+        @Override
+        public CommandResult setLanguage(String language) {
             return unsupported();
         }
 

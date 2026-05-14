@@ -110,6 +110,22 @@ class LiveMessageFormatterTest {
     }
 
     @Test
+    void plainSyntheticMessagesUseRequestedLanguage() {
+        assertEquals(
+                "[LIVE]  <alice> comecou a seguir",
+                formatter.formatSyntheticFollow(liveStyle, "alice", "pt_br").getString()
+        );
+        assertEquals(
+                "[LIVE]  <alice> alcancou nivel 4 de membro",
+                formatter.formatSyntheticMemberLevel(liveStyle, "alice", 4, "pt_br").getString()
+        );
+        assertEquals(
+                "[LIVE]  <alice> enviou Rosa x3",
+                formatter.formatSyntheticGift(liveStyle, "alice", "Rosa", 3, "pt_br").getString()
+        );
+    }
+
+    @Test
     void customTemplatePreservesRichInlineTokens() {
         RichLiveMessage.AvatarSegment avatar = new RichLiveMessage.AvatarSegment(
                 "resource://reinodoce_mctiktok/textures/gui/no_user_image.png", "");

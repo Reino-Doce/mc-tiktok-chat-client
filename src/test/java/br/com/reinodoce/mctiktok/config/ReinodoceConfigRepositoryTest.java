@@ -50,6 +50,7 @@ class ReinodoceConfigRepositoryTest {
         assertEquals(6, loaded.getHudLines());
         assertTrue(loaded.isChatEmotesEnabled());
         assertFalse(loaded.isChatLogEnabled());
+        assertEquals("auto", loaded.getLanguage());
         assertFalse(loaded.isSessionLoggingEnabled());
         assertEquals("jsonl", loaded.getSessionLoggingFormat());
         assertFalse(loaded.isRuleFollowerOnly());
@@ -75,6 +76,7 @@ class ReinodoceConfigRepositoryTest {
         config.setSessionLoggingFormat(UNKNOWN);
         config.setChatPrefix("   ");
         config.setChatFormat("{username}: {message}");
+        config.setLanguage(" PT-BR ");
 
         assertEquals("streamer", config.getLastUsername());
         assertEquals(0, config.getReconnectSeconds());
@@ -92,6 +94,11 @@ class ReinodoceConfigRepositoryTest {
         assertEquals("jsonl", config.getSessionLoggingFormat());
         assertEquals("[LIVE]", config.getChatPrefix());
         assertEquals("{prefix}  <{username}> {message}", config.getChatFormat());
+        assertEquals("pt_br", config.getLanguage());
+
+        config.setLanguage("not a locale");
+
+        assertEquals("auto", config.getLanguage());
     }
 
     @Test
@@ -125,8 +132,27 @@ class ReinodoceConfigRepositoryTest {
         assertEquals("{prefix} {username}: {message}", loaded.getChatFormat());
         assertFalse(loaded.isChatEmotesEnabled());
         assertTrue(loaded.isChatLogEnabled());
+        assertEquals("pt_br", loaded.getLanguage());
         assertTrue(loaded.isSessionLoggingEnabled());
         assertEquals("text", loaded.getSessionLoggingFormat());
+    }
+
+    @Test
+    void oldConfigWithoutLanguageLoadsAsAuto() throws IOException {
+        Path configFile = tempDir.resolve("old-config.json");
+        Files.writeString(configFile, """
+                {
+                  "lastUsername": "alice",
+                  "chatPrefix": "[OLD]"
+                }
+                """);
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+
+        ReinodoceConfig loaded = repository.load();
+
+        assertEquals(ALICE, loaded.getLastUsername());
+        assertEquals("[OLD]", loaded.getChatPrefix());
+        assertEquals("auto", loaded.getLanguage());
     }
 
     private void configureRoundTripConfig(ReinodoceConfig config) {
@@ -157,6 +183,7 @@ class ReinodoceConfigRepositoryTest {
         config.setChatFormat("{prefix} {username}: {message}");
         config.setChatEmotesEnabled(false);
         config.setChatLogEnabled(true);
+        config.setLanguage("pt-BR");
         config.setSessionLoggingEnabled(true);
         config.setSessionLoggingFormat("text");
     }
@@ -220,5 +247,6 @@ class ReinodoceConfigRepositoryTest {
         assertTrue(savedJson.contains("\"outputMode\""));
         assertTrue(savedJson.contains("\"hudPosition\""));
         assertTrue(savedJson.contains("\"hudLines\""));
+        assertTrue(savedJson.contains("\"language\""));
     }
 }
