@@ -16,6 +16,10 @@ automatically.
 
 ## [Unreleased]
 
+### Fixed
+
+- Correct the synthetic event command branch spelling to `/reinodoce synthetic`.
+
 ## [0.1.3]
 
 ### Fixed

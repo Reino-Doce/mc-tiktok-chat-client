@@ -13,6 +13,9 @@ The file is read on mod startup and rewritten whenever a setting changes
 through `/reinodoce …`. You can also edit it by hand and run
 `/reinodoce reload` to pick up the changes without restarting the client.
 
+The synthetic-event config fields keep the existing `syntetic...` spelling
+for compatibility with saved client config files.
+
 ## Fields
 
 | Field | Type | Default | Notes |

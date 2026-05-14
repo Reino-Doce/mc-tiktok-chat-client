@@ -148,7 +148,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     }
 
     @Override
-    public CommandResult setSynteticGift(int value) {
+    public CommandResult setSyntheticGift(int value) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSynteticGiftMinValue(value);
@@ -157,7 +157,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     }
 
     @Override
-    public CommandResult setSynteticGiftComboMode(String mode) {
+    public CommandResult setSyntheticGiftComboMode(String mode) {
         ensureInitialized();
         GiftComboMode parsed = GiftComboMode.fromString(mode);
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -167,7 +167,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     }
 
     @Override
-    public CommandResult setSynteticFollow(boolean enabled) {
+    public CommandResult setSyntheticFollow(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSynteticFollowEnabled(enabled);
@@ -176,7 +176,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     }
 
     @Override
-    public CommandResult setSynteticJoin(boolean enabled) {
+    public CommandResult setSyntheticJoin(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSynteticJoinEnabled(enabled);
@@ -185,7 +185,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     }
 
     @Override
-    public CommandResult setSynteticMemberLevel(boolean enabled) {
+    public CommandResult setSyntheticMemberLevel(boolean enabled) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSynteticMemberLevelEnabled(enabled);

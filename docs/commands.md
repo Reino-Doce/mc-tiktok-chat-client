@@ -58,11 +58,11 @@ joins, member-level changes) into visible `[LIVE]`-prefixed chat lines.
 
 | Command | Argument | Default | Effect |
 | ------- | -------- | ------- | ------ |
-| `/reinodoce syntetic gift <value>` | integer ≥ 0 | `1` | Minimum gift diamond cost to surface. `0` disables gift announcements; `1` surfaces every gift. |
-| `/reinodoce syntetic gift-combo <ignore\|single\|bulk>` | enum | `bulk` | How gift combos are folded. `ignore` skips combo updates; `single` emits one line per combo step; `bulk` emits one summary line per combo. |
-| `/reinodoce syntetic follow <true\|false>` | boolean | `false` | Surface new-follower events. |
-| `/reinodoce syntetic join <true\|false>` | boolean | `false` | Surface viewer-join events. |
-| `/reinodoce syntetic member-level <true\|false>` | boolean | `false` | Surface member-level-up events. |
+| `/reinodoce synthetic gift <value>` | integer ≥ 0 | `1` | Minimum gift diamond cost to surface. `0` disables gift announcements; `1` surfaces every gift. |
+| `/reinodoce synthetic gift-combo <ignore\|single\|bulk>` | enum | `bulk` | How gift combos are folded. `ignore` skips combo updates; `single` emits one line per combo step; `bulk` emits one summary line per combo. |
+| `/reinodoce synthetic follow <true\|false>` | boolean | `false` | Surface new-follower events. |
+| `/reinodoce synthetic join <true\|false>` | boolean | `false` | Surface viewer-join events. |
+| `/reinodoce synthetic member-level <true\|false>` | boolean | `false` | Surface member-level-up events. |
 
 ## Quick example
 
@@ -70,7 +70,7 @@ joins, member-level changes) into visible `[LIVE]`-prefixed chat lines.
 /reinodoce settings reconnect 5
 /reinodoce rule follower true
 /reinodoce rule min-member-level 1
-/reinodoce syntetic gift-combo bulk
+/reinodoce synthetic gift-combo bulk
 /reinodoce connect @yourusername
 /reinodoce status
 ```

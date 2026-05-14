@@ -58,7 +58,7 @@ public interface ReinodoceCommandService {
      * @param value minimum gift value
      * @return command result
      */
-    CommandResult setSynteticGift(int value);
+    CommandResult setSyntheticGift(int value);
 
     /**
      * Updates synthetic gift combo aggregation mode.
@@ -66,7 +66,7 @@ public interface ReinodoceCommandService {
      * @param mode combo mode identifier
      * @return command result
      */
-    CommandResult setSynteticGiftComboMode(String mode);
+    CommandResult setSyntheticGiftComboMode(String mode);
 
     /**
      * Updates synthetic follow output.
@@ -74,7 +74,7 @@ public interface ReinodoceCommandService {
      * @param enabled whether synthetic follow output is enabled
      * @return command result
      */
-    CommandResult setSynteticFollow(boolean enabled);
+    CommandResult setSyntheticFollow(boolean enabled);
 
     /**
      * Updates synthetic join output.
@@ -82,7 +82,7 @@ public interface ReinodoceCommandService {
      * @param enabled whether synthetic join output is enabled
      * @return command result
      */
-    CommandResult setSynteticJoin(boolean enabled);
+    CommandResult setSyntheticJoin(boolean enabled);
 
     /**
      * Updates synthetic member-level output.
@@ -90,7 +90,7 @@ public interface ReinodoceCommandService {
      * @param enabled whether synthetic member-level output is enabled
      * @return command result
      */
-    CommandResult setSynteticMemberLevel(boolean enabled);
+    CommandResult setSyntheticMemberLevel(boolean enabled);
 
     /**
      * Updates inline emote rendering.

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ReinodoceCommandTreeTest {
     private static final String ENABLED_ARGUMENT = "enabled";
@@ -32,12 +33,13 @@ class ReinodoceCommandTreeTest {
         assertNotNull(rule.getChild("follower").getChild(ENABLED_ARGUMENT));
         assertNotNull(rule.getChild("min-member-level").getChild("level"));
 
-        CommandNode<CommandSourceStack> syntetic = root.getChild("syntetic");
-        assertNotNull(syntetic.getChild("gift").getChild("value"));
-        assertNotNull(syntetic.getChild("gift-combo").getChild("mode"));
-        assertNotNull(syntetic.getChild("follow").getChild(ENABLED_ARGUMENT));
-        assertNotNull(syntetic.getChild("join").getChild(ENABLED_ARGUMENT));
-        assertNotNull(syntetic.getChild("member-level").getChild(ENABLED_ARGUMENT));
+        CommandNode<CommandSourceStack> synthetic = root.getChild("synthetic");
+        assertNotNull(synthetic.getChild("gift").getChild("value"));
+        assertNotNull(synthetic.getChild("gift-combo").getChild("mode"));
+        assertNotNull(synthetic.getChild("follow").getChild(ENABLED_ARGUMENT));
+        assertNotNull(synthetic.getChild("join").getChild(ENABLED_ARGUMENT));
+        assertNotNull(synthetic.getChild("member-level").getChild(ENABLED_ARGUMENT));
+        assertNull(root.getChild("syntetic"));
     }
 
     private static final class StubCommandService implements ReinodoceCommandService {
@@ -72,27 +74,27 @@ class ReinodoceCommandTreeTest {
         }
 
         @Override
-        public CommandResult setSynteticGift(int value) {
+        public CommandResult setSyntheticGift(int value) {
             return unsupported();
         }
 
         @Override
-        public CommandResult setSynteticGiftComboMode(String mode) {
+        public CommandResult setSyntheticGiftComboMode(String mode) {
             return unsupported();
         }
 
         @Override
-        public CommandResult setSynteticFollow(boolean enabled) {
+        public CommandResult setSyntheticFollow(boolean enabled) {
             return unsupported();
         }
 
         @Override
-        public CommandResult setSynteticJoin(boolean enabled) {
+        public CommandResult setSyntheticJoin(boolean enabled) {
             return unsupported();
         }
 
         @Override
-        public CommandResult setSynteticMemberLevel(boolean enabled) {
+        public CommandResult setSyntheticMemberLevel(boolean enabled) {
             return unsupported();
         }
 
