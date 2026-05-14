@@ -29,6 +29,13 @@ final class TikTokUserNames {
         return Translations.tr(USER_UNKNOWN_KEY);
     }
 
+    static long resolveUserId(User user) {
+        if (user == null || user.getId() == null) {
+            return 0L;
+        }
+        return Math.max(0L, user.getId());
+    }
+
     static String chooseRawUserName(String profileName, String username) {
         if (profileName != null && !profileName.isBlank()) {
             return profileName;

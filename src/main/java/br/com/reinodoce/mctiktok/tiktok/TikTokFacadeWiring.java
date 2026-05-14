@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 @SuppressWarnings({"PMD.CouplingBetweenObjects", "PMD.ExcessiveImports"})
 record TikTokFacadeWiring(
         LiveSessionState sessionState,
+        SessionStatsTracker statsTracker,
         TikTokEventDispatcher eventDispatcher,
         WebsocketMessageDispatcher websocketDispatcher,
         LifecycleHookBinding lifecycleBinding
@@ -89,24 +90,28 @@ record TikTokFacadeWiring(
             TikTokEventDispatcher.Dependencies deps = new TikTokEventDispatcher.Dependencies(
                     configSupplier, chatGateway, ruleEngine, memberLevelResolver,
                     emitters.renderedTracker(), emitters.messageFactory(),
-                    emitters.giftEmitter(), emitters.giftComboAggregator());
+                    emitters.giftEmitter(), emitters.giftComboAggregator(), emitters.statsTracker());
             TikTokEventDispatcher dispatcher = new TikTokEventDispatcher(deps, binding::isTokenCurrentLazy);
-            return new TikTokFacadeWiring(sessionState, dispatcher, handlers.websocketDispatcher(), binding);
+            return new TikTokFacadeWiring(
+                    sessionState, emitters.statsTracker(), dispatcher, handlers.websocketDispatcher(), binding);
         }
 
         private Emitters buildEmitters() {
             RenderedCommentTracker renderedTracker = new RenderedCommentTracker();
+            SessionStatsTracker statsTracker = new SessionStatsTracker();
             RichLiveMessageFactory messageFactory = new RichLiveMessageFactory(new UnicodeEmojiParser());
-            LiveCommentEmitter liveCommentEmitter = new LiveCommentEmitter(
-                    configSupplier, chatGateway, ruleEngine, commentDeduplicator, renderedTracker, messageFactory);
+            LiveCommentEmitter.Dependencies liveCommentDependencies = new LiveCommentEmitter.Dependencies(
+                    configSupplier, chatGateway, ruleEngine, commentDeduplicator,
+                    renderedTracker, messageFactory, statsTracker);
+            LiveCommentEmitter liveCommentEmitter = new LiveCommentEmitter(liveCommentDependencies);
             MemberLevelEmitter memberLevelEmitter = new MemberLevelEmitter(
-                    configSupplier, chatGateway, messageFactory);
+                    configSupplier, chatGateway, messageFactory, statsTracker);
             TikTokGiftEmitter giftEmitter = new TikTokGiftEmitter(
-                    configSupplier, chatGateway, ruleEngine, giftDeduplicator, messageFactory);
+                    configSupplier, chatGateway, ruleEngine, giftDeduplicator, messageFactory, statsTracker);
             GiftComboAggregator giftComboAggregator = new GiftComboAggregator(
                     executors.scheduler(), giftEmitter::emitFromAsyncFlush);
             return new Emitters(
-                    renderedTracker, messageFactory, liveCommentEmitter, memberLevelEmitter,
+                    renderedTracker, statsTracker, messageFactory, liveCommentEmitter, memberLevelEmitter,
                     giftEmitter, new TikTokRichMessageParser(), giftComboAggregator);
         }
 
@@ -131,6 +136,7 @@ record TikTokFacadeWiring(
                     new NoticeThrottler(Duration.ofSeconds(ERROR_NOTICE_COOLDOWN_SECONDS)),
                     new NoticeThrottler(Duration.ofSeconds(RECONNECT_NOTICE_COOLDOWN_SECONDS)),
                     reset,
+                    emitters.statsTracker()::reset,
                     languageSupplier);
             return new LifecycleHookBinding(params);
         }
@@ -154,6 +160,7 @@ record TikTokFacadeWiring(
 
     private record Emitters(
             RenderedCommentTracker renderedTracker,
+            SessionStatsTracker statsTracker,
             RichLiveMessageFactory messageFactory,
             LiveCommentEmitter liveCommentEmitter,
             MemberLevelEmitter memberLevelEmitter,

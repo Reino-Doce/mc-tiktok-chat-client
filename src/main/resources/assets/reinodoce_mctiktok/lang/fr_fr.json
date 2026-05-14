@@ -30,6 +30,7 @@
   "reinodoce.command.connect.auto_skipped_invalid": "Auto-connect skipped invalid saved username: @%s.",
   "reinodoce.command.disconnect.already": "Déjà déconnecté.",
   "reinodoce.command.disconnect.in_progress": "Déconnexion...",
+  "reinodoce.command.stats.reset": "Session stats reset.",
   "reinodoce.command.set.reconnect": "Reconnect mis à jour à %ss.",
   "reinodoce.command.set.auto_connect": "Auto-connect = %s.",
   "reinodoce.command.set.follower": "Rule follower = %s.",
@@ -44,6 +45,18 @@
   "reinodoce.command.set.chat_prefix": "Préfixe du chat = %s.",
   "reinodoce.command.set.chat_format": "Format du chat = %s.",
   "reinodoce.command.reload.ok": "Configuration rechargée.",
+
+
+  "reinodoce.stats.title": "Session stats",
+  "reinodoce.stats.messages": "Messages: %s",
+  "reinodoce.stats.unique_chatters": "Unique chatters: %s",
+  "reinodoce.stats.follows": "Follows: %s",
+  "reinodoce.stats.joins": "Joins: %s",
+  "reinodoce.stats.gifts": "Gifts: %s",
+  "reinodoce.stats.diamonds": "Diamonds: %s",
+  "reinodoce.stats.member_levels": "Member levels: %s",
+  "reinodoce.stats.top_gifter": "Top gifter: %s",
+  "reinodoce.stats.top_gifter_value": "%s (%s diamonds)",
 
   "reinodoce.status.state": "État : %s",
   "reinodoce.status.username": "Utilisateur actuel : %s",
@@ -63,5 +76,6 @@
   "reinodoce.status.chat_format": "Format du chat : %s",
   "reinodoce.status.chat_emotes": "Chat emotes : %s",
   "reinodoce.status.chat_log": "Chat log : %s",
+  "reinodoce.status.session_stats": "Session stats: messages=%s chatters=%s gifts=%s diamonds=%s",
   "reinodoce.status.next_reconnect": "Prochaine reconnexion : %s"
 }

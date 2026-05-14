@@ -61,11 +61,13 @@ public class GiftComboAggregator {
 
         if (state == null) {
             return List.of(new GiftEmission(
+                    snapshot.key().userId(),
                     snapshot.username(),
                     snapshot.avatarUrl(),
                     snapshot.giftName(),
                     snapshot.giftIconUrl(),
                     snapshot.diamondCost(),
+                    count,
                     count,
                     snapshot.messageId()
             ));
@@ -77,11 +79,13 @@ public class GiftComboAggregator {
 
         if (mode == GiftComboMode.BULK) {
             return List.of(new GiftEmission(
+                    snapshot.key().userId(),
                     snapshot.username(),
                     snapshot.avatarUrl(),
                     snapshot.giftName(),
                     snapshot.giftIconUrl(),
                     snapshot.diamondCost(),
+                    effectiveCount,
                     effectiveCount,
                     snapshot.messageId()
             ));
@@ -118,11 +122,13 @@ public class GiftComboAggregator {
         }
 
         return List.of(new GiftEmission(
+                snapshot.key().userId(),
                 snapshot.username(),
                 snapshot.avatarUrl(),
                 snapshot.giftName(),
                 snapshot.giftIconUrl(),
                 snapshot.diamondCost(),
+                delta,
                 delta,
                 snapshot.messageId()
         ));
@@ -145,12 +151,14 @@ public class GiftComboAggregator {
         }
 
         return List.of(new GiftEmission(
+                snapshot.key().userId(),
                 snapshot.username(),
                 snapshot.avatarUrl(),
                 snapshot.giftName(),
                 snapshot.giftIconUrl(),
                 snapshot.diamondCost(),
                 currentCount,
+                currentCount - previousCount,
                 snapshot.messageId()
         ));
     }
@@ -214,11 +222,13 @@ public class GiftComboAggregator {
 
     private GiftEmission emissionFrom(GiftSnapshot snapshot) {
         return new GiftEmission(
+                snapshot.key().userId(),
                 snapshot.username(),
                 snapshot.avatarUrl(),
                 snapshot.giftName(),
                 snapshot.giftIconUrl(),
                 snapshot.diamondCost(),
+                Math.max(1, snapshot.comboCount()),
                 Math.max(1, snapshot.comboCount()),
                 snapshot.messageId()
         );
@@ -278,21 +288,25 @@ public class GiftComboAggregator {
     /**
      * Gift message ready to emit into chat.
      *
+     * @param userId stable TikTok user id, or zero when unavailable
      * @param username sender display name
      * @param avatarUrl sender avatar URL
      * @param giftName gift display name
      * @param giftIconUrl gift icon URL
      * @param diamondCost gift diamond value
-     * @param count effective gift count
+     * @param count display gift count
+     * @param statsCount effective gift count for session statistics
      * @param messageId TikTok message id
      */
     public record GiftEmission(
+            long userId,
             String username,
             String avatarUrl,
             String giftName,
             String giftIconUrl,
             int diamondCost,
             int count,
+            int statsCount,
             long messageId
     ) {
     }

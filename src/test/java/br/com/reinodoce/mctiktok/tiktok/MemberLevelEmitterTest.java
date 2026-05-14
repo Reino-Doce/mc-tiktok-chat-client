@@ -50,7 +50,8 @@ class MemberLevelEmitterTest {
         return new MemberLevelEmitter(
                 () -> config,
                 sink,
-                new RichLiveMessageFactory(new UnicodeEmojiParser()));
+                new RichLiveMessageFactory(new UnicodeEmojiParser()),
+                new SessionStatsTracker());
     }
 
     private static final class RecordingSink implements ChatEventSink {

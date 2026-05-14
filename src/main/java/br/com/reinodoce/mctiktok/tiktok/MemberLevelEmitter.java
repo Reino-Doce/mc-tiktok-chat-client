@@ -10,15 +10,18 @@ final class MemberLevelEmitter {
     private final Supplier<ReinodoceConfig> configSupplier;
     private final ChatEventSink chatGateway;
     private final RichLiveMessageFactory messageFactory;
+    private final SessionStatsTracker statsTracker;
 
     MemberLevelEmitter(
             Supplier<ReinodoceConfig> configSupplier,
             ChatEventSink chatGateway,
-            RichLiveMessageFactory messageFactory
+            RichLiveMessageFactory messageFactory,
+            SessionStatsTracker statsTracker
     ) {
         this.configSupplier = configSupplier;
         this.chatGateway = chatGateway;
         this.messageFactory = messageFactory;
+        this.statsTracker = statsTracker;
     }
 
     boolean emit(MemberLevelResolver.LevelUpdate update) {
@@ -37,9 +40,11 @@ final class MemberLevelEmitter {
                     config,
                     messageFactory.richAuthorOnlyMessage(username, update.avatarUrl()),
                     update.newLevel());
+            statsTracker.recordMemberLevel();
             return true;
         }
         chatGateway.sendSyntheticMemberLevel(config, username, update.newLevel());
+        statsTracker.recordMemberLevel();
         return true;
     }
 

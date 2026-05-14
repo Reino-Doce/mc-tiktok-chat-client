@@ -17,6 +17,7 @@ import java.util.function.Supplier;
  */
 public class TikTokClientFacade {
     private final LiveSessionState sessionState;
+    private final SessionStatsTracker statsTracker;
     private final TikTokConnectionLifecycle lifecycle;
     private final TikTokEventDispatcher eventDispatcher;
     private final WebsocketMessageDispatcher websocketDispatcher;
@@ -43,6 +44,7 @@ public class TikTokClientFacade {
                 configSupplier, chatGateway, ruleEngine, memberLevelResolver, giftDeduplicator, languageSupplier);
         wiring.bindFacade(this);
         this.sessionState = wiring.sessionState();
+        this.statsTracker = wiring.statsTracker();
         this.lifecycle = wiring.lifecycle();
         this.eventDispatcher = wiring.eventDispatcher();
         this.websocketDispatcher = wiring.websocketDispatcher();
@@ -74,6 +76,23 @@ public class TikTokClientFacade {
      */
     public LiveSessionState.Snapshot status() {
         return sessionState.snapshot();
+    }
+
+    /**
+     * Returns current session statistics.
+     *
+     * @return stats snapshot
+     */
+    public SessionStatsTracker.Snapshot stats() {
+        return statsTracker.snapshot();
+    }
+
+    /**
+     * Resets current session statistics without changing connection state.
+     */
+    public void resetStats() {
+        eventDispatcher.clearPendingGifts();
+        statsTracker.reset();
     }
 
     /**

@@ -36,6 +36,20 @@ public interface ReinodoceCommandService {
     List<String> statusLines();
 
     /**
+     * Returns current session stats lines for `/reinodoce stats`.
+     *
+     * @return ordered stats lines
+     */
+    List<String> statsLines();
+
+    /**
+     * Resets current session stats.
+     *
+     * @return command result
+     */
+    CommandResult resetStats();
+
+    /**
      * Updates reconnect delay.
      *
      * @param seconds reconnect delay in seconds

@@ -5,6 +5,7 @@ import br.com.reinodoce.mctiktok.command.handlers.DisconnectCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.ReloadCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.RuleCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.SettingsCommandHandler;
+import br.com.reinodoce.mctiktok.command.handlers.StatsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.StatusCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.SyntheticCommandHandler;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
@@ -42,6 +43,7 @@ public final class ReinodoceCommandTree {
                 .then(connectBranch(commandService))
                 .then(disconnectBranch(commandService))
                 .then(statusBranch(commandService))
+                .then(statsBranch(commandService))
                 .then(settingsBranch(commandService))
                 .then(ruleBranch(commandService))
                 .then(syntheticBranch(commandService))
@@ -68,6 +70,13 @@ public final class ReinodoceCommandTree {
     private static LiteralArgumentBuilder<CommandSourceStack> statusBranch(ReinodoceCommandService service) {
         return Commands.literal("status")
                 .executes(ctx -> StatusCommandHandler.execute(ctx.getSource(), service));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> statsBranch(ReinodoceCommandService service) {
+        return Commands.literal("stats")
+                .executes(ctx -> StatsCommandHandler.execute(ctx.getSource(), service))
+                .then(Commands.literal("reset")
+                        .executes(ctx -> StatsCommandHandler.reset(ctx.getSource(), service)));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> settingsBranch(ReinodoceCommandService service) {

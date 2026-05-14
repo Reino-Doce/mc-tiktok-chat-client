@@ -22,19 +22,22 @@ final class TikTokGiftEmitter {
     private final MessageRuleEngine ruleEngine;
     private final MessageDeduplicator giftDeduplicator;
     private final RichLiveMessageFactory messageFactory;
+    private final SessionStatsTracker statsTracker;
 
     TikTokGiftEmitter(
             Supplier<ReinodoceConfig> configSupplier,
             ChatEventSink chatGateway,
             MessageRuleEngine ruleEngine,
             MessageDeduplicator giftDeduplicator,
-            RichLiveMessageFactory messageFactory
+            RichLiveMessageFactory messageFactory,
+            SessionStatsTracker statsTracker
     ) {
         this.configSupplier = configSupplier;
         this.chatGateway = chatGateway;
         this.ruleEngine = ruleEngine;
         this.giftDeduplicator = giftDeduplicator;
         this.messageFactory = messageFactory;
+        this.statsTracker = statsTracker;
     }
 
     void emit(List<GiftComboAggregator.GiftEmission> emissions) {
@@ -88,6 +91,7 @@ final class TikTokGiftEmitter {
             } else {
                 chatGateway.sendSyntheticGift(config, username, giftName, count);
             }
+            statsTracker.recordGift(emission.userId(), username, emission.statsCount(), emission.diamondCost());
         }
     }
 
