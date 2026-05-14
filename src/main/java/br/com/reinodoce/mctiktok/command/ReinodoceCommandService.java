@@ -216,6 +216,22 @@ public interface ReinodoceCommandService {
     CommandResult setChatFormat(String format);
 
     /**
+     * Updates local session event logging.
+     *
+     * @param enabled whether local session logging is enabled
+     * @return command result
+     */
+    CommandResult setSessionLoggingEnabled(boolean enabled);
+
+    /**
+     * Updates local session event log format.
+     *
+     * @param format session log format id
+     * @return command result
+     */
+    CommandResult setSessionLoggingFormat(String format);
+
+    /**
      * Reloads persisted configuration.
      *
      * @return command result

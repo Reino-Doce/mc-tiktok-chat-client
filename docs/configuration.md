@@ -35,6 +35,8 @@ through `/reinodoce …`. You can also edit it by hand and run
 | `chatFormat` | string | current layout | Template used to arrange mirrored lines. Must include `{prefix}`, `{username}`, and `{message}`; unknown tokens or blank values revert to the default. |
 | `chatEmotesEnabled` | boolean | `true` | Render TikTok chat emotes inline in Minecraft chat. |
 | `chatLogEnabled` | boolean | `false` | Write mirrored TikTok chat and synthetic event lines through Minecraft's chat logger. System/status/error lines remain logged. |
+| `sessionLoggingEnabled` | boolean | `false` | Write accepted mirrored LIVE events to local session files under `logs/reinodoce/`. Opt-in because files may contain TikTok usernames and chat content. |
+| `sessionLoggingFormat` | string | `"jsonl"` | One of `"jsonl"` or `"text"`. Unknown values fall back to `"jsonl"`. |
 
 All commands that change a field validate and clamp the same way the
 config loader does, so editing the file by hand and editing through
@@ -49,3 +51,12 @@ config loader does, so editing the file by hand and editing through
   emotes and gift icons when enabled.
 
 See [commands.md](commands.md) for the command that drives each field.
+
+## Session log files
+
+When `sessionLoggingEnabled` is `true`, each successful connection opens
+one local file under the Minecraft instance's `logs/reinodoce/`
+directory. JSONL files contain one object per line with stable fields such
+as `type`, `timestamp`, `username`, `message`, `memberLevel`, `giftName`,
+`count`, and `diamonds` when those values are available. Text logs use the
+same fields as tab-separated key-value pairs.

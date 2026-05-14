@@ -4,7 +4,10 @@ import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.emoji.UnicodeEmojiParser;
+import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
 import org.junit.jupiter.api.Test;
+
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -51,7 +54,8 @@ class MemberLevelEmitterTest {
                 () -> config,
                 sink,
                 new RichLiveMessageFactory(new UnicodeEmojiParser()),
-                new SessionStatsTracker());
+                new SessionStatsTracker(),
+                new SessionEventLogger(Path.of("build/test-session-logs")));
     }
 
     private static final class RecordingSink implements ChatEventSink {

@@ -4,6 +4,7 @@ import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.i18n.Translations;
+import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
 import br.com.reinodoce.mctiktok.state.ConnectionLifecycleState;
 import br.com.reinodoce.mctiktok.state.LiveSessionState;
 import br.com.reinodoce.mctiktok.util.NoticeThrottler;
@@ -78,6 +79,11 @@ final class TikTokConnectionLifecycle {
 
     void onConfigUpdated() {
         reconnectScheduler.onConfigUpdated();
+        LiveSessionState.Snapshot snapshot = params.sessionState().snapshot();
+        params.sessionEventLogger().refreshSession(
+                params.configSupplier().get(),
+                snapshot.state() == ConnectionLifecycleState.CONNECTED,
+                snapshot.username());
     }
 
     boolean isTokenCurrent(long token) {
@@ -95,6 +101,7 @@ final class TikTokConnectionLifecycle {
         sessionState.setReconnectAttempts(0);
         sessionState.setState(ConnectionLifecycleState.DISCONNECTED);
         sessionState.setLastError("");
+        params.sessionEventLogger().stopSession();
         params.errorNoticeThrottler().reset();
         params.reconnectNoticeThrottler().reset();
     }
@@ -123,6 +130,7 @@ final class TikTokConnectionLifecycle {
 
     private void performConnect(long token, String username) {
         reconnectScheduler.cancel();
+        params.sessionEventLogger().stopSession();
         disconnectCurrentClient();
         params.onReset().run();
         connectInternal(token, username);
@@ -130,11 +138,13 @@ final class TikTokConnectionLifecycle {
 
     private void resetClient() {
         reconnectScheduler.cancel();
+        params.sessionEventLogger().stopSession();
         disconnectCurrentClient();
         params.onReset().run();
     }
 
     private void executeReconnect(long token, String username) {
+        params.sessionEventLogger().stopSession();
         params.onReset().run();
         connectInternal(token, username);
     }
@@ -187,6 +197,7 @@ final class TikTokConnectionLifecycle {
         sessionState.setLastError("");
         sessionState.setReconnectAt(null);
         sessionState.setReconnectAttempts(0);
+        params.sessionEventLogger().startSession(params.configSupplier().get(), username);
         params.reconnectNoticeThrottler().reset();
         params.chatGateway().sendSystem(Translations.tr("reinodoce.chat.connected", username), true);
         ReinodoceLogger.LOGGER.info("Connected to TikTok LIVE @{}", username);
@@ -196,6 +207,7 @@ final class TikTokConnectionLifecycle {
         if (!isTokenCurrent(token)) {
             return;
         }
+        params.sessionEventLogger().stopSession();
         liveClient = null;
         String reason = TikTokUserNames.normalizeErrorReason(
                 event == null ? null : event.getReason(),
@@ -229,6 +241,7 @@ final class TikTokConnectionLifecycle {
         String username = params.sessionState().snapshot().username();
         params.sessionState().setLastError(message);
         params.sessionState().setState(ConnectionLifecycleState.ERROR);
+        params.sessionEventLogger().stopSession();
         sendErrorSystemNotice(
                 "runtime:" + exception.getClass().getName() + ":" + error, message);
         ReinodoceLogger.LOGGER.warn(
@@ -247,6 +260,7 @@ final class TikTokConnectionLifecycle {
         String message = describeConnectFailure(username, exception, allowReconnect);
         params.sessionState().setLastError(message);
         params.sessionState().setState(ConnectionLifecycleState.ERROR);
+        params.sessionEventLogger().stopSession();
         sendErrorSystemNotice(
                 "connect:" + username + ":" + exception.getClass().getName(), message);
         ReinodoceLogger.LOGGER.warn(
@@ -311,7 +325,8 @@ final class TikTokConnectionLifecycle {
             NoticeThrottler reconnectNoticeThrottler,
             Runnable onReset,
             Runnable onConnected,
-            Supplier<String> clientLanguageSupplier
+            Supplier<String> clientLanguageSupplier,
+            SessionEventLogger sessionEventLogger
     ) {
     }
 }

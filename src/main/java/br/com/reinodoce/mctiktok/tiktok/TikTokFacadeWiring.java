@@ -1,6 +1,5 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
-import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.emoji.UnicodeEmojiParser;
 import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
@@ -32,14 +31,15 @@ record TikTokFacadeWiring(
 
     static TikTokFacadeWiring assemble(
             Supplier<ReinodoceConfig> configSupplier,
-            ChatEventSink chatGateway,
+            TikTokRuntimeServices runtimeServices,
             MessageRuleEngine ruleEngine,
             MemberLevelResolver memberLevelResolver,
             MessageDeduplicator giftDeduplicator,
             Supplier<String> languageSupplier
     ) {
         AssemblyContext context = new AssemblyContext(
-                configSupplier, chatGateway, ruleEngine, memberLevelResolver, giftDeduplicator, languageSupplier);
+                configSupplier, runtimeServices, ruleEngine, memberLevelResolver,
+                giftDeduplicator, languageSupplier);
         return context.assemble();
     }
 
@@ -54,7 +54,7 @@ record TikTokFacadeWiring(
     @SuppressWarnings("PMD.CouplingBetweenObjects")
     private static final class AssemblyContext {
         private final Supplier<ReinodoceConfig> configSupplier;
-        private final ChatEventSink chatGateway;
+        private final TikTokRuntimeServices runtimeServices;
         private final MessageRuleEngine ruleEngine;
         private final MemberLevelResolver memberLevelResolver;
         private final MessageDeduplicator giftDeduplicator;
@@ -65,14 +65,14 @@ record TikTokFacadeWiring(
 
         AssemblyContext(
                 Supplier<ReinodoceConfig> configSupplier,
-                ChatEventSink chatGateway,
+                TikTokRuntimeServices runtimeServices,
                 MessageRuleEngine ruleEngine,
                 MemberLevelResolver memberLevelResolver,
                 MessageDeduplicator giftDeduplicator,
                 Supplier<String> languageSupplier
         ) {
             this.configSupplier = configSupplier;
-            this.chatGateway = chatGateway;
+            this.runtimeServices = runtimeServices;
             this.ruleEngine = ruleEngine;
             this.memberLevelResolver = memberLevelResolver;
             this.giftDeduplicator = giftDeduplicator;
@@ -88,10 +88,11 @@ record TikTokFacadeWiring(
             Handlers handlers = buildHandlers(emitters);
             LifecycleHookBinding binding = buildLifecycleBinding(emitters);
             TikTokEventDispatcher.Dependencies deps = new TikTokEventDispatcher.Dependencies(
-                    configSupplier, chatGateway, ruleEngine, memberLevelResolver,
+                    configSupplier, runtimeServices.chatGateway(), ruleEngine, memberLevelResolver,
                     emitters.renderedTracker(), emitters.messageFactory(),
                     emitters.giftEmitter(), emitters.giftComboAggregator(),
-                    emitters.statsTracker(), emitters.moderationDuplicateTracker());
+                    emitters.statsTracker(), emitters.moderationDuplicateTracker(),
+                    runtimeServices.sessionEventLogger());
             TikTokEventDispatcher dispatcher = new TikTokEventDispatcher(deps, binding::isTokenCurrentLazy);
             return new TikTokFacadeWiring(
                     sessionState, emitters.statsTracker(), dispatcher, handlers.websocketDispatcher(), binding);
@@ -103,13 +104,16 @@ record TikTokFacadeWiring(
             ModerationDuplicateTracker moderationDuplicateTracker = new ModerationDuplicateTracker();
             RichLiveMessageFactory messageFactory = new RichLiveMessageFactory(new UnicodeEmojiParser());
             LiveCommentEmitter.Dependencies liveCommentDependencies = new LiveCommentEmitter.Dependencies(
-                    configSupplier, chatGateway, ruleEngine, commentDeduplicator,
-                    renderedTracker, messageFactory, statsTracker, moderationDuplicateTracker);
+                    configSupplier, runtimeServices.chatGateway(), ruleEngine, commentDeduplicator,
+                    renderedTracker, messageFactory, statsTracker,
+                    moderationDuplicateTracker, runtimeServices.sessionEventLogger());
             LiveCommentEmitter liveCommentEmitter = new LiveCommentEmitter(liveCommentDependencies);
             MemberLevelEmitter memberLevelEmitter = new MemberLevelEmitter(
-                    configSupplier, chatGateway, messageFactory, statsTracker);
+                    configSupplier, runtimeServices.chatGateway(),
+                    messageFactory, statsTracker, runtimeServices.sessionEventLogger());
             TikTokGiftEmitter giftEmitter = new TikTokGiftEmitter(
-                    configSupplier, chatGateway, ruleEngine, giftDeduplicator, messageFactory, statsTracker);
+                    configSupplier, runtimeServices, ruleEngine, giftDeduplicator,
+                    messageFactory, statsTracker);
             GiftComboAggregator giftComboAggregator = new GiftComboAggregator(
                     executors.scheduler(), giftEmitter::emitFromAsyncFlush);
             return new Emitters(
@@ -134,13 +138,14 @@ record TikTokFacadeWiring(
         private LifecycleHookBinding buildLifecycleBinding(Emitters emitters) {
             Runnable reset = () -> resetTransientState(emitters);
             TikTokConnectionLifecycle.LifecycleParams params = new TikTokConnectionLifecycle.LifecycleParams(
-                    configSupplier, chatGateway, sessionState,
+                    configSupplier, runtimeServices.chatGateway(), sessionState,
                     executors.ioExecutor(), executors.scheduler(),
                     new NoticeThrottler(Duration.ofSeconds(ERROR_NOTICE_COOLDOWN_SECONDS)),
                     new NoticeThrottler(Duration.ofSeconds(RECONNECT_NOTICE_COOLDOWN_SECONDS)),
                     reset,
                     emitters.statsTracker()::reset,
-                    languageSupplier);
+                    languageSupplier,
+                    runtimeServices.sessionEventLogger());
             return new LifecycleHookBinding(params);
         }
 

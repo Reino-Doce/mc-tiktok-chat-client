@@ -4,6 +4,8 @@ import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
 import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
+import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
+import br.com.reinodoce.mctiktok.logging.SessionLogEvent;
 import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
 import br.com.reinodoce.mctiktok.util.MessageDeduplicator;
 import io.github.jwdeveloper.tiktok.data.models.users.User;
@@ -19,6 +21,7 @@ final class LiveCommentEmitter {
     private final RichLiveMessageFactory messageFactory;
     private final SessionStatsTracker statsTracker;
     private final ModerationDuplicateTracker moderationDuplicateTracker;
+    private final SessionEventLogger sessionEventLogger;
 
     LiveCommentEmitter(Dependencies dependencies) {
         this.configSupplier = dependencies.configSupplier();
@@ -29,6 +32,7 @@ final class LiveCommentEmitter {
         this.messageFactory = dependencies.messageFactory();
         this.statsTracker = dependencies.statsTracker();
         this.moderationDuplicateTracker = dependencies.moderationDuplicateTracker();
+        this.sessionEventLogger = dependencies.sessionEventLogger();
     }
 
     void emit(EmissionContext context) {
@@ -42,6 +46,7 @@ final class LiveCommentEmitter {
         }
         renderedTracker.remember(context.username(), plainText);
         sendComment(config, context, plainText);
+        sessionEventLogger.log(logEvent(context, plainText));
         moderationDuplicateTracker.remember(plainText, config.getRuleDuplicateCooldownSeconds());
         statsTracker.recordComment(TikTokUserNames.resolveUserId(context.user()), context.username());
     }
@@ -86,6 +91,13 @@ final class LiveCommentEmitter {
         }
     }
 
+    private static SessionLogEvent logEvent(EmissionContext context, String plainText) {
+        if (context.starComment()) {
+            return SessionLogEvent.starComment(context.username(), plainText, context.memberLevel());
+        }
+        return SessionLogEvent.chat(context.username(), plainText, context.memberLevel());
+    }
+
     record EmissionContext(
             User user,
             String username,
@@ -104,7 +116,8 @@ final class LiveCommentEmitter {
             RenderedCommentTracker renderedTracker,
             RichLiveMessageFactory messageFactory,
             SessionStatsTracker statsTracker,
-            ModerationDuplicateTracker moderationDuplicateTracker
+            ModerationDuplicateTracker moderationDuplicateTracker,
+            SessionEventLogger sessionEventLogger
     ) {
     }
 }

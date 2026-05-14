@@ -2,6 +2,8 @@ package br.com.reinodoce.mctiktok.tiktok;
 
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
+import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
+import br.com.reinodoce.mctiktok.logging.SessionLogEvent;
 import br.com.reinodoce.mctiktok.util.ReinodoceLogger;
 
 import java.util.function.Supplier;
@@ -11,17 +13,20 @@ final class MemberLevelEmitter {
     private final ChatEventSink chatGateway;
     private final RichLiveMessageFactory messageFactory;
     private final SessionStatsTracker statsTracker;
+    private final SessionEventLogger sessionEventLogger;
 
     MemberLevelEmitter(
             Supplier<ReinodoceConfig> configSupplier,
             ChatEventSink chatGateway,
             RichLiveMessageFactory messageFactory,
-            SessionStatsTracker statsTracker
+            SessionStatsTracker statsTracker,
+            SessionEventLogger sessionEventLogger
     ) {
         this.configSupplier = configSupplier;
         this.chatGateway = chatGateway;
         this.messageFactory = messageFactory;
         this.statsTracker = statsTracker;
+        this.sessionEventLogger = sessionEventLogger;
     }
 
     boolean emit(MemberLevelResolver.LevelUpdate update) {
@@ -40,10 +45,12 @@ final class MemberLevelEmitter {
                     config,
                     messageFactory.richAuthorOnlyMessage(username, update.avatarUrl()),
                     update.newLevel());
+            sessionEventLogger.log(SessionLogEvent.memberLevel(username, update.newLevel()));
             statsTracker.recordMemberLevel();
             return true;
         }
         chatGateway.sendSyntheticMemberLevel(config, username, update.newLevel());
+        sessionEventLogger.log(SessionLogEvent.memberLevel(username, update.newLevel()));
         statsTracker.recordMemberLevel();
         return true;
     }

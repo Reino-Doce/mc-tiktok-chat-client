@@ -4,6 +4,8 @@ import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.i18n.Translations;
+import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
+import br.com.reinodoce.mctiktok.logging.SessionLogEvent;
 import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
 import br.com.reinodoce.mctiktok.util.MessageDeduplicator;
 import io.github.jwdeveloper.tiktok.data.events.gift.TikTokGiftEvent;
@@ -23,21 +25,23 @@ final class TikTokGiftEmitter {
     private final MessageDeduplicator giftDeduplicator;
     private final RichLiveMessageFactory messageFactory;
     private final SessionStatsTracker statsTracker;
+    private final SessionEventLogger sessionEventLogger;
 
     TikTokGiftEmitter(
             Supplier<ReinodoceConfig> configSupplier,
-            ChatEventSink chatGateway,
+            TikTokRuntimeServices runtimeServices,
             MessageRuleEngine ruleEngine,
             MessageDeduplicator giftDeduplicator,
             RichLiveMessageFactory messageFactory,
             SessionStatsTracker statsTracker
     ) {
         this.configSupplier = configSupplier;
-        this.chatGateway = chatGateway;
+        this.chatGateway = runtimeServices.chatGateway();
         this.ruleEngine = ruleEngine;
         this.giftDeduplicator = giftDeduplicator;
         this.messageFactory = messageFactory;
         this.statsTracker = statsTracker;
+        this.sessionEventLogger = runtimeServices.sessionEventLogger();
     }
 
     void emit(List<GiftComboAggregator.GiftEmission> emissions) {
@@ -91,6 +95,8 @@ final class TikTokGiftEmitter {
             } else {
                 chatGateway.sendSyntheticGift(config, username, giftName, count);
             }
+            sessionEventLogger.log(SessionLogEvent.gift(
+                    username, giftName, count, (long) count * Math.max(0, emission.diamondCost())));
             statsTracker.recordGift(emission.userId(), username, emission.statsCount(), emission.diamondCost());
         }
     }

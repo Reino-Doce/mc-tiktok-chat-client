@@ -13,6 +13,9 @@ from a TikTok LIVE inside the local Minecraft chat.
 - Mirrored TikTok lines are hidden from Minecraft's chat log by default
   to avoid flooding `latest.log`; enable `/reinodoce settings chat-log true`
   if you want them logged.
+- Optional session logs can write accepted LIVE events to
+  `logs/reinodoce/` for after-stream review or diagnostics; enable them
+  with `/reinodoce logging enabled true`.
 - This branch (`1.20.1`) targets Minecraft `1.20.1`, Forge `47.4.16`,
   Java `17`.
 
@@ -20,6 +23,7 @@ from a TikTok LIVE inside the local Minecraft chat.
 /reinodoce connect @yourusername
 /reinodoce settings auto-connect true
 /reinodoce rule block-word add spam
+/reinodoce logging enabled true
 /reinodoce stats
 ```
 

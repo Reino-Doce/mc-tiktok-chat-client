@@ -54,6 +54,10 @@ class ReinodoceCommandTreeTest {
         assertNotNull(synthetic.getChild("follow").getChild(ENABLED_ARGUMENT));
         assertNotNull(synthetic.getChild("join").getChild(ENABLED_ARGUMENT));
         assertNotNull(synthetic.getChild("member-level").getChild(ENABLED_ARGUMENT));
+
+        CommandNode<CommandSourceStack> logging = root.getChild("logging");
+        assertNotNull(logging.getChild("enabled").getChild(ENABLED_ARGUMENT));
+        assertNotNull(logging.getChild("format").getChild("format"));
     }
 
     private static final class StubCommandService implements ReinodoceCommandService {
@@ -189,6 +193,16 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setChatFormat(String format) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setSessionLoggingEnabled(boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setSessionLoggingFormat(String format) {
             return unsupported();
         }
 

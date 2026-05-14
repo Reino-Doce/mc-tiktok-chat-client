@@ -6,6 +6,8 @@
   parsing, and reconnect scheduling never block the Minecraft client tick.
 - Mirrored chat lines are always dispatched from the client's safe
   context, the same path used by vanilla chat rendering.
+- Optional session log writes run through a dedicated background writer
+  and do not block the Minecraft client tick.
 - Reconnect uses a dedicated scheduler so connect / disconnect /
   reconnect cycles cannot stack on the main thread.
 
