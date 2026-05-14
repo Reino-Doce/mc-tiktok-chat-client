@@ -82,6 +82,29 @@ tools can be invoked one at a time:
 .\gradlew.bat spotbugsMain
 ```
 
+### TikTokLiveJava live integration test
+
+`TikTokLiveJavaIntegrationTest` uses the bundled TikTokLiveJava library
+directly and attempts to connect to a real LIVE account. It is skipped
+unless a username is provided, so normal `test` and CI runs do not
+depend on TikTok or network availability.
+
+```powershell
+.\gradlew.bat test --tests br.com.reinodoce.mctiktok.tiktok.TikTokLiveJavaIntegrationTest "-Dreinodoce.tiktok.live.username=eubrabex"
+```
+
+Equivalent environment variable:
+
+```powershell
+$env:REINODOCE_TIKTOK_LIVE_USERNAME = "eubrabex"
+.\gradlew.bat test --tests br.com.reinodoce.mctiktok.tiktok.TikTokLiveJavaIntegrationTest
+```
+
+Optional timeouts:
+
+- `"-Dreinodoce.tiktok.live.httpTimeoutSeconds=15"`
+- `"-Dreinodoce.tiktok.live.connectTimeoutSeconds=45"`
+
 Lint findings are treated as defects to fix at the call site, not to
 suppress. Add a file-level suppression only with a one-line
 justification — see [AGENTS.md](../AGENTS.md).

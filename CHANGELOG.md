@@ -16,6 +16,18 @@ automatically.
 
 ## [Unreleased]
 
+## [0.1.3]
+
+### Fixed
+
+- Increase TikTokLiveJava HTTP timeout to 15 seconds to avoid reconnect
+  loops on slower TikTok LIVE routes.
+
+### Added
+
+- Add an opt-in TikTokLiveJava integration test for checking real LIVE
+  account connectivity outside the mod runtime.
+
 ## [0.1.2]
 
 ### Changed

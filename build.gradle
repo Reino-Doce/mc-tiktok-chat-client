@@ -165,6 +165,15 @@ dependencies {
 
 tasks.named('test', Test).configure {
     useJUnitPlatform()
+    [
+        'reinodoce.tiktok.live.username',
+        'reinodoce.tiktok.live.httpTimeoutSeconds',
+        'reinodoce.tiktok.live.connectTimeoutSeconds'
+    ].each { propertyName ->
+        if (System.getProperty(propertyName) != null) {
+            systemProperty propertyName, System.getProperty(propertyName)
+        }
+    }
 }
 
 tasks.named('compileJava').configure {
