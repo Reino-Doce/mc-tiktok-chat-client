@@ -18,7 +18,7 @@ class ReinodoceConfigRepositoryTest {
     Path tempDir;
 
     @Test
-    void saveAndLoadRoundTripPreservesRelevantSettings() {
+    void saveAndLoadRoundTripPreservesRelevantSettings() throws IOException {
         ReinodoceConfigRepository repository = new ReinodoceConfigRepository(tempDir);
 
         ReinodoceConfig config = ReinodoceConfig.defaults();
