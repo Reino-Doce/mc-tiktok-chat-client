@@ -314,6 +314,21 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     }
 
     @Override
+    public CommandResult setAlertToastTemplate(AlertEventType eventType, String template) {
+        return coreService.setAlertToastTemplate(eventType, template);
+    }
+
+    @Override
+    public CommandResult setAlertMediaMode(AlertEventType eventType, String mediaMode) {
+        return coreService.setAlertMediaMode(eventType, mediaMode);
+    }
+
+    @Override
+    public CommandResult setAlertCustomImage(AlertEventType eventType, String customImage) {
+        return coreService.setAlertCustomImage(eventType, customImage);
+    }
+
+    @Override
     public CommandResult setAlertGiftMinValue(int value) {
         return coreService.setAlertGiftMinValue(value);
     }

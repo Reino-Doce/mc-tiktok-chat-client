@@ -67,6 +67,60 @@ public final class AlertCommandHandler {
     }
 
     /**
+     * Updates a local alert toast template.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param eventType alert event type
+     * @param template toast template
+     * @return Brigadier command result code
+     */
+    public static int template(
+            ReinodoceCommandService service,
+            CommandSourceStack source,
+            AlertEventType eventType,
+            String template
+    ) {
+        return CommandFeedback.sendResult(source, service.setAlertToastTemplate(eventType, template));
+    }
+
+    /**
+     * Updates a local alert toast media mode.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param eventType alert event type
+     * @param mediaMode toast media mode
+     * @return Brigadier command result code
+     */
+    public static int mediaMode(
+            ReinodoceCommandService service,
+            CommandSourceStack source,
+            AlertEventType eventType,
+            String mediaMode
+    ) {
+        return CommandFeedback.sendResult(source, service.setAlertMediaMode(eventType, mediaMode));
+    }
+
+    /**
+     * Updates a local alert toast custom image.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param eventType alert event type
+     * @param customImage custom image reference
+     * @return Brigadier command result code
+     */
+    public static int customImage(
+            ReinodoceCommandService service,
+            CommandSourceStack source,
+            AlertEventType eventType,
+            String customImage
+    ) {
+        return CommandFeedback.sendResult(source, service.setAlertCustomImage(eventType, customImage));
+    }
+
+    /**
      * Updates the minimum diamond value for gift alerts.
      *
      * @param service command service boundary

@@ -2,6 +2,8 @@ package br.com.reinodoce.mctiktok.config;
 
 import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import br.com.reinodoce.mctiktok.alert.AlertSoundId;
+import br.com.reinodoce.mctiktok.alert.AlertToastMediaMode;
+import br.com.reinodoce.mctiktok.alert.AlertToastTemplate;
 import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import br.com.reinodoce.mctiktok.util.UsernameValidator;
@@ -11,6 +13,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -35,10 +38,14 @@ public class ReinodoceConfig {
     public static final int MAX_HUD_LINES = 12;
     /** Default language setting that follows the Minecraft client language. */
     public static final String DEFAULT_LANGUAGE = LanguageSetting.AUTO;
+    /** Default alert toast template, meaning built-in localized toast text. */
+    public static final String DEFAULT_ALERT_TOAST_TEMPLATE = AlertToastTemplate.DEFAULT;
     private static final int DEFAULT_RECONNECT_SECONDS = 5;
     private static final int DEFAULT_SYNTHETIC_GIFT_MIN_VALUE = 1;
     private static final int DEFAULT_ALERT_GIFT_MIN_VALUE = 1;
+    private static final int MAX_ALERT_CUSTOM_IMAGE_LENGTH = 512;
     private static final String ALERT_EVENT_TYPE_ARGUMENT = "eventType";
+    private static final String DEFAULT_CUSTOM_IMAGE = "";
 
     private String lastUsername = "";
     private boolean autoConnectOnStart = false;
@@ -57,16 +64,28 @@ public class ReinodoceConfig {
     private boolean alertGiftSoundEnabled = false;
     private String alertGiftSoundId = AlertSoundId.DEFAULT;
     private boolean alertGiftToastEnabled = false;
+    private String alertGiftToastTemplate = DEFAULT_ALERT_TOAST_TEMPLATE;
+    private String alertGiftMediaMode = AlertToastMediaMode.DEFAULT.id();
+    private String alertGiftCustomImage = DEFAULT_CUSTOM_IMAGE;
     private int alertGiftMinValue = DEFAULT_ALERT_GIFT_MIN_VALUE;
     private boolean alertFollowSoundEnabled = false;
     private String alertFollowSoundId = AlertSoundId.DEFAULT;
     private boolean alertFollowToastEnabled = false;
+    private String alertFollowToastTemplate = DEFAULT_ALERT_TOAST_TEMPLATE;
+    private String alertFollowMediaMode = AlertToastMediaMode.DEFAULT.id();
+    private String alertFollowCustomImage = DEFAULT_CUSTOM_IMAGE;
     private boolean alertJoinSoundEnabled = false;
     private String alertJoinSoundId = AlertSoundId.DEFAULT;
     private boolean alertJoinToastEnabled = false;
+    private String alertJoinToastTemplate = DEFAULT_ALERT_TOAST_TEMPLATE;
+    private String alertJoinMediaMode = AlertToastMediaMode.DEFAULT.id();
+    private String alertJoinCustomImage = DEFAULT_CUSTOM_IMAGE;
     private boolean alertMemberLevelSoundEnabled = false;
     private String alertMemberLevelSoundId = AlertSoundId.DEFAULT;
     private boolean alertMemberLevelToastEnabled = false;
+    private String alertMemberLevelToastTemplate = DEFAULT_ALERT_TOAST_TEMPLATE;
+    private String alertMemberLevelMediaMode = AlertToastMediaMode.DEFAULT.id();
+    private String alertMemberLevelCustomImage = DEFAULT_CUSTOM_IMAGE;
     private String outputMode = OutputMode.CHAT.id();
     private String hudPosition = HudPosition.TOP_LEFT.id();
     private int hudLines = DEFAULT_HUD_LINES;
@@ -111,16 +130,28 @@ public class ReinodoceConfig {
         copy.setAlertSoundEnabled(AlertEventType.GIFT, alertGiftSoundEnabled);
         copy.setAlertSoundId(AlertEventType.GIFT, alertGiftSoundId);
         copy.setAlertToastEnabled(AlertEventType.GIFT, alertGiftToastEnabled);
+        copy.setAlertToastTemplate(AlertEventType.GIFT, alertGiftToastTemplate);
+        copy.setAlertMediaMode(AlertEventType.GIFT, alertGiftMediaMode);
+        copy.setAlertCustomImage(AlertEventType.GIFT, alertGiftCustomImage);
         copy.setAlertGiftMinValue(alertGiftMinValue);
         copy.setAlertSoundEnabled(AlertEventType.FOLLOW, alertFollowSoundEnabled);
         copy.setAlertSoundId(AlertEventType.FOLLOW, alertFollowSoundId);
         copy.setAlertToastEnabled(AlertEventType.FOLLOW, alertFollowToastEnabled);
+        copy.setAlertToastTemplate(AlertEventType.FOLLOW, alertFollowToastTemplate);
+        copy.setAlertMediaMode(AlertEventType.FOLLOW, alertFollowMediaMode);
+        copy.setAlertCustomImage(AlertEventType.FOLLOW, alertFollowCustomImage);
         copy.setAlertSoundEnabled(AlertEventType.JOIN, alertJoinSoundEnabled);
         copy.setAlertSoundId(AlertEventType.JOIN, alertJoinSoundId);
         copy.setAlertToastEnabled(AlertEventType.JOIN, alertJoinToastEnabled);
+        copy.setAlertToastTemplate(AlertEventType.JOIN, alertJoinToastTemplate);
+        copy.setAlertMediaMode(AlertEventType.JOIN, alertJoinMediaMode);
+        copy.setAlertCustomImage(AlertEventType.JOIN, alertJoinCustomImage);
         copy.setAlertSoundEnabled(AlertEventType.MEMBER_LEVEL, alertMemberLevelSoundEnabled);
         copy.setAlertSoundId(AlertEventType.MEMBER_LEVEL, alertMemberLevelSoundId);
         copy.setAlertToastEnabled(AlertEventType.MEMBER_LEVEL, alertMemberLevelToastEnabled);
+        copy.setAlertToastTemplate(AlertEventType.MEMBER_LEVEL, alertMemberLevelToastTemplate);
+        copy.setAlertMediaMode(AlertEventType.MEMBER_LEVEL, alertMemberLevelMediaMode);
+        copy.setAlertCustomImage(AlertEventType.MEMBER_LEVEL, alertMemberLevelCustomImage);
         copy.setOutputMode(outputMode);
         copy.setHudPosition(hudPosition);
         copy.setHudLines(hudLines);
@@ -499,6 +530,77 @@ public class ReinodoceConfig {
         }
     }
 
+    public String getAlertToastTemplate(AlertEventType eventType) {
+        return switch (requireAlertEventType(eventType)) {
+            case GIFT -> AlertToastTemplate.sanitize(alertGiftToastTemplate);
+            case FOLLOW -> AlertToastTemplate.sanitize(alertFollowToastTemplate);
+            case JOIN -> AlertToastTemplate.sanitize(alertJoinToastTemplate);
+            case MEMBER_LEVEL -> AlertToastTemplate.sanitize(alertMemberLevelToastTemplate);
+            default -> AlertToastTemplate.DEFAULT;
+        };
+    }
+
+    public void setAlertToastTemplate(AlertEventType eventType, String template) {
+        String sanitized = AlertToastTemplate.sanitize(template);
+        switch (requireAlertEventType(eventType)) {
+            case GIFT -> alertGiftToastTemplate = sanitized;
+            case FOLLOW -> alertFollowToastTemplate = sanitized;
+            case JOIN -> alertJoinToastTemplate = sanitized;
+            case MEMBER_LEVEL -> alertMemberLevelToastTemplate = sanitized;
+            default -> throw new IllegalArgumentException(ALERT_EVENT_TYPE_ARGUMENT);
+        }
+    }
+
+    public static boolean isValidAlertToastTemplate(String template) {
+        return AlertToastTemplate.isValid(template);
+    }
+
+    public static Optional<String> parseAlertMediaModeId(String mediaMode) {
+        return AlertToastMediaMode.parse(mediaMode).map(AlertToastMediaMode::id);
+    }
+
+    public String getAlertMediaMode(AlertEventType eventType) {
+        return switch (requireAlertEventType(eventType)) {
+            case GIFT -> AlertToastMediaMode.fromString(alertGiftMediaMode).id();
+            case FOLLOW -> AlertToastMediaMode.fromString(alertFollowMediaMode).id();
+            case JOIN -> AlertToastMediaMode.fromString(alertJoinMediaMode).id();
+            case MEMBER_LEVEL -> AlertToastMediaMode.fromString(alertMemberLevelMediaMode).id();
+            default -> AlertToastMediaMode.DEFAULT.id();
+        };
+    }
+
+    public void setAlertMediaMode(AlertEventType eventType, String mediaMode) {
+        String sanitized = AlertToastMediaMode.fromString(mediaMode).id();
+        switch (requireAlertEventType(eventType)) {
+            case GIFT -> alertGiftMediaMode = sanitized;
+            case FOLLOW -> alertFollowMediaMode = sanitized;
+            case JOIN -> alertJoinMediaMode = sanitized;
+            case MEMBER_LEVEL -> alertMemberLevelMediaMode = sanitized;
+            default -> throw new IllegalArgumentException(ALERT_EVENT_TYPE_ARGUMENT);
+        }
+    }
+
+    public String getAlertCustomImage(AlertEventType eventType) {
+        return switch (requireAlertEventType(eventType)) {
+            case GIFT -> sanitizeAlertCustomImage(alertGiftCustomImage);
+            case FOLLOW -> sanitizeAlertCustomImage(alertFollowCustomImage);
+            case JOIN -> sanitizeAlertCustomImage(alertJoinCustomImage);
+            case MEMBER_LEVEL -> sanitizeAlertCustomImage(alertMemberLevelCustomImage);
+            default -> DEFAULT_CUSTOM_IMAGE;
+        };
+    }
+
+    public void setAlertCustomImage(AlertEventType eventType, String customImage) {
+        String sanitized = sanitizeAlertCustomImage(customImage);
+        switch (requireAlertEventType(eventType)) {
+            case GIFT -> alertGiftCustomImage = sanitized;
+            case FOLLOW -> alertFollowCustomImage = sanitized;
+            case JOIN -> alertJoinCustomImage = sanitized;
+            case MEMBER_LEVEL -> alertMemberLevelCustomImage = sanitized;
+            default -> throw new IllegalArgumentException(ALERT_EVENT_TYPE_ARGUMENT);
+        }
+    }
+
     /**
      * Returns the minimum single-gift diamond cost for gift alerts.
      *
@@ -519,6 +621,21 @@ public class ReinodoceConfig {
 
     private static AlertEventType requireAlertEventType(AlertEventType eventType) {
         return Objects.requireNonNull(eventType, ALERT_EVENT_TYPE_ARGUMENT);
+    }
+
+    private static String sanitizeAlertCustomImage(String value) {
+        if (value == null || value.isBlank() || "default".equalsIgnoreCase(value.trim())) {
+            return DEFAULT_CUSTOM_IMAGE;
+        }
+        String trimmed = value.trim();
+        StringBuilder builder = new StringBuilder(Math.min(trimmed.length(), MAX_ALERT_CUSTOM_IMAGE_LENGTH));
+        for (int index = 0; index < trimmed.length() && builder.length() < MAX_ALERT_CUSTOM_IMAGE_LENGTH; index++) {
+            char current = trimmed.charAt(index);
+            if (!Character.isISOControl(current)) {
+                builder.append(current);
+            }
+        }
+        return builder.toString().trim();
     }
 
     /**

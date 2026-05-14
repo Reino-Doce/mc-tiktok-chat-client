@@ -31,6 +31,8 @@ class ReinodoceCoreServiceTest {
     private static final String DE_DE = "de_de";
     private static final String HUD_MODE = "hud";
     private static final String CUSTOM_SOUND_ID = "minecraft:entity.experience_orb.pickup";
+    private static final String CUSTOM_TEMPLATE = "{username} -> {giftName} ({count}/{diamonds})";
+    private static final String CUSTOM_IMAGE = "https://cdn.example/alert.png";
 
     @TempDir
     Path tempDir;
@@ -72,17 +74,44 @@ class ReinodoceCoreServiceTest {
                 AlertEventType.GIFT,
                 CUSTOM_SOUND_ID);
         CommandResult toastResult = service.setAlertToast(AlertEventType.FOLLOW, true);
+        CommandResult templateResult = service.setAlertToastTemplate(AlertEventType.GIFT, CUSTOM_TEMPLATE);
+        CommandResult mediaModeResult = service.setAlertMediaMode(AlertEventType.GIFT, "gift");
+        CommandResult customImageResult = service.setAlertCustomImage(AlertEventType.FOLLOW, CUSTOM_IMAGE);
         CommandResult minValueResult = service.setAlertGiftMinValue(100);
         ReinodoceConfig loaded = repository.load();
 
         assertTrue(soundResult.success());
         assertTrue(soundIdResult.success());
         assertTrue(toastResult.success());
+        assertTrue(templateResult.success());
+        assertTrue(mediaModeResult.success());
+        assertTrue(customImageResult.success());
         assertTrue(minValueResult.success());
         assertTrue(loaded.isAlertSoundEnabled(AlertEventType.GIFT));
         assertEquals(CUSTOM_SOUND_ID, loaded.getAlertSoundId(AlertEventType.GIFT));
         assertTrue(loaded.isAlertToastEnabled(AlertEventType.FOLLOW));
+        assertEquals(CUSTOM_TEMPLATE, loaded.getAlertToastTemplate(AlertEventType.GIFT));
+        assertEquals("gift", loaded.getAlertMediaMode(AlertEventType.GIFT));
+        assertEquals(CUSTOM_IMAGE, loaded.getAlertCustomImage(AlertEventType.FOLLOW));
         assertEquals(100, loaded.getAlertGiftMinValue());
+    }
+
+    @Test
+    void invalidAlertTemplateAndMediaModeAreRejectedWithoutPersisting() {
+        Path configFile = tempDir.resolve("invalid-alert-toast-format.json");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        ReinodoceCoreService service = new ReinodoceCoreService(ChatEventSink.noop(), repository, () -> EN_US);
+        service.setAlertToastTemplate(AlertEventType.GIFT, CUSTOM_TEMPLATE);
+        service.setAlertMediaMode(AlertEventType.GIFT, "profile");
+
+        CommandResult templateResult = service.setAlertToastTemplate(AlertEventType.GIFT, "{username} {bad}");
+        CommandResult mediaModeResult = service.setAlertMediaMode(AlertEventType.GIFT, "bad-mode");
+        ReinodoceConfig loaded = repository.load();
+
+        assertFalse(templateResult.success());
+        assertFalse(mediaModeResult.success());
+        assertEquals(CUSTOM_TEMPLATE, loaded.getAlertToastTemplate(AlertEventType.GIFT));
+        assertEquals("profile", loaded.getAlertMediaMode(AlertEventType.GIFT));
     }
 
     @Test

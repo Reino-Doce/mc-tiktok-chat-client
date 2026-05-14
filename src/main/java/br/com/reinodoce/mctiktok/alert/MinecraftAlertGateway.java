@@ -36,4 +36,17 @@ public class MinecraftAlertGateway implements AlertSink {
         Component messageComponent = Component.literal(message);
         platformBridge.runOnClientThread(() -> platformBridge.showAlertToast(titleComponent, messageComponent));
     }
+
+    @Override
+    public void showAlertToast(AlertToastPayload payload) {
+        if (payload == null) {
+            return;
+        }
+        Component titleComponent = Component.literal(payload.title());
+        Component messageComponent = Component.literal(payload.message());
+        platformBridge.runOnClientThread(() -> platformBridge.showAlertToast(
+                titleComponent,
+                messageComponent,
+                payload));
+    }
 }

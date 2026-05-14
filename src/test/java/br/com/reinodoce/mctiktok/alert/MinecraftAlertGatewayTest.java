@@ -65,6 +65,29 @@ class MinecraftAlertGatewayTest {
         assertFalse(bridge.toastRanOffClientThread());
     }
 
+    @Test
+    void richToastSchedulingFallsBackSafelyToSystemToastPayload() {
+        RecordingPlatformBridge bridge = new RecordingPlatformBridge();
+        MinecraftAlertGateway gateway = new MinecraftAlertGateway(bridge);
+        AlertToastPayload payload = new AlertToastPayload(
+                AlertEventType.FOLLOW,
+                TITLE,
+                MESSAGE,
+                AlertToastMediaMode.PROFILE,
+                "https://cdn.example/alice.png",
+                "https://cdn.example/alice.png",
+                "",
+                "");
+
+        gateway.showAlertToast(payload);
+        bridge.runNextClientTask();
+
+        assertEquals(TITLE, bridge.toastTitle().getString());
+        assertEquals(MESSAGE, bridge.toastMessage().getString());
+        assertEquals(payload, bridge.payload());
+        assertFalse(bridge.toastRanOffClientThread());
+    }
+
     private static final class RecordingPlatformBridge implements MinecraftPlatformBridge {
         private final Queue<Runnable> clientTasks = new ArrayDeque<>();
         private int recordedSounds;
@@ -74,6 +97,7 @@ class MinecraftAlertGatewayTest {
         private String recordedSoundId = "";
         private Component recordedToastTitle = Component.literal("");
         private Component recordedToastMessage = Component.literal("");
+        private AlertToastPayload recordedPayload;
 
         @Override
         public void runOnClientThread(Runnable runnable) {
@@ -112,6 +136,12 @@ class MinecraftAlertGatewayTest {
         }
 
         @Override
+        public void showAlertToast(Component title, Component message, AlertToastPayload payload) {
+            showAlertToast(title, message);
+            recordedPayload = payload;
+        }
+
+        @Override
         public boolean isClientReady() {
             return true;
         }
@@ -142,6 +172,10 @@ class MinecraftAlertGatewayTest {
 
         private Component toastMessage() {
             return recordedToastMessage;
+        }
+
+        private AlertToastPayload payload() {
+            return recordedPayload;
         }
 
         private void runNextClientTask() {

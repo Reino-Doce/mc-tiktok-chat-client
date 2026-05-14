@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
+import br.com.reinodoce.mctiktok.alert.AlertMediaReferences;
 import br.com.reinodoce.mctiktok.alert.AlertService;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
@@ -100,8 +101,18 @@ final class TikTokGiftEmitter {
             sessionEventLogger.log(SessionLogEvent.gift(
                     username, giftName, count, (long) count * Math.max(0, emission.diamondCost())));
             statsTracker.recordGift(emission.userId(), username, emission.statsCount(), emission.diamondCost());
-            alertService.gift(config, username, giftName, count, emission.diamondCost());
+            alertService.gift(
+                    config,
+                    username,
+                    giftName,
+                    count,
+                    emission.diamondCost(),
+                    alertMedia(emission));
         }
+    }
+
+    private static AlertMediaReferences alertMedia(GiftComboAggregator.GiftEmission emission) {
+        return new AlertMediaReferences(emission.avatarUrl(), emission.giftIconUrl());
     }
 
     private static Gift toGift(GiftComboAggregator.GiftEmission emission) {

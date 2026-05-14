@@ -9,8 +9,9 @@
   <!-- Test sources favor readability over wrapping for fixture literals and protobuf builders. -->
   <suppress checks="LineLength" files=".*[\\/]src[\\/]test[\\/].*"/>
 
-  <!-- Persisted config mirrors public JSON fields; alert settings push the data carrier beyond file-length caps. -->
+  <!-- Persisted config mirrors public JSON fields; alert settings push the data carrier beyond size caps. -->
   <suppress checks="FileLength" files=".*[\\/]ReinodoceConfig\.java"/>
+  <suppress checks="JavaNCSS" files=".*[\\/]ReinodoceConfig\.java"/>
 
   <!-- Command facade mirrors the public command surface; new settings push the facade beyond structural caps. -->
   <suppress checks="JavaNCSS" files=".*[\\/]ReinodoceCoreService\.java"/>

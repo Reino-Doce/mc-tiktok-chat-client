@@ -2,6 +2,7 @@ package br.com.reinodoce.mctiktok.command;
 
 import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import br.com.reinodoce.mctiktok.alert.AlertSoundId;
+import br.com.reinodoce.mctiktok.alert.AlertToastMediaMode;
 import br.com.reinodoce.mctiktok.command.handlers.AlertCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.ConnectCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.DisconnectCommandHandler;
@@ -43,6 +44,7 @@ public final class ReinodoceCommandTree {
     private static final String ARG_LINES = "lines";
     private static final String ARG_LOCALE = "locale";
     private static final String ARG_SOUND_ID = "soundId";
+    private static final String ARG_CUSTOM_IMAGE = "customImage";
 
     private ReinodoceCommandTree() {
     }
@@ -306,7 +308,30 @@ public final class ReinodoceCommandTree {
                                         service,
                                         ctx.getSource(),
                                         eventType,
-                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))));
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal(ARG_TEMPLATE)
+                        .then(Commands.argument(ARG_TEMPLATE, StringArgumentType.greedyString())
+                                .executes(ctx -> AlertCommandHandler.template(
+                                        service,
+                                        ctx.getSource(),
+                                        eventType,
+                                        StringArgumentType.getString(ctx, ARG_TEMPLATE)))))
+                .then(Commands.literal("media-mode")
+                        .then(Commands.argument(ARG_MODE, StringArgumentType.string())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                        AlertToastMediaMode.ids(), builder))
+                                .executes(ctx -> AlertCommandHandler.mediaMode(
+                                        service,
+                                        ctx.getSource(),
+                                        eventType,
+                                        StringArgumentType.getString(ctx, ARG_MODE)))))
+                .then(Commands.literal("custom-image")
+                        .then(Commands.argument(ARG_CUSTOM_IMAGE, StringArgumentType.greedyString())
+                                .executes(ctx -> AlertCommandHandler.customImage(
+                                        service,
+                                        ctx.getSource(),
+                                        eventType,
+                                        StringArgumentType.getString(ctx, ARG_CUSTOM_IMAGE)))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> loggingBranch(ReinodoceCommandService service) {

@@ -110,16 +110,34 @@ above. They never send packets or chat messages to the server.
 | `/reinodoce alert gift sound <true\|false>` | boolean | `false` | Play a local sound for surfaced gifts that pass `alertGiftMinValue`. |
 | `/reinodoce alert gift sound-id <soundId\|default>` | namespaced Minecraft sound resource id, or `default` | `default` | Sets the sound used when gift sound alerts are enabled. `default` plays `minecraft:ui.toast.in`; custom ids use resources such as `minecraft:entity.experience_orb.pickup`. Malformed ids are rejected. If a well-formed id is unavailable at playback, the default sound is used. |
 | `/reinodoce alert gift toast <true\|false>` | boolean | `false` | Show a local toast for surfaced gifts that pass `alertGiftMinValue`. |
+| `/reinodoce alert gift template <template\|default>` | text | `default` | Sets the gift toast text template. Supported tokens: `{username}`, `{giftName}`, `{count}`, `{diamonds}`, `{profileImage}`, `{giftImage}`. `default` restores the built-in localized text. Unknown tokens are rejected. |
+| `/reinodoce alert gift media-mode <none\|profile\|custom\|profile-custom\|gift\|inline>` | enum | `none` | Selects the gift toast media mode independently from other alert types. `gift` shows TikTok's gift image when available. |
+| `/reinodoce alert gift custom-image <value\|default>` | image reference | `default` | Sets or clears the gift toast custom image reference used by `custom` and `profile-custom`. Use `https://...`, `resource://namespace/path`, or a namespaced resource id such as `reinodoce_mctiktok:textures/gui/no_user_image.png`. Missing or failed media loads fall back safely. |
 | `/reinodoce alert gift-min-value <value>` | integer >= 0 | `1` | Minimum single-gift diamond value required for gift alerts. |
 | `/reinodoce alert follow sound <true\|false>` | boolean | `false` | Play a local sound for surfaced follow events. |
 | `/reinodoce alert follow sound-id <soundId\|default>` | namespaced Minecraft sound resource id, or `default` | `default` | Sets the sound used when follow sound alerts are enabled. |
 | `/reinodoce alert follow toast <true\|false>` | boolean | `false` | Show a local toast for surfaced follow events. |
+| `/reinodoce alert follow template <template\|default>` | text | `default` | Sets the follow toast text template. Supported tokens include `{username}` and `{profileImage}`. |
+| `/reinodoce alert follow media-mode <none\|profile\|custom\|profile-custom\|gift\|inline>` | enum | `none` | Selects the follow toast media hint independently from other alert types. `profile` uses TikTok's user profile image when available. |
+| `/reinodoce alert follow custom-image <value\|default>` | image reference | `default` | Sets or clears the follow toast custom image reference. |
 | `/reinodoce alert join sound <true\|false>` | boolean | `false` | Play a local sound for surfaced join events. Join alerts use a global cooldown to avoid noise. |
 | `/reinodoce alert join sound-id <soundId\|default>` | namespaced Minecraft sound resource id, or `default` | `default` | Sets the sound used when join sound alerts are enabled. |
 | `/reinodoce alert join toast <true\|false>` | boolean | `false` | Show a local toast for surfaced join events. Join alerts use a global cooldown to avoid noise. |
+| `/reinodoce alert join template <template\|default>` | text | `default` | Sets the join toast text template. Supported tokens include `{username}` and `{profileImage}`. |
+| `/reinodoce alert join media-mode <none\|profile\|custom\|profile-custom\|gift\|inline>` | enum | `none` | Selects the join toast media hint independently from other alert types. |
+| `/reinodoce alert join custom-image <value\|default>` | image reference | `default` | Sets or clears the join toast custom image reference. |
 | `/reinodoce alert member-level sound <true\|false>` | boolean | `false` | Play a local sound for surfaced member-level-up events. |
 | `/reinodoce alert member-level sound-id <soundId\|default>` | namespaced Minecraft sound resource id, or `default` | `default` | Sets the sound used when member-level sound alerts are enabled. |
 | `/reinodoce alert member-level toast <true\|false>` | boolean | `false` | Show a local toast for surfaced member-level-up events. |
+| `/reinodoce alert member-level template <template\|default>` | text | `default` | Sets the member-level toast text template. Supported tokens include `{username}`, `{memberLevel}`, and `{profileImage}`. |
+| `/reinodoce alert member-level media-mode <none\|profile\|custom\|profile-custom\|gift\|inline>` | enum | `none` | Selects the member-level toast media hint independently from other alert types. |
+| `/reinodoce alert member-level custom-image <value\|default>` | image reference | `default` | Sets or clears the member-level toast custom image reference. |
+
+Toast template tokens resolve to blank when that event does not provide a
+value. Profile and gift image tokens expose the resolved media reference
+as text. Media modes draw the selected image in the toast when the active
+platform renderer supports it; failed image loads show a safe placeholder
+without breaking the toast.
 
 ## Quick example
 
