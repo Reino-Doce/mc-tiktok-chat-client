@@ -44,6 +44,22 @@ Example:
 /reinodoce settings format "{prefix} <{username}> {message}"
 ```
 
+## Local session logging
+
+Local session logging writes accepted mirrored LIVE events to files under
+`logs/reinodoce/` inside the Minecraft instance. Logging is opt-in because
+files may contain TikTok usernames and chat content.
+
+| Command | Argument | Default | Effect |
+| ------- | -------- | ------- | ------ |
+| `/reinodoce logging enabled <true\|false>` | boolean | `false` | Enables or disables local session event logs. When enabled during a connection, logging starts for the current session; disabling closes the active file. |
+| `/reinodoce logging format <jsonl\|text>` | enum | `jsonl` | Selects JSON Lines or plain text key-value output. Format changes apply to the next opened session file. |
+
+Each successful connection opens one file such as
+`logs/reinodoce/live-2026-05-13T20-30-00.jsonl`. A duplicate timestamp
+adds a numeric suffix, for example `live-2026-05-13T20-30-00-2.jsonl`.
+Files close on disconnect, reconnect, or when logging is disabled.
+
 ## Rules (incoming chat filtering)
 
 Rules decide which TikTok chat comments are mirrored into Minecraft.
@@ -83,6 +99,7 @@ joins, member-level changes) into visible `[LIVE]`-prefixed chat lines.
 /reinodoce settings reconnect 5
 /reinodoce rule follower true
 /reinodoce rule min-member-level 1
+/reinodoce logging enabled true
 /reinodoce synthetic gift-combo bulk
 /reinodoce connect @yourusername
 /reinodoce settings auto-connect true

@@ -4,6 +4,8 @@ import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
 import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
+import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
+import br.com.reinodoce.mctiktok.logging.SessionLogEvent;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
 import io.github.jwdeveloper.tiktok.data.events.TikTokCommentEvent;
@@ -36,7 +38,8 @@ final class TikTokEventDispatcher {
             TikTokGiftEmitter giftEmitter,
             GiftComboAggregator giftComboAggregator,
             SessionStatsTracker statsTracker,
-            ModerationDuplicateTracker moderationDuplicateTracker
+            ModerationDuplicateTracker moderationDuplicateTracker,
+            SessionEventLogger sessionEventLogger
     ) {
     }
 
@@ -48,8 +51,9 @@ final class TikTokEventDispatcher {
         ReinodoceConfig config = dependencies.configSupplier().get();
         User user = event.getUser();
         String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user));
+        int memberLevel = dependencies.memberLevelResolver().resolveLevel(user);
         if (!dependencies.ruleEngine().shouldDisplayComment(
-                config, user, dependencies.memberLevelResolver().resolveLevel(user), username, message)
+                config, user, memberLevel, username, message)
                 || dependencies.renderedTracker().wasRecentlyRendered(username, message)
                 || dependencies.moderationDuplicateTracker().isDuplicate(
                         message, config.getRuleDuplicateCooldownSeconds())) {
@@ -57,6 +61,7 @@ final class TikTokEventDispatcher {
         }
         dependencies.renderedTracker().remember(username, message);
         sendComment(config, username, user, message);
+        dependencies.sessionEventLogger().log(SessionLogEvent.chat(username, message, memberLevel));
         dependencies.moderationDuplicateTracker().remember(message, config.getRuleDuplicateCooldownSeconds());
         dependencies.statsTracker().recordComment(TikTokUserNames.resolveUserId(user), username);
     }
@@ -124,6 +129,7 @@ final class TikTokEventDispatcher {
         } else {
             kind.sendPlain(dependencies.chatGateway(), config, username);
         }
+        dependencies.sessionEventLogger().log(kind.logEvent(username));
     }
 
     private enum SyntheticAuthorKind {
@@ -137,6 +143,11 @@ final class TikTokEventDispatcher {
             void sendPlain(ChatEventSink sink, ReinodoceConfig config, String username) {
                 sink.sendSyntheticFollow(config, username);
             }
+
+            @Override
+            SessionLogEvent logEvent(String username) {
+                return SessionLogEvent.follow(username);
+            }
         },
         JOIN {
             @Override
@@ -148,10 +159,17 @@ final class TikTokEventDispatcher {
             void sendPlain(ChatEventSink sink, ReinodoceConfig config, String username) {
                 sink.sendSyntheticJoin(config, username);
             }
+
+            @Override
+            SessionLogEvent logEvent(String username) {
+                return SessionLogEvent.join(username);
+            }
         };
 
         abstract void sendRich(ChatEventSink sink, ReinodoceConfig config, RichLiveMessage rich);
 
         abstract void sendPlain(ChatEventSink sink, ReinodoceConfig config, String username);
+
+        abstract SessionLogEvent logEvent(String username);
     }
 }

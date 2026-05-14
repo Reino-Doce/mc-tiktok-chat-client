@@ -53,6 +53,8 @@
   "reinodoce.command.set.chat_log": "Chat log = %s.",
   "reinodoce.command.set.chat_prefix": "Prefiks chat = %s.",
   "reinodoce.command.set.chat_format": "Format chat = %s.",
+  "reinodoce.command.set.session_logging": "Session logging = %s.",
+  "reinodoce.command.set.session_logging_format": "Session log format = %s.",
   "reinodoce.command.reload.ok": "Konfigurasi dimuat ulang.",
 
 
@@ -89,6 +91,8 @@
   "reinodoce.status.chat_format": "Format chat: %s",
   "reinodoce.status.chat_emotes": "Chat emotes: %s",
   "reinodoce.status.chat_log": "Chat log: %s",
+  "reinodoce.status.session_logging": "Session logging: %s",
+  "reinodoce.status.session_logging_format": "Session log format: %s",
   "reinodoce.status.session_stats": "Session stats: messages=%s chatters=%s gifts=%s diamonds=%s",
   "reinodoce.status.next_reconnect": "Reconnect berikutnya: %s"
 }

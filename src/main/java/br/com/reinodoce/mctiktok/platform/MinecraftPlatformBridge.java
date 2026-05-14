@@ -2,6 +2,8 @@ package br.com.reinodoce.mctiktok.platform;
 
 import net.minecraft.network.chat.Component;
 
+import java.nio.file.Path;
+
 /**
  * Minimal Minecraft client adapter used by core services without depending directly on Forge runtime state.
  */
@@ -35,5 +37,14 @@ public interface MinecraftPlatformBridge {
      */
     default String selectedLanguageCode() {
         return "en_us";
+    }
+
+    /**
+     * Returns the Minecraft logs directory.
+     *
+     * @return logs directory path
+     */
+    default Path logsDirectory() {
+        return Path.of("logs");
     }
 }

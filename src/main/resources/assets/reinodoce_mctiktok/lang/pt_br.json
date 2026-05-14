@@ -53,6 +53,8 @@
   "reinodoce.command.set.chat_log": "Log do chat = %s.",
   "reinodoce.command.set.chat_prefix": "Prefixo do chat = %s.",
   "reinodoce.command.set.chat_format": "Formato do chat = %s.",
+  "reinodoce.command.set.session_logging": "Log de sessao = %s.",
+  "reinodoce.command.set.session_logging_format": "Formato do log de sessao = %s.",
   "reinodoce.command.reload.ok": "Configuracao recarregada.",
 
 
@@ -89,6 +91,8 @@
   "reinodoce.status.chat_format": "Formato do chat: %s",
   "reinodoce.status.chat_emotes": "Chat emotes: %s",
   "reinodoce.status.chat_log": "Log do chat: %s",
+  "reinodoce.status.session_logging": "Log de sessao: %s",
+  "reinodoce.status.session_logging_format": "Formato do log de sessao: %s",
   "reinodoce.status.session_stats": "Estatisticas: mensagens=%s chatters=%s presentes=%s diamonds=%s",
   "reinodoce.status.next_reconnect": "Proximo reconnect: %s"
 }

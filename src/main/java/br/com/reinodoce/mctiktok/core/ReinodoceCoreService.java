@@ -6,6 +6,8 @@ import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
 import br.com.reinodoce.mctiktok.i18n.Translations;
+import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
+import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
 import br.com.reinodoce.mctiktok.state.LiveSessionState;
@@ -13,9 +15,11 @@ import br.com.reinodoce.mctiktok.state.RuntimeSettingsState;
 import br.com.reinodoce.mctiktok.tiktok.MemberLevelResolver;
 import br.com.reinodoce.mctiktok.tiktok.SessionStatsTracker;
 import br.com.reinodoce.mctiktok.tiktok.TikTokClientFacade;
+import br.com.reinodoce.mctiktok.tiktok.TikTokRuntimeServices;
 import br.com.reinodoce.mctiktok.util.MessageDeduplicator;
 import br.com.reinodoce.mctiktok.util.UsernameValidator;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -33,6 +37,7 @@ import java.util.function.Supplier;
 @SuppressWarnings("PMD.TooManyMethods")
 public class ReinodoceCoreService implements ReinodoceCommandService {
     private static final int DEDUPLICATION_WINDOW_MINUTES = 3;
+    private static final Path DEFAULT_SESSION_LOG_DIRECTORY = Path.of("logs", "reinodoce");
 
     private final ReinodoceConfigRepository configRepository;
     private final RuntimeSettingsState settingsState;
@@ -61,6 +66,23 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
             ReinodoceConfigRepository configRepository,
             Supplier<String> languageSupplier
     ) {
+        this(chatEventSink, configRepository, languageSupplier, DEFAULT_SESSION_LOG_DIRECTORY);
+    }
+
+    /**
+     * Creates the core service.
+     *
+     * @param chatEventSink chat sink used for rendered TikTok events
+     * @param configRepository persisted configuration repository
+     * @param languageSupplier selected client language supplier
+     * @param sessionLogDirectory local session log directory
+     */
+    public ReinodoceCoreService(
+            ChatEventSink chatEventSink,
+            ReinodoceConfigRepository configRepository,
+            Supplier<String> languageSupplier,
+            Path sessionLogDirectory
+    ) {
         this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
         this.settingsState = new RuntimeSettingsState();
         MessageRuleEngine ruleEngine = new MessageRuleEngine();
@@ -68,7 +90,9 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         MessageDeduplicator deduplicator = new MessageDeduplicator(Duration.ofMinutes(DEDUPLICATION_WINDOW_MINUTES));
         this.tikTokClientFacade = new TikTokClientFacade(
                 settingsState::getSnapshot,
-                Objects.requireNonNull(chatEventSink, "chatEventSink"),
+                new TikTokRuntimeServices(
+                        Objects.requireNonNull(chatEventSink, "chatEventSink"),
+                        new SessionEventLogger(Objects.requireNonNull(sessionLogDirectory, "sessionLogDirectory"))),
                 ruleEngine,
                 memberLevelResolver,
                 deduplicator,
@@ -155,6 +179,8 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.chat_format", config.getChatFormat()));
         lines.add(Translations.tr("reinodoce.status.chat_emotes", config.isChatEmotesEnabled()));
         lines.add(Translations.tr("reinodoce.status.chat_log", config.isChatLogEnabled()));
+        lines.add(Translations.tr("reinodoce.status.session_logging", config.isSessionLoggingEnabled()));
+        lines.add(Translations.tr("reinodoce.status.session_logging_format", config.getSessionLoggingFormat()));
         SessionStatsTracker.Snapshot stats = tikTokClientFacade.stats();
         lines.add(Translations.tr("reinodoce.status.session_stats",
                 stats.messages(), stats.uniqueChatters(), stats.gifts(), stats.diamonds()));
@@ -396,6 +422,27 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         config.setChatFormat(format);
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.set.chat_format", config.getChatFormat()));
+    }
+
+    @Override
+    public CommandResult setSessionLoggingEnabled(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setSessionLoggingEnabled(enabled);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.session_logging", enabled));
+    }
+
+    @Override
+    public CommandResult setSessionLoggingFormat(String format) {
+        ensureInitialized();
+        SessionLogFormat parsed = SessionLogFormat.fromString(format);
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setSessionLoggingFormat(parsed.id());
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.session_logging_format", parsed.id()));
     }
 
     @Override

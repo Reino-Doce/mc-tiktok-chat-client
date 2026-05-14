@@ -11,6 +11,7 @@ import net.minecraft.network.chat.MessageSignature;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.file.Path;
 
 /**
  * Forge 1.20.1 implementation of the Minecraft client adapter.
@@ -54,6 +55,15 @@ public class Forge1201PlatformBridge implements MinecraftPlatformBridge {
         return selected == null || selected.isBlank()
                 ? MinecraftPlatformBridge.super.selectedLanguageCode()
                 : selected;
+    }
+
+    @Override
+    public Path logsDirectory() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null || minecraft.gameDirectory == null) {
+            return MinecraftPlatformBridge.super.logsDirectory();
+        }
+        return minecraft.gameDirectory.toPath().resolve("logs");
     }
 
     private static Method findSilentAddMessageMethod() {

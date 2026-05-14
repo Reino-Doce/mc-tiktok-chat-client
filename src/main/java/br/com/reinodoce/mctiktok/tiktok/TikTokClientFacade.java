@@ -1,6 +1,5 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
-import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.MessageSanitizer;
 import br.com.reinodoce.mctiktok.command.CommandResult;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
@@ -26,7 +25,7 @@ public class TikTokClientFacade {
      * Creates a facade and wires the TikTok event handlers.
      *
      * @param configSupplier current configuration supplier
-     * @param chatGateway chat event sink
+     * @param runtimeServices runtime side-effect services
      * @param ruleEngine message rule engine
      * @param memberLevelResolver member-level resolver
      * @param giftDeduplicator gift deduplicator
@@ -34,14 +33,15 @@ public class TikTokClientFacade {
      */
     public TikTokClientFacade(
             Supplier<ReinodoceConfig> configSupplier,
-            ChatEventSink chatGateway,
+            TikTokRuntimeServices runtimeServices,
             MessageRuleEngine ruleEngine,
             MemberLevelResolver memberLevelResolver,
             MessageDeduplicator giftDeduplicator,
             Supplier<String> languageSupplier
     ) {
         TikTokFacadeWiring wiring = TikTokFacadeWiring.assemble(
-                configSupplier, chatGateway, ruleEngine, memberLevelResolver, giftDeduplicator, languageSupplier);
+                configSupplier, runtimeServices, ruleEngine, memberLevelResolver,
+                giftDeduplicator, languageSupplier);
         wiring.bindFacade(this);
         this.sessionState = wiring.sessionState();
         this.statsTracker = wiring.statsTracker();

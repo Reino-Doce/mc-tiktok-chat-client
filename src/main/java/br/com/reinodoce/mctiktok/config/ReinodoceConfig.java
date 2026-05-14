@@ -1,5 +1,6 @@
 package br.com.reinodoce.mctiktok.config;
 
+import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import br.com.reinodoce.mctiktok.util.UsernameValidator;
 
@@ -13,7 +14,13 @@ import java.util.Set;
  * Persisted client configuration for the `/reinodoce` command surface.
  */
 // Config intentionally mirrors persisted JSON fields and validation rules.
-@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.DataClass", "PMD.GodClass", "PMD.TooManyFields"})
+@SuppressWarnings({
+    "PMD.CyclomaticComplexity",
+    "PMD.DataClass",
+    "PMD.ExcessivePublicCount",
+    "PMD.GodClass",
+    "PMD.TooManyFields"
+})
 public class ReinodoceConfig {
     /** Default prefix used before rendered LIVE chat lines. */
     public static final String DEFAULT_CHAT_PREFIX = "[LIVE]";
@@ -40,6 +47,8 @@ public class ReinodoceConfig {
     private String chatFormat = DEFAULT_CHAT_FORMAT;
     private boolean chatEmotesEnabled = true;
     private boolean chatLogEnabled = false;
+    private boolean sessionLoggingEnabled = false;
+    private String sessionLoggingFormat = SessionLogFormat.JSONL.id();
 
     /**
      * Creates a configuration instance populated with default values.
@@ -75,6 +84,8 @@ public class ReinodoceConfig {
         copy.setChatFormat(chatFormat);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
         copy.setChatLogEnabled(chatLogEnabled);
+        copy.setSessionLoggingEnabled(sessionLoggingEnabled);
+        copy.setSessionLoggingFormat(sessionLoggingFormat);
         return copy;
     }
 
@@ -456,6 +467,42 @@ public class ReinodoceConfig {
      */
     public void setChatLogEnabled(boolean chatLogEnabled) {
         this.chatLogEnabled = chatLogEnabled;
+    }
+
+    /**
+     * Returns whether local session event logging is enabled.
+     *
+     * @return local session logging state
+     */
+    public boolean isSessionLoggingEnabled() {
+        return sessionLoggingEnabled;
+    }
+
+    /**
+     * Sets whether local session event logging is enabled.
+     *
+     * @param sessionLoggingEnabled local session logging state
+     */
+    public void setSessionLoggingEnabled(boolean sessionLoggingEnabled) {
+        this.sessionLoggingEnabled = sessionLoggingEnabled;
+    }
+
+    /**
+     * Returns the local session event log format.
+     *
+     * @return session log format id
+     */
+    public String getSessionLoggingFormat() {
+        return sessionLoggingFormat;
+    }
+
+    /**
+     * Sets the local session event log format.
+     *
+     * @param sessionLoggingFormat session log format id
+     */
+    public void setSessionLoggingFormat(String sessionLoggingFormat) {
+        this.sessionLoggingFormat = SessionLogFormat.fromString(sessionLoggingFormat).id();
     }
 
     private static List<String> normalizeTerms(List<String> values) {

@@ -2,12 +2,14 @@ package br.com.reinodoce.mctiktok.command;
 
 import br.com.reinodoce.mctiktok.command.handlers.ConnectCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.DisconnectCommandHandler;
+import br.com.reinodoce.mctiktok.command.handlers.LoggingCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.ReloadCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.RuleCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.SettingsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.StatsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.StatusCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.SyntheticCommandHandler;
+import br.com.reinodoce.mctiktok.logging.SessionLogFormat;
 import br.com.reinodoce.mctiktok.rules.GiftComboMode;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -24,6 +26,7 @@ import java.util.Objects;
  */
 public final class ReinodoceCommandTree {
     private static final String ARG_ENABLED = "enabled";
+    private static final String ARG_FORMAT = "format";
     private static final String ARG_TEMPLATE = "template";
     private static final String ARG_VALUE = "value";
     private static final String ARG_USERNAME = "username";
@@ -49,6 +52,7 @@ public final class ReinodoceCommandTree {
                 .then(settingsBranch(commandService))
                 .then(ruleBranch(commandService))
                 .then(syntheticBranch(commandService))
+                .then(loggingBranch(commandService))
                 .then(reloadBranch(commandService));
     }
 
@@ -113,7 +117,7 @@ public final class ReinodoceCommandTree {
                                         service,
                                         ctx.getSource(),
                                         StringArgumentType.getString(ctx, ARG_VALUE)))))
-                .then(Commands.literal("format")
+                .then(Commands.literal(ARG_FORMAT)
                         .then(Commands.argument(ARG_TEMPLATE, StringArgumentType.greedyString())
                                 .executes(ctx -> SettingsCommandHandler.format(
                                         service,
@@ -198,6 +202,24 @@ public final class ReinodoceCommandTree {
                 .then(syntheticToggle(service, "follow", SyntheticCommandHandler::follow))
                 .then(syntheticToggle(service, "join", SyntheticCommandHandler::join))
                 .then(syntheticToggle(service, "member-level", SyntheticCommandHandler::memberLevel));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> loggingBranch(ReinodoceCommandService service) {
+        return Commands.literal("logging")
+                .then(Commands.literal("enabled")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> LoggingCommandHandler.enabled(
+                                        service,
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal(ARG_FORMAT)
+                        .then(Commands.argument(ARG_FORMAT, StringArgumentType.string())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                        SessionLogFormat.ids(), builder))
+                                .executes(ctx -> LoggingCommandHandler.format(
+                                        service,
+                                        ctx.getSource(),
+                                        StringArgumentType.getString(ctx, ARG_FORMAT)))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> syntheticToggle(

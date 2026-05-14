@@ -39,7 +39,8 @@ public class ReinodoceClientService implements ReinodoceCommandService {
                         inlineMediaCache
                 ),
                 new ReinodoceConfigRepository(),
-                platformBridge::selectedLanguageCode
+                platformBridge::selectedLanguageCode,
+                platformBridge.logsDirectory().resolve("reinodoce")
         );
     }
 
@@ -199,6 +200,16 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     @Override
     public CommandResult setChatFormat(String format) {
         return coreService.setChatFormat(format);
+    }
+
+    @Override
+    public CommandResult setSessionLoggingEnabled(boolean enabled) {
+        return coreService.setSessionLoggingEnabled(enabled);
+    }
+
+    @Override
+    public CommandResult setSessionLoggingFormat(String format) {
+        return coreService.setSessionLoggingFormat(format);
     }
 
     @Override

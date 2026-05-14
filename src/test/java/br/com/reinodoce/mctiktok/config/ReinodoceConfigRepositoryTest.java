@@ -44,6 +44,8 @@ class ReinodoceConfigRepositoryTest {
         assertFalse(loaded.isSyntheticMemberLevelEnabled());
         assertTrue(loaded.isChatEmotesEnabled());
         assertFalse(loaded.isChatLogEnabled());
+        assertFalse(loaded.isSessionLoggingEnabled());
+        assertEquals("jsonl", loaded.getSessionLoggingFormat());
         assertFalse(loaded.isRuleFollowerOnly());
     }
 
@@ -60,6 +62,7 @@ class ReinodoceConfigRepositoryTest {
         config.setRuleDuplicateCooldownSeconds(-5);
         config.setSyntheticGiftMinValue(-3);
         config.setSyntheticGiftComboMode("unknown");
+        config.setSessionLoggingFormat("unknown");
         config.setChatPrefix("   ");
         config.setChatFormat("{username}: {message}");
 
@@ -72,6 +75,7 @@ class ReinodoceConfigRepositoryTest {
         assertEquals(0, config.getRuleDuplicateCooldownSeconds());
         assertEquals(0, config.getSyntheticGiftMinValue());
         assertEquals("bulk", config.getSyntheticGiftComboMode());
+        assertEquals("jsonl", config.getSessionLoggingFormat());
         assertEquals("[LIVE]", config.getChatPrefix());
         assertEquals("{prefix}  <{username}> {message}", config.getChatFormat());
     }
@@ -103,6 +107,8 @@ class ReinodoceConfigRepositoryTest {
         assertEquals("{prefix} {username}: {message}", loaded.getChatFormat());
         assertFalse(loaded.isChatEmotesEnabled());
         assertTrue(loaded.isChatLogEnabled());
+        assertTrue(loaded.isSessionLoggingEnabled());
+        assertEquals("text", loaded.getSessionLoggingFormat());
     }
 
     private void configureRoundTripConfig(ReinodoceConfig config) {
@@ -124,6 +130,8 @@ class ReinodoceConfigRepositoryTest {
         config.setChatFormat("{prefix} {username}: {message}");
         config.setChatEmotesEnabled(false);
         config.setChatLogEnabled(true);
+        config.setSessionLoggingEnabled(true);
+        config.setSessionLoggingFormat("text");
     }
 
     private void assertRoundTripRules(ReinodoceConfig loaded) {
