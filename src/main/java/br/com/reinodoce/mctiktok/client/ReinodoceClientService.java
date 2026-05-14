@@ -6,6 +6,7 @@ import br.com.reinodoce.mctiktok.chat.LiveMessageFormatter;
 import br.com.reinodoce.mctiktok.chat.MinecraftChatGateway;
 import br.com.reinodoce.mctiktok.client.font.InlineMediaFontHooks;
 import br.com.reinodoce.mctiktok.client.font.InlineMediaTokenRegistry;
+import br.com.reinodoce.mctiktok.client.gui.ReinodoceSettingsScreen;
 import br.com.reinodoce.mctiktok.client.hud.HudMessageStore;
 import br.com.reinodoce.mctiktok.client.hud.LocalHudOverlay;
 import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
@@ -15,7 +16,9 @@ import br.com.reinodoce.mctiktok.config.HudPosition;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
 import br.com.reinodoce.mctiktok.core.ReinodoceCoreService;
+import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 
 import java.util.ArrayList;
@@ -30,6 +33,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     private final InlineMediaCache inlineMediaCache;
     private final InlineMediaTokenRegistry inlineMediaTokenRegistry;
     private final LocalHudOverlay localHudOverlay;
+    private final MinecraftPlatformBridge platformBridge;
 
     /**
      * Creates a client service for the supplied Minecraft platform adapter.
@@ -38,6 +42,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
      */
     public ReinodoceClientService(MinecraftPlatformBridge platformBridge) {
         MinecraftPlatformBridge safePlatformBridge = Objects.requireNonNull(platformBridge, "platformBridge");
+        this.platformBridge = safePlatformBridge;
         this.inlineMediaCache = new InlineMediaCache();
         this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
         HudMessageStore hudMessageStore = new HudMessageStore();
@@ -79,6 +84,25 @@ public class ReinodoceClientService implements ReinodoceCommandService {
                 screenHeight,
                 HudPosition.fromString(config.getHudPosition()),
                 config.getHudLines());
+    }
+
+    /**
+     * Saves a complete settings GUI draft through the core config path.
+     *
+     * @param config settings draft
+     * @return command result
+     */
+    public CommandResult saveSettingsDraft(ReinodoceConfig config) {
+        return coreService.replaceConfig(config);
+    }
+
+    /**
+     * Returns the current client settings snapshot for config-screen entry points.
+     *
+     * @return current configuration
+     */
+    public ReinodoceConfig currentConfig() {
+        return coreService.currentConfig();
     }
 
     @Override
@@ -150,6 +174,15 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     @Override
     public CommandResult setHudLines(int lines) {
         return coreService.setHudLines(lines);
+    }
+
+    @Override
+    public CommandResult openSettingsGui() {
+        platformBridge.runOnClientThread(() -> {
+            Minecraft minecraft = Minecraft.getInstance();
+            minecraft.setScreen(new ReinodoceSettingsScreen(this, currentConfig(), minecraft.screen));
+        });
+        return CommandResult.ok(Translations.tr("reinodoce.command.settings_gui.open"));
     }
 
     @Override

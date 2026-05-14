@@ -111,6 +111,8 @@ public final class ReinodoceCommandTree {
                 .then(outputBranch(service))
                 .then(hudPositionBranch(service))
                 .then(hudLinesBranch(service))
+                .then(Commands.literal("gui")
+                        .executes(ctx -> SettingsCommandHandler.gui(service, ctx.getSource())))
                 .then(Commands.literal("chat-emotes")
                         .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
                                 .executes(ctx -> SettingsCommandHandler.chatEmotes(

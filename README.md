@@ -27,6 +27,7 @@ from a TikTok LIVE inside the local Minecraft chat.
 
 ```
 /reinodoce connect @yourusername
+/reinodoce settings gui
 /reinodoce settings auto-connect true
 /reinodoce rule block-word add spam
 /reinodoce logging enabled true

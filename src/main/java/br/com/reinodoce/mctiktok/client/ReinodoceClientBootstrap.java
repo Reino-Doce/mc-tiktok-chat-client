@@ -1,10 +1,12 @@
 package br.com.reinodoce.mctiktok.client;
 
 import br.com.reinodoce.mctiktok.command.ReinodoceCommandRegistrar;
+import br.com.reinodoce.mctiktok.client.gui.ReinodoceSettingsScreen;
 import br.com.reinodoce.mctiktok.platform.mc1201.Forge1201PlatformBridge;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,6 +30,10 @@ public final class ReinodoceClientBootstrap {
             return;
         }
         SERVICE.initialize();
+        FMLJavaModLoadingContext.get().registerExtensionPoint(
+                ConfigScreenHandler.ConfigScreenFactory.class,
+                () -> new ConfigScreenHandler.ConfigScreenFactory((minecraft, parent) ->
+                        new ReinodoceSettingsScreen(SERVICE, SERVICE.currentConfig(), parent)));
         FMLJavaModLoadingContext.get().getModEventBus().addListener(
                 (RegisterGuiOverlaysEvent event) -> event.registerAboveAll(
                         "reinodoce_live_output",

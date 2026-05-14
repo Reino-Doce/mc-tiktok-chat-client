@@ -69,6 +69,9 @@
   "reinodoce.command.set.alert_sound": "Alert %s sound = %s.",
   "reinodoce.command.set.alert_toast": "Alert %s toast = %s.",
   "reinodoce.command.set.alert_gift_min_value": "Alert gift-min-value = %s.",
+  "reinodoce.command.settings_gui.open": "Opening settings GUI.",
+  "reinodoce.command.settings_gui.saved": "Settings saved.",
+  "reinodoce.command.settings_gui.client_only": "Settings GUI is only available in the Minecraft client.",
   "reinodoce.command.reload.ok": "Konfiguration neu geladen.",
 
 

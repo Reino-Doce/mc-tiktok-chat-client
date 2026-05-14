@@ -72,6 +72,17 @@ public final class SettingsCommandHandler {
     }
 
     /**
+     * Opens the client settings GUI.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @return Brigadier command result code
+     */
+    public static int gui(ReinodoceCommandService service, CommandSourceStack source) {
+        return CommandFeedback.sendResult(source, service.openSettingsGui());
+    }
+
+    /**
      * Updates chat inline-emote rendering settings.
      *
      * @param service command service boundary
