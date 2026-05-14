@@ -19,7 +19,7 @@ automatically.
 ### Fixed
 
 - Correct the synthetic event command branch spelling to `/reinodoce synthetic`.
-- Correct persisted synthetic-event config field names while accepting legacy keys.
+- Correct persisted synthetic-event config field names while dual-writing legacy keys.
 
 ## [0.1.3]
 

@@ -43,11 +43,11 @@ class ReinodoceConfigRepositoryTest {
         assertTrue(savedJson.contains("\"syntheticFollowEnabled\""));
         assertTrue(savedJson.contains("\"syntheticJoinEnabled\""));
         assertTrue(savedJson.contains("\"syntheticMemberLevelEnabled\""));
-        assertFalse(savedJson.contains("\"synteticGiftMinValue\""));
-        assertFalse(savedJson.contains("\"synteticGiftComboMode\""));
-        assertFalse(savedJson.contains("\"synteticFollowEnabled\""));
-        assertFalse(savedJson.contains("\"synteticJoinEnabled\""));
-        assertFalse(savedJson.contains("\"synteticMemberLevelEnabled\""));
+        assertTrue(savedJson.contains("\"synteticGiftMinValue\""));
+        assertTrue(savedJson.contains("\"synteticGiftComboMode\""));
+        assertTrue(savedJson.contains("\"synteticFollowEnabled\""));
+        assertTrue(savedJson.contains("\"synteticJoinEnabled\""));
+        assertTrue(savedJson.contains("\"synteticMemberLevelEnabled\""));
         assertEquals("streamer", loaded.getLastUsername());
         assertEquals(5, loaded.getReconnectSeconds());
         assertTrue(loaded.isRuleFollowerOnly());
@@ -62,7 +62,7 @@ class ReinodoceConfigRepositoryTest {
     }
 
     @Test
-    void loadLegacySyntheticFieldNamesMigratesToCorrectedNames() throws IOException {
+    void loadLegacySyntheticFieldNamesPreservesDowngradeCompatibility() throws IOException {
         Path file = tempDir.resolve("reinodoce-mc-tiktok-client.json");
         Files.writeString(file, """
                 {
@@ -87,7 +87,7 @@ class ReinodoceConfigRepositoryTest {
         String savedJson = Files.readString(file, StandardCharsets.UTF_8);
 
         assertTrue(savedJson.contains("\"syntheticGiftMinValue\""));
-        assertFalse(savedJson.contains("\"synteticGiftMinValue\""));
+        assertTrue(savedJson.contains("\"synteticGiftMinValue\""));
     }
 
     @Test

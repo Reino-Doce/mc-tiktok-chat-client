@@ -1,7 +1,5 @@
 package br.com.reinodoce.mctiktok.config;
 
-import com.google.gson.annotations.SerializedName;
-
 import java.util.Locale;
 
 public class ReinodoceConfig {
@@ -14,16 +12,21 @@ public class ReinodoceConfig {
     private int reconnectSeconds = DEFAULT_RECONNECT_SECONDS;
     private boolean ruleFollowerOnly;
     private int ruleMinMemberLevel;
-    @SerializedName(value = "syntheticGiftMinValue", alternate = {"synteticGiftMinValue"})
-    private int syntheticGiftMinValue = DEFAULT_SYNTHETIC_GIFT_MIN_VALUE;
-    @SerializedName(value = "syntheticGiftComboMode", alternate = {"synteticGiftComboMode"})
-    private String syntheticGiftComboMode = DEFAULT_GIFT_COMBO_MODE;
-    @SerializedName(value = "syntheticFollowEnabled", alternate = {"synteticFollowEnabled"})
-    private boolean syntheticFollowEnabled;
-    @SerializedName(value = "syntheticJoinEnabled", alternate = {"synteticJoinEnabled"})
-    private boolean syntheticJoinEnabled;
-    @SerializedName(value = "syntheticMemberLevelEnabled", alternate = {"synteticMemberLevelEnabled"})
-    private boolean syntheticMemberLevelEnabled;
+    private Integer syntheticGiftMinValue;
+    private String syntheticGiftComboMode;
+    private Boolean syntheticFollowEnabled;
+    private Boolean syntheticJoinEnabled;
+    private Boolean syntheticMemberLevelEnabled;
+    @Deprecated
+    private Integer synteticGiftMinValue;
+    @Deprecated
+    private String synteticGiftComboMode;
+    @Deprecated
+    private Boolean synteticFollowEnabled;
+    @Deprecated
+    private Boolean synteticJoinEnabled;
+    @Deprecated
+    private Boolean synteticMemberLevelEnabled;
     private boolean chatEmotesEnabled = true;
     private boolean chatLogEnabled = false;
     private String chatPrefix = DEFAULT_CHAT_PREFIX;
@@ -38,11 +41,11 @@ public class ReinodoceConfig {
         copy.setReconnectSeconds(reconnectSeconds);
         copy.setRuleFollowerOnly(ruleFollowerOnly);
         copy.setRuleMinMemberLevel(ruleMinMemberLevel);
-        copy.setSyntheticGiftMinValue(syntheticGiftMinValue);
-        copy.setSyntheticGiftComboMode(syntheticGiftComboMode);
-        copy.setSyntheticFollowEnabled(syntheticFollowEnabled);
-        copy.setSyntheticJoinEnabled(syntheticJoinEnabled);
-        copy.setSyntheticMemberLevelEnabled(syntheticMemberLevelEnabled);
+        copy.setSyntheticGiftMinValue(getSyntheticGiftMinValue());
+        copy.setSyntheticGiftComboMode(getSyntheticGiftComboMode());
+        copy.setSyntheticFollowEnabled(isSyntheticFollowEnabled());
+        copy.setSyntheticJoinEnabled(isSyntheticJoinEnabled());
+        copy.setSyntheticMemberLevelEnabled(isSyntheticMemberLevelEnabled());
         copy.setChatEmotesEnabled(chatEmotesEnabled);
         copy.setChatLogEnabled(chatLogEnabled);
         copy.setChatPrefix(chatPrefix);
@@ -82,43 +85,55 @@ public class ReinodoceConfig {
     }
 
     public int getSyntheticGiftMinValue() {
-        return syntheticGiftMinValue;
+        Integer value = syntheticGiftMinValue == null ? synteticGiftMinValue : syntheticGiftMinValue;
+        return value == null ? DEFAULT_SYNTHETIC_GIFT_MIN_VALUE : Math.max(0, value);
     }
 
     public void setSyntheticGiftMinValue(int syntheticGiftMinValue) {
-        this.syntheticGiftMinValue = Math.max(0, syntheticGiftMinValue);
+        int normalized = Math.max(0, syntheticGiftMinValue);
+        this.syntheticGiftMinValue = normalized;
+        this.synteticGiftMinValue = normalized;
     }
 
     public String getSyntheticGiftComboMode() {
-        return syntheticGiftComboMode;
+        String value = syntheticGiftComboMode == null ? synteticGiftComboMode : syntheticGiftComboMode;
+        return normalizedGiftComboMode(value);
     }
 
     public void setSyntheticGiftComboMode(String syntheticGiftComboMode) {
-        this.syntheticGiftComboMode = normalizedGiftComboMode(syntheticGiftComboMode);
+        String normalized = normalizedGiftComboMode(syntheticGiftComboMode);
+        this.syntheticGiftComboMode = normalized;
+        this.synteticGiftComboMode = normalized;
     }
 
     public boolean isSyntheticFollowEnabled() {
-        return syntheticFollowEnabled;
+        Boolean value = syntheticFollowEnabled == null ? synteticFollowEnabled : syntheticFollowEnabled;
+        return Boolean.TRUE.equals(value);
     }
 
     public void setSyntheticFollowEnabled(boolean syntheticFollowEnabled) {
         this.syntheticFollowEnabled = syntheticFollowEnabled;
+        this.synteticFollowEnabled = syntheticFollowEnabled;
     }
 
     public boolean isSyntheticJoinEnabled() {
-        return syntheticJoinEnabled;
+        Boolean value = syntheticJoinEnabled == null ? synteticJoinEnabled : syntheticJoinEnabled;
+        return Boolean.TRUE.equals(value);
     }
 
     public void setSyntheticJoinEnabled(boolean syntheticJoinEnabled) {
         this.syntheticJoinEnabled = syntheticJoinEnabled;
+        this.synteticJoinEnabled = syntheticJoinEnabled;
     }
 
     public boolean isSyntheticMemberLevelEnabled() {
-        return syntheticMemberLevelEnabled;
+        Boolean value = syntheticMemberLevelEnabled == null ? synteticMemberLevelEnabled : syntheticMemberLevelEnabled;
+        return Boolean.TRUE.equals(value);
     }
 
     public void setSyntheticMemberLevelEnabled(boolean syntheticMemberLevelEnabled) {
         this.syntheticMemberLevelEnabled = syntheticMemberLevelEnabled;
+        this.synteticMemberLevelEnabled = syntheticMemberLevelEnabled;
     }
 
     public boolean isChatEmotesEnabled() {
