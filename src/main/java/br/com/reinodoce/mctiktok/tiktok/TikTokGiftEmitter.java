@@ -91,7 +91,7 @@ final class TikTokGiftEmitter {
             } else {
                 chatGateway.sendSyntheticGift(config, username, giftName, count);
             }
-            statsTracker.recordGift(username, count, emission.diamondCost());
+            statsTracker.recordGift(emission.userId(), username, emission.statsCount(), emission.diamondCost());
         }
     }
 

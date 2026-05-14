@@ -15,7 +15,7 @@ public class SessionStatsTracker {
     private static final long MISSING_USER_ID = 0L;
 
     private final Set<String> uniqueChatters = new HashSet<>();
-    private final Map<String, Long> diamondsByGifter = new HashMap<>();
+    private final Map<String, GifterTotal> gifters = new HashMap<>();
 
     private long messages;
     private long follows;
@@ -52,17 +52,20 @@ public class SessionStatsTracker {
     /**
      * Records an accepted gift event.
      *
+     * @param userId stable TikTok user id, or zero when unavailable
      * @param username gifter display username
      * @param count gift count
      * @param diamondCost diamond value per gift
      */
-    public synchronized void recordGift(String username, int count, int diamondCost) {
+    public synchronized void recordGift(long userId, String username, int count, int diamondCost) {
         int safeCount = Math.max(1, count);
         long giftDiamonds = (long) Math.max(0, diamondCost) * safeCount;
         gifts += safeCount;
         diamonds += giftDiamonds;
         if (giftDiamonds > NO_DIAMONDS) {
-            diamondsByGifter.merge(sanitizeStatName(username), giftDiamonds, Long::sum);
+            String displayName = sanitizeStatName(username);
+            gifters.computeIfAbsent(gifterKey(userId, displayName), key -> new GifterTotal())
+                    .add(displayName, giftDiamonds);
         }
     }
 
@@ -84,7 +87,7 @@ public class SessionStatsTracker {
         diamonds = 0L;
         memberLevels = 0L;
         uniqueChatters.clear();
-        diamondsByGifter.clear();
+        gifters.clear();
     }
 
     /**
@@ -110,10 +113,10 @@ public class SessionStatsTracker {
     private TopGifter topGifter() {
         String topUsername = EMPTY;
         long topDiamonds = NO_DIAMONDS;
-        for (Map.Entry<String, Long> entry : diamondsByGifter.entrySet()) {
-            if (entry.getValue() > topDiamonds) {
-                topUsername = entry.getKey();
-                topDiamonds = entry.getValue();
+        for (GifterTotal total : gifters.values()) {
+            if (total.diamonds() > topDiamonds) {
+                topUsername = total.username();
+                topDiamonds = total.diamonds();
             }
         }
         return new TopGifter(topUsername, topDiamonds);
@@ -126,11 +129,36 @@ public class SessionStatsTracker {
         return "name:" + sanitizeStatName(username).toLowerCase(Locale.ROOT);
     }
 
+    private static String gifterKey(long userId, String username) {
+        if (userId > MISSING_USER_ID) {
+            return "id:" + userId;
+        }
+        return "name:" + username.toLowerCase(Locale.ROOT);
+    }
+
     private static String sanitizeStatName(String username) {
         return TikTokUserNames.sanitizeUserName(username);
     }
 
     private record TopGifter(String username, long diamonds) {
+    }
+
+    private static final class GifterTotal {
+        private String displayNameValue = EMPTY;
+        private long diamondTotal;
+
+        void add(String displayName, long giftDiamonds) {
+            displayNameValue = displayName;
+            diamondTotal += giftDiamonds;
+        }
+
+        String username() {
+            return displayNameValue;
+        }
+
+        long diamonds() {
+            return diamondTotal;
+        }
     }
 
     /**

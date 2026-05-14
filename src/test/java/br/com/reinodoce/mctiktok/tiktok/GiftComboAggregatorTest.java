@@ -39,7 +39,9 @@ class GiftComboAggregatorTest {
             );
 
             assertEquals(1, first.get(0).count());
+            assertEquals(1, first.get(0).statsCount());
             assertEquals(2, second.get(0).count());
+            assertEquals(2, second.get(0).statsCount());
             assertEquals("avatar://alice", second.get(0).avatarUrl());
             assertEquals("gift://rose", second.get(0).giftIconUrl());
             assertTrue(duplicate.isEmpty());
@@ -73,8 +75,10 @@ class GiftComboAggregatorTest {
             );
 
             assertEquals(1, first.size());
+            assertEquals(1, first.get(0).statsCount());
             assertTrue(duplicate.isEmpty());
             assertEquals(2, next.get(0).count());
+            assertEquals(1, next.get(0).statsCount());
         } finally {
             scheduler.shutdownNow();
         }
@@ -102,6 +106,7 @@ class GiftComboAggregatorTest {
             assertTrue(start.isEmpty());
             assertEquals(1, finished.size());
             assertEquals(5, finished.get(0).count());
+            assertEquals(5, finished.get(0).statsCount());
             assertEquals("avatar://bob", finished.get(0).avatarUrl());
             assertEquals("gift://galaxy", finished.get(0).giftIconUrl());
             assertTrue(asyncFlush.isEmpty());

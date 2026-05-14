@@ -96,6 +96,10 @@ final class TikTokEventDispatcher {
                 mode, dependencies.giftEmitter().toSnapshot(event), finished));
     }
 
+    void clearPendingGifts() {
+        dependencies.giftComboAggregator().clear();
+    }
+
     private void sendComment(ReinodoceConfig config, String username, User user, String message) {
         if (config.isChatEmotesEnabled()) {
             dependencies.chatGateway().sendLiveComment(

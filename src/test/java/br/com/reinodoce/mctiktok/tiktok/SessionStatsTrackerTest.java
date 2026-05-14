@@ -26,9 +26,9 @@ class SessionStatsTrackerTest {
     void tracksGiftsDiamondsAndTopGifter() {
         SessionStatsTracker tracker = new SessionStatsTracker();
 
-        tracker.recordGift(ALICE, 2, 10);
-        tracker.recordGift("bob", 1, 30);
-        tracker.recordGift(ALICE, 1, 5);
+        tracker.recordGift(1L, ALICE, 2, 10);
+        tracker.recordGift(2L, "bob", 1, 30);
+        tracker.recordGift(1L, ALICE, 1, 5);
 
         SessionStatsTracker.Snapshot snapshot = tracker.snapshot();
 
@@ -39,12 +39,27 @@ class SessionStatsTrackerTest {
     }
 
     @Test
+    void tracksTopGifterByStableUserId() {
+        SessionStatsTracker tracker = new SessionStatsTracker();
+
+        tracker.recordGift(1L, ALICE, 1, 10);
+        tracker.recordGift(1L, "alice-renamed", 1, 25);
+        tracker.recordGift(0L, ALICE, 1, 20);
+
+        SessionStatsTracker.Snapshot snapshot = tracker.snapshot();
+
+        assertEquals(55L, snapshot.diamonds());
+        assertEquals("alice-renamed", snapshot.topGifter());
+        assertEquals(35L, snapshot.topGifterDiamonds());
+    }
+
+    @Test
     void resetClearsAllCounters() {
         SessionStatsTracker tracker = new SessionStatsTracker();
         tracker.recordComment(1L, ALICE);
         tracker.recordFollow();
         tracker.recordJoin();
-        tracker.recordGift(ALICE, 2, 10);
+        tracker.recordGift(1L, ALICE, 2, 10);
         tracker.recordMemberLevel();
 
         tracker.reset();

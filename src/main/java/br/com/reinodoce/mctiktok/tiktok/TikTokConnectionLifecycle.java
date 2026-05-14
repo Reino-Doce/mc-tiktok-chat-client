@@ -135,6 +135,7 @@ final class TikTokConnectionLifecycle {
     }
 
     private void executeReconnect(long token, String username) {
+        params.onReset().run();
         connectInternal(token, username);
     }
 

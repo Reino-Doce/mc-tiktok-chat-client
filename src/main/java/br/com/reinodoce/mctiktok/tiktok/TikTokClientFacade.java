@@ -91,6 +91,7 @@ public class TikTokClientFacade {
      * Resets current session statistics without changing connection state.
      */
     public void resetStats() {
+        eventDispatcher.clearPendingGifts();
         statsTracker.reset();
     }
 
