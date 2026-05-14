@@ -14,6 +14,7 @@ final class ModerationDuplicateTracker {
 
     boolean isDuplicate(String message, int cooldownSeconds) {
         if (cooldownSeconds <= 0) {
+            clear();
             return false;
         }
         String key = MessageSanitizer.sanitize(message).toLowerCase(Locale.ROOT);
@@ -29,6 +30,7 @@ final class ModerationDuplicateTracker {
 
     void remember(String message, int cooldownSeconds) {
         if (cooldownSeconds <= 0) {
+            clear();
             return;
         }
         String key = MessageSanitizer.sanitize(message).toLowerCase(Locale.ROOT);
