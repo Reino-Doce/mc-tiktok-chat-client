@@ -191,13 +191,13 @@ final class TikTokConnectionLifecycle {
         reconnectScheduler.cancel();
         liveClient = client;
         params.onConnected().run();
-        params.sessionEventLogger().startSession(params.configSupplier().get(), username);
         LiveSessionState sessionState = params.sessionState();
         sessionState.setState(ConnectionLifecycleState.CONNECTED);
         sessionState.setUsername(username);
         sessionState.setLastError("");
         sessionState.setReconnectAt(null);
         sessionState.setReconnectAttempts(0);
+        params.sessionEventLogger().startSession(params.configSupplier().get(), username);
         params.reconnectNoticeThrottler().reset();
         params.chatGateway().sendSystem(Translations.tr("reinodoce.chat.connected", username), true);
         ReinodoceLogger.LOGGER.info("Connected to TikTok LIVE @{}", username);
