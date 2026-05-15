@@ -61,6 +61,7 @@ final class DiagnosticsConfigReport {
         output.put("mode", config.getOutputMode());
         output.put("hudPosition", config.getHudPosition());
         output.put("hudLines", config.getHudLines());
+        output.put("maskUsernamesInOutput", config.isMaskUsernamesInOutput());
         output.put("pinnedOverlayEnabled", config.isPinnedOverlayEnabled());
         output.put("pinnedOverlayPosition", config.getPinnedOverlayPosition());
         output.put("pinnedOverlayMessages", config.getPinnedOverlayMessages());
@@ -119,6 +120,10 @@ final class DiagnosticsConfigReport {
         sessionLogging.put("enabled", config.isSessionLoggingEnabled());
         sessionLogging.put("format", config.getSessionLoggingFormat());
         sessionLogging.put("contentIncluded", false);
+        sessionLogging.put("retentionDays", config.getSessionLoggingRetentionDays());
+        sessionLogging.put("retentionFiles", config.getSessionLoggingRetentionFiles());
+        sessionLogging.put("anonymized", config.isSessionLoggingAnonymized());
+        sessionLogging.put("metadataOnly", config.isSessionLoggingMetadataOnly());
         return sessionLogging;
     }
 

@@ -70,9 +70,14 @@ top-level screen. You can also edit the file by hand and run
 | `chatFormat` | string | current layout | Template used to arrange mirrored lines. Must include `{prefix}`, `{username}`, and `{message}`; unknown tokens or blank values revert to the default. |
 | `chatEmotesEnabled` | boolean | `true` | Render TikTok chat emotes inline in Minecraft chat. |
 | `chatLogEnabled` | boolean | `false` | Write mirrored TikTok chat and synthetic event lines through Minecraft's chat logger. System/status/error lines remain logged. |
+| `maskUsernamesInOutput` | boolean | `false` | Mask TikTok usernames in mirrored chat, actionbar, HUD, and pinned overlay output. |
 | `language` | string | `"auto"` | `auto` follows the Minecraft client language. A locale such as `"pt_br"` overrides the language used for TikTok metadata requests and fixed synthetic phrases. Invalid values fall back to `"auto"` on load. |
 | `sessionLoggingEnabled` | boolean | `false` | Write accepted mirrored LIVE events to local session files under `logs/reinodoce/`. Opt-in because files may contain TikTok usernames and chat content. |
 | `sessionLoggingFormat` | string | `"jsonl"` | One of `"jsonl"` or `"text"`. Unknown values fall back to `"jsonl"`. |
+| `sessionLoggingRetentionDays` | integer | `0` | Delete this mod's own session log files older than this many days when a new session log opens. `0` disables age cleanup. |
+| `sessionLoggingRetentionFiles` | integer | `0` | Keep at most this many session log files after a new session log opens. `0` disables count cleanup. |
+| `sessionLoggingAnonymized` | boolean | `false` | Mask username fields in session log files. |
+| `sessionLoggingMetadataOnly` | boolean | `false` | Omit message body fields from session log files while preserving event metadata. |
 
 Commands reject malformed values before saving. When the file is edited
 by hand, the config loader sanitizes malformed values to defaults so the
@@ -104,3 +109,11 @@ directory. JSONL files contain one object per line with stable fields such
 as `type`, `timestamp`, `username`, `message`, `memberLevel`, `giftName`,
 `count`, and `diamonds` when those values are available. Text logs use the
 same fields as tab-separated key-value pairs.
+
+Privacy controls are opt-in and preserve existing behavior by default.
+`sessionLoggingAnonymized` masks session log username fields,
+`sessionLoggingMetadataOnly` omits message body fields, and retention
+cleanup only deletes this mod's own non-recursive `live-*.jsonl` and
+`live-*.txt` files in `logs/reinodoce/`. The `maskUsernamesInOutput`
+setting affects local mirrored output surfaces, not command or status
+feedback.

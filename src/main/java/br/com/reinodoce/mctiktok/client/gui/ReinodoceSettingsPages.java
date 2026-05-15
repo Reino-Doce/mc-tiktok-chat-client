@@ -89,8 +89,10 @@ final class ReinodoceSettingsPages {
                 screen.configDraft()::setChatPrefix);
         screen.addTextField(row++, "Chat format", FORMAT_MAX_LENGTH, screen.configDraft()::getChatFormat,
                 screen.configDraft()::setChatFormat);
-        screen.addToggle(row, "Chat emotes", screen.configDraft()::isChatEmotesEnabled,
+        screen.addToggle(row++, "Chat emotes", screen.configDraft()::isChatEmotesEnabled,
                 screen.configDraft()::setChatEmotesEnabled);
+        screen.addToggle(row, "Mask usernames", screen.configDraft()::isMaskUsernamesInOutput,
+                screen.configDraft()::setMaskUsernamesInOutput);
         screen.addBackButton();
     }
 
@@ -164,8 +166,16 @@ final class ReinodoceSettingsPages {
         int row = 0;
         screen.addToggle(row++, "Enabled", screen.configDraft()::isSessionLoggingEnabled,
                 screen.configDraft()::setSessionLoggingEnabled);
-        screen.addCycle(row, "Format", screen.configDraft()::getSessionLoggingFormat,
+        screen.addCycle(row++, "Format", screen.configDraft()::getSessionLoggingFormat,
                 screen.configDraft()::setSessionLoggingFormat, SESSION_LOG_FORMATS);
+        screen.addToggle(row++, "Anonymized", screen.configDraft()::isSessionLoggingAnonymized,
+                screen.configDraft()::setSessionLoggingAnonymized);
+        screen.addToggle(row++, "Metadata only", screen.configDraft()::isSessionLoggingMetadataOnly,
+                screen.configDraft()::setSessionLoggingMetadataOnly);
+        screen.addNumberField(row++, "Retention days", screen.configDraft()::getSessionLoggingRetentionDays,
+                screen.configDraft()::setSessionLoggingRetentionDays);
+        screen.addNumberField(row, "Retention files", screen.configDraft()::getSessionLoggingRetentionFiles,
+                screen.configDraft()::setSessionLoggingRetentionFiles);
         screen.addBackButton();
     }
 

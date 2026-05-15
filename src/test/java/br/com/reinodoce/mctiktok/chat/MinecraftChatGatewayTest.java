@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MinecraftChatGatewayTest {
     private static final String ALICE = "alice";
+    private static final String HELLO = "hello";
 
     @Test
     void mirroredLiveLinesRespectChatLogSetting() {
@@ -21,7 +22,7 @@ class MinecraftChatGatewayTest {
         MinecraftChatGateway gateway = gateway(bridge);
         ReinodoceConfig config = ReinodoceConfig.defaults();
 
-        gateway.sendLiveComment(config, ALICE, "hello");
+        gateway.sendLiveComment(config, ALICE, HELLO);
 
         assertFalse(bridge.lastLogToChat());
     }
@@ -79,7 +80,7 @@ class MinecraftChatGatewayTest {
         ReinodoceConfig config = ReinodoceConfig.defaults();
         config.setOutputMode("actionbar");
 
-        gateway.sendLiveComment(config, ALICE, "hello");
+        gateway.sendLiveComment(config, ALICE, HELLO);
 
         assertEquals("[LIVE]  <alice> hello", bridge.lastActionbar().getString());
         assertFalse(bridge.chatWritten());
@@ -109,10 +110,28 @@ class MinecraftChatGatewayTest {
         ReinodoceConfig config = ReinodoceConfig.defaults();
         config.setOutputMode("off");
 
-        gateway.sendLiveComment(config, ALICE, "hello");
+        gateway.sendLiveComment(config, ALICE, HELLO);
 
         assertFalse(bridge.chatWritten());
         assertEquals("", bridge.lastActionbar().getString());
+    }
+
+    @Test
+    void usernameMaskingAppliesToMirroredOutputOnly() {
+        RecordingPlatformBridge bridge = new RecordingPlatformBridge();
+        HudMessageStore hudMessageStore = new HudMessageStore();
+        MinecraftChatGateway gateway = gateway(bridge, hudMessageStore);
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.setMaskUsernamesInOutput(true);
+
+        gateway.sendLiveComment(config, ALICE, HELLO);
+        gateway.sendSystem("Connected to @alice", true);
+        config.setOutputMode("hud");
+        gateway.sendLiveComment(config, ALICE, "hud hello");
+
+        assertEquals("[LIVE]  <viewer> hello", bridge.firstChatMessage().getString());
+        assertEquals("[ReinoDoce] Connected to @alice", bridge.lastChatMessage().getString());
+        assertEquals("[LIVE]  <viewer> hud hello", hudMessageStore.snapshot(config.getHudLines()).get(0).getString());
     }
 
     private static MinecraftChatGateway gateway(RecordingPlatformBridge bridge) {
@@ -133,6 +152,7 @@ class MinecraftChatGatewayTest {
         private boolean recordedChatWrite;
         private String configuredLanguageCode = "en_us";
         private Component recordedChatMessage = Component.literal("");
+        private Component firstRecordedChatMessage = Component.literal("");
         private Component recordedActionbar = Component.literal("");
 
         @Override
@@ -144,6 +164,9 @@ class MinecraftChatGatewayTest {
         public void addChatMessage(Component component, boolean logToChat) {
             this.recordedLogToChat = logToChat;
             this.recordedChatWrite = true;
+            if (firstRecordedChatMessage.getString().isBlank()) {
+                this.firstRecordedChatMessage = component;
+            }
             this.recordedChatMessage = component;
         }
 
@@ -180,6 +203,10 @@ class MinecraftChatGatewayTest {
 
         Component lastChatMessage() {
             return recordedChatMessage;
+        }
+
+        Component firstChatMessage() {
+            return firstRecordedChatMessage;
         }
     }
 }

@@ -75,11 +75,13 @@ public final class SessionEventLogger implements AutoCloseable {
             return;
         }
         SessionLogFormat format = SessionLogFormat.fromString(safeConfig.getSessionLoggingFormat());
+        SessionLogPrivacyOptions privacyOptions = SessionLogPrivacyOptions.from(safeConfig);
         String safeUsername = username == null ? "" : username.trim();
         synchronized (queueLock) {
             int generation = activateNewGeneration();
             submit(() -> {
-                if (!logWriter.start(generation, format, safeUsername) && activeGeneration == generation) {
+                if (!logWriter.start(generation, format, privacyOptions, safeUsername)
+                        && activeGeneration == generation) {
                     activeGeneration = 0;
                 }
             });

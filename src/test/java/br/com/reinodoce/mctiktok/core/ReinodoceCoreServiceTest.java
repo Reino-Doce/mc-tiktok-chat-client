@@ -342,6 +342,11 @@ class ReinodoceCoreServiceTest {
         draft.setChatPrefix("TikTok");
         draft.setChatFormat("{prefix} {username}: {message}");
         draft.setChatEmotesEnabled(false);
+        draft.setMaskUsernamesInOutput(true);
+        draft.setSessionLoggingRetentionDays(5);
+        draft.setSessionLoggingRetentionFiles(8);
+        draft.setSessionLoggingAnonymized(true);
+        draft.setSessionLoggingMetadataOnly(true);
         draft.setLanguage("ja-JP");
         draft.setSyntheticGiftMinValue(50);
         draft.setSyntheticGiftComboMode("single");
@@ -365,6 +370,11 @@ class ReinodoceCoreServiceTest {
         assertEquals("TikTok", loaded.getChatPrefix());
         assertEquals("{prefix} {username}: {message}", loaded.getChatFormat());
         assertFalse(loaded.isChatEmotesEnabled());
+        assertTrue(loaded.isMaskUsernamesInOutput());
+        assertEquals(5, loaded.getSessionLoggingRetentionDays());
+        assertEquals(8, loaded.getSessionLoggingRetentionFiles());
+        assertTrue(loaded.isSessionLoggingAnonymized());
+        assertTrue(loaded.isSessionLoggingMetadataOnly());
         assertEquals("ja_jp", loaded.getLanguage());
         assertEquals(50, loaded.getSyntheticGiftMinValue());
         assertEquals("single", loaded.getSyntheticGiftComboMode());
