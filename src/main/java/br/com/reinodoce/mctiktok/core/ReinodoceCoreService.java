@@ -31,6 +31,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -53,6 +54,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     private final ReinodoceConfigRepository configRepository;
     private final RuntimeSettingsState settingsState;
     private final TikTokClientFacade tikTokClientFacade;
+    private final CoreDiagnosticsExporter diagnosticsExporter;
     private final Supplier<String> clientLanguageSupplier;
     private final AtomicBoolean initialized;
 
@@ -132,14 +134,14 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
             ReinodoceConfigRepository configRepository,
             Supplier<String> languageSupplier
     ) {
+        TikTokRuntimeServices.SideEffects sideEffects = Objects.requireNonNull(runtimeSideEffects, "runtimeSideEffects");
         this.configRepository = Objects.requireNonNull(configRepository, "configRepository");
         this.settingsState = new RuntimeSettingsState();
         this.clientLanguageSupplier = Objects.requireNonNull(languageSupplier, "languageSupplier");
-        this.tikTokClientFacade = createTikTokClientFacade(
-                Objects.requireNonNull(runtimeSideEffects, "runtimeSideEffects")
-                        .withLanguageSuppliers(
-                                this::effectiveLanguageUnchecked,
-                                this::useRuntimeLanguageForEffectiveLanguage));
+        this.tikTokClientFacade = createTikTokClientFacade(sideEffects.withLanguageSuppliers(
+                this::effectiveLanguageUnchecked,
+                this::useRuntimeLanguageForEffectiveLanguage));
+        this.diagnosticsExporter = new CoreDiagnosticsExporter(sideEffects.sessionLogDirectory());
         this.initialized = new AtomicBoolean(false);
     }
 
@@ -152,6 +154,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         this.settingsState = new RuntimeSettingsState();
         this.clientLanguageSupplier = Objects.requireNonNull(languageSupplier, "languageSupplier");
         this.tikTokClientFacade = Objects.requireNonNull(tikTokClientFacade, "tikTokClientFacade");
+        this.diagnosticsExporter = new CoreDiagnosticsExporter(DEFAULT_SESSION_LOG_DIRECTORY);
         this.initialized = new AtomicBoolean(false);
     }
 
@@ -313,6 +316,28 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         ensureInitialized();
         tikTokClientFacade.resetStats();
         return CommandResult.ok(Translations.tr("reinodoce.command.stats.reset"));
+    }
+
+    @Override
+    public CommandResult exportDiagnostics() {
+        return exportDiagnostics(Map.of());
+    }
+
+    /**
+     * Writes a sanitized support diagnostics report with client-side renderer diagnostics.
+     *
+     * @param clientDiagnostics client-side renderer diagnostics
+     * @return command result
+     */
+    public CommandResult exportDiagnostics(Map<String, Object> clientDiagnostics) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        return diagnosticsExporter.export(
+                config,
+                tikTokClientFacade,
+                effectiveLanguage(config),
+                configRepository.configPath(),
+                clientDiagnostics);
     }
 
     @Override

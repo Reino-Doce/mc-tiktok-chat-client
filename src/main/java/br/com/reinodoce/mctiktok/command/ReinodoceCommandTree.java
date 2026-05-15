@@ -5,6 +5,7 @@ import br.com.reinodoce.mctiktok.alert.AlertSoundId;
 import br.com.reinodoce.mctiktok.alert.AlertToastMediaMode;
 import br.com.reinodoce.mctiktok.command.handlers.AlertCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.ConnectCommandHandler;
+import br.com.reinodoce.mctiktok.command.handlers.DiagnosticsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.DisconnectCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.LoggingCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.ReloadCommandHandler;
@@ -64,6 +65,7 @@ public final class ReinodoceCommandTree {
                 .then(disconnectBranch(commandService))
                 .then(statusBranch(commandService))
                 .then(statsBranch(commandService))
+                .then(diagnosticsBranch(commandService))
                 .then(settingsBranch(commandService))
                 .then(ruleBranch(commandService))
                 .then(syntheticBranch(commandService))
@@ -99,6 +101,12 @@ public final class ReinodoceCommandTree {
                 .executes(ctx -> StatsCommandHandler.execute(ctx.getSource(), service))
                 .then(Commands.literal("reset")
                         .executes(ctx -> StatsCommandHandler.reset(ctx.getSource(), service)));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> diagnosticsBranch(ReinodoceCommandService service) {
+        return Commands.literal("diagnostics")
+                .then(Commands.literal("export")
+                        .executes(ctx -> DiagnosticsCommandHandler.export(service, ctx.getSource())));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> settingsBranch(ReinodoceCommandService service) {

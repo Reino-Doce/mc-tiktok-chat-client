@@ -17,9 +17,11 @@ import br.com.reinodoce.mctiktok.util.MessageDeduplicator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -307,6 +309,26 @@ class ReinodoceCoreServiceTest {
         assertGuiDraftSettings(loaded);
     }
 
+    @Test
+    void diagnosticsExportCreatesSupportFileAndReportsPath() throws IOException {
+        Path configFile = tempDir.resolve("diagnostics-config.json");
+        Path logDirectory = tempDir.resolve("logs").resolve("reinodoce");
+        ReinodoceConfigRepository repository = new ReinodoceConfigRepository(configFile);
+        ReinodoceCoreService service = new ReinodoceCoreService(
+                ChatEventSink.noop(),
+                repository,
+                () -> EN_US,
+                logDirectory);
+
+        CommandResult result = service.exportDiagnostics();
+        Path reportPath = singleDiagnosticsFile(logDirectory.resolve("diagnostics"));
+
+        assertTrue(result.success());
+        assertTrue(result.message().contains(reportPath.getFileName().toString()));
+        assertFalse(result.message().contains(tempDir.toString()));
+        assertTrue(result.message().contains("Diagnostics exported to"));
+    }
+
     private static void configureGuiDraft(ReinodoceConfig draft) {
         draft.setLastUsername("  Reino_Doce  ");
         draft.setReconnectSeconds(0);
@@ -351,6 +373,15 @@ class ReinodoceCoreServiceTest {
         assertTrue(loaded.isSyntheticMemberLevelEnabled());
         assertTrue(loaded.isRuleFollowerOnly());
         assertEquals(2, loaded.getRuleMinMemberLevel());
+    }
+
+    private static Path singleDiagnosticsFile(Path diagnosticsDirectory) throws IOException {
+        try (Stream<Path> files = java.nio.file.Files.list(diagnosticsDirectory)) {
+            return files
+                    .filter(path -> path.getFileName().toString().startsWith("reinodoce-diagnostics-"))
+                    .findFirst()
+                    .orElseThrow();
+        }
     }
 
     private static final class RecordingTikTokClientFacade extends TikTokClientFacade {
