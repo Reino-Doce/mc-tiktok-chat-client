@@ -1,16 +1,11 @@
 package br.com.reinodoce.mctiktok.tiktok;
 
 import br.com.reinodoce.mctiktok.alert.AlertEventType;
-import br.com.reinodoce.mctiktok.alert.AlertService;
 import br.com.reinodoce.mctiktok.alert.AlertSink;
 import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.chat.RichLiveMessage;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
-import br.com.reinodoce.mctiktok.emoji.UnicodeEmojiParser;
-import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
 import org.junit.jupiter.api.Test;
-
-import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -67,18 +62,11 @@ class MemberLevelEmitterTest {
     }
 
     private static MemberLevelEmitter newEmitter(ReinodoceConfig config, RecordingSink sink) {
-        return newEmitter(config, sink, AlertSink.noop());
+        return MemberLevelEmitterTestFactory.create(config, sink);
     }
 
     private static MemberLevelEmitter newEmitter(ReinodoceConfig config, RecordingSink sink, AlertSink alertSink) {
-        return new MemberLevelEmitter(
-                () -> config,
-                new TikTokRuntimeServices(
-                        sink,
-                        new SessionEventLogger(Path.of("build/test-session-logs")),
-                        new AlertService(alertSink)),
-                new RichLiveMessageFactory(new UnicodeEmojiParser()),
-                new SessionStatsTracker());
+        return MemberLevelEmitterTestFactory.create(config, sink, alertSink);
     }
 
     private static final class RecordingSink implements ChatEventSink {

@@ -5,6 +5,7 @@ import br.com.reinodoce.mctiktok.chat.ChatEventSink;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.logging.SessionEventLogger;
 import br.com.reinodoce.mctiktok.logging.SessionLogEvent;
+import br.com.reinodoce.mctiktok.rules.MessageRuleEngine;
 import br.com.reinodoce.mctiktok.util.ReinodoceLogger;
 
 import java.util.function.Supplier;
@@ -12,6 +13,7 @@ import java.util.function.Supplier;
 final class MemberLevelEmitter {
     private final Supplier<ReinodoceConfig> configSupplier;
     private final ChatEventSink chatGateway;
+    private final MessageRuleEngine ruleEngine;
     private final RichLiveMessageFactory messageFactory;
     private final SessionStatsTracker statsTracker;
     private final SessionEventLogger sessionEventLogger;
@@ -20,11 +22,13 @@ final class MemberLevelEmitter {
     MemberLevelEmitter(
             Supplier<ReinodoceConfig> configSupplier,
             TikTokRuntimeServices runtimeServices,
+            MessageRuleEngine ruleEngine,
             RichLiveMessageFactory messageFactory,
             SessionStatsTracker statsTracker
     ) {
         this.configSupplier = configSupplier;
         this.chatGateway = runtimeServices.chatGateway();
+        this.ruleEngine = ruleEngine;
         this.messageFactory = messageFactory;
         this.statsTracker = statsTracker;
         this.sessionEventLogger = runtimeServices.sessionEventLogger();
@@ -42,6 +46,10 @@ final class MemberLevelEmitter {
             return false;
         }
         String username = TikTokUserNames.sanitizeUserName(update.username());
+        if (!ruleEngine.shouldRouteSyntheticUser(config, null, update.accountUsername())) {
+            logSkipped("allowlist", update);
+            return false;
+        }
         if (config.isChatEmotesEnabled()) {
             chatGateway.sendSyntheticMemberLevel(
                     config,

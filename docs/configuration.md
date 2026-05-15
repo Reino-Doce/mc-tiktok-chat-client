@@ -27,6 +27,11 @@ top-level screen. You can also edit the file by hand and run
 | `ruleMinMemberLevel` | integer | `0` | Minimum LIVE member level required. `0` disables. Clamped to ≥ 0. |
 | `ruleBlockedWords` | string array | `[]` | Case-insensitive blocked word fragments. Comments containing a fragment are hidden. |
 | `ruleBlockedUsers` | string array | `[]` | Case-insensitive exact TikTok usernames to hide. Invalid usernames are discarded on load. |
+| `ruleEmoteOnlyFilterEnabled` | boolean | `false` | When enabled, hides comments whose body has no letters or digits, including inline-media-only comments. |
+| `ruleLinkFilterEnabled` | boolean | `false` | When enabled, hides comments containing `http://`, `https://`, `www.`, or domain-like URLs. |
+| `ruleUserCooldownSeconds` | integer | `0` | Per-user comment cooldown in seconds. `0` disables. Clamped to >= 0. |
+| `ruleAllowlistMode` | boolean | `false` | When enabled, only usernames in `ruleAllowedUsers` pass comment and synthetic user routing. |
+| `ruleAllowedUsers` | string array | `[]` | Case-insensitive exact TikTok usernames allowed while allowlist mode is enabled. Invalid usernames are discarded on load. |
 | `ruleMaxMessageLength` | integer | `0` | Maximum accepted message length. `0` disables. Clamped to ≥ 0. |
 | `ruleDuplicateCooldownSeconds` | integer | `0` | Duplicate text suppression window in seconds. `0` disables. Clamped to ≥ 0. |
 | `syntheticGiftMinValue` | integer | `1` | Minimum gift diamond cost to surface. `0` disables; `1` surfaces all. Clamped to ≥ 0. |

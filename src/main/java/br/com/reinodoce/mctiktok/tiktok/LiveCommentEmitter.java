@@ -21,6 +21,7 @@ final class LiveCommentEmitter {
     private final RichLiveMessageFactory messageFactory;
     private final SessionStatsTracker statsTracker;
     private final ModerationDuplicateTracker moderationDuplicateTracker;
+    private final UserCooldownTracker userCooldownTracker;
     private final SessionEventLogger sessionEventLogger;
 
     LiveCommentEmitter(Dependencies dependencies) {
@@ -32,6 +33,7 @@ final class LiveCommentEmitter {
         this.messageFactory = dependencies.messageFactory();
         this.statsTracker = dependencies.statsTracker();
         this.moderationDuplicateTracker = dependencies.moderationDuplicateTracker();
+        this.userCooldownTracker = dependencies.userCooldownTracker();
         this.sessionEventLogger = dependencies.sessionEventLogger();
     }
 
@@ -48,19 +50,27 @@ final class LiveCommentEmitter {
         sendComment(config, context, plainText);
         sessionEventLogger.log(logEvent(context, plainText));
         moderationDuplicateTracker.remember(plainText, config.getRuleDuplicateCooldownSeconds());
+        userCooldownTracker.remember(context.user(), context.username(), config.getRuleUserCooldownSeconds());
         statsTracker.recordComment(TikTokUserNames.resolveUserId(context.user()), context.username());
     }
 
     private boolean shouldEmit(ReinodoceConfig config, EmissionContext context, String plainText) {
         if (!ruleEngine.shouldDisplayComment(
-                config, context.user(), context.memberLevel(), context.username(), plainText)) {
+                config,
+                context.user(),
+                context.memberLevel(),
+                context.username(),
+                plainText,
+                context.richMessage().hasInlineMedia())) {
             return false;
         }
         if (plainText.isBlank() && !context.richMessage().hasInlineMedia()) {
             return false;
         }
         return !commentDeduplicator.isDuplicate(context.richMessage().messageId(), 1)
-                && !moderationDuplicateTracker.isDuplicate(plainText, config.getRuleDuplicateCooldownSeconds());
+                && !moderationDuplicateTracker.isDuplicate(plainText, config.getRuleDuplicateCooldownSeconds())
+                && !userCooldownTracker.isCoolingDown(
+                        context.user(), context.username(), config.getRuleUserCooldownSeconds());
     }
 
     private void sendComment(ReinodoceConfig config, EmissionContext context, String plainText) {
@@ -117,6 +127,7 @@ final class LiveCommentEmitter {
             RichLiveMessageFactory messageFactory,
             SessionStatsTracker statsTracker,
             ModerationDuplicateTracker moderationDuplicateTracker,
+            UserCooldownTracker userCooldownTracker,
             SessionEventLogger sessionEventLogger
     ) {
     }

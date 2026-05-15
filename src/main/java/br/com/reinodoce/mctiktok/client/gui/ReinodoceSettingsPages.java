@@ -97,6 +97,13 @@ final class ReinodoceSettingsPages {
     }
 
     private static void initRules(ReinodoceSettingsScreen screen) {
+        screen.addDomainButton(ROOT_LEFT_COLUMN, ROOT_ROW_0, Page.RULE_BASIC);
+        screen.addDomainButton(ROOT_RIGHT_COLUMN, ROOT_ROW_0, Page.RULE_CONTENT);
+        screen.addDomainButton(ROOT_LEFT_COLUMN, ROOT_ROW_1, Page.RULE_ALLOWLIST);
+        screen.addBackButton();
+    }
+
+    private static void initRuleBasic(ReinodoceSettingsScreen screen) {
         int row = 0;
         screen.addToggle(row++, "Follower only", screen.configDraft()::isRuleFollowerOnly,
                 screen.configDraft()::setRuleFollowerOnly);
@@ -106,12 +113,33 @@ final class ReinodoceSettingsPages {
                 screen.configDraft()::setRuleMaxMessageLength);
         screen.addNumberField(row++, "Duplicate sec", screen.configDraft()::getRuleDuplicateCooldownSeconds,
                 screen.configDraft()::setRuleDuplicateCooldownSeconds);
+        screen.addNumberField(row, "User cooldown", screen.configDraft()::getRuleUserCooldownSeconds,
+                screen.configDraft()::setRuleUserCooldownSeconds);
+        screen.addBackButton();
+    }
+
+    private static void initRuleContent(ReinodoceSettingsScreen screen) {
+        int row = 0;
+        screen.addToggle(row++, "Emote-only", screen.configDraft()::isRuleEmoteOnlyFilterEnabled,
+                screen.configDraft()::setRuleEmoteOnlyFilterEnabled);
+        screen.addToggle(row++, "Links", screen.configDraft()::isRuleLinkFilterEnabled,
+                screen.configDraft()::setRuleLinkFilterEnabled);
         screen.addTextField(row++, "Blocked words", CSV_MAX_LENGTH,
                 () -> ReinodoceSettingsScreen.joinCsv(screen.configDraft().getRuleBlockedWords()),
                 value -> screen.configDraft().setRuleBlockedWords(ReinodoceSettingsScreen.parseCsvList(value)));
         screen.addTextField(row, "Blocked users", CSV_MAX_LENGTH,
                 () -> ReinodoceSettingsScreen.joinCsv(screen.configDraft().getRuleBlockedUsers()),
                 value -> screen.configDraft().setRuleBlockedUsers(ReinodoceSettingsScreen.parseCsvList(value)));
+        screen.addBackButton();
+    }
+
+    private static void initRuleAllowlist(ReinodoceSettingsScreen screen) {
+        int row = 0;
+        screen.addToggle(row++, "Allowlist mode", screen.configDraft()::isRuleAllowlistMode,
+                screen.configDraft()::setRuleAllowlistMode);
+        screen.addTextField(row, "Allowed users", CSV_MAX_LENGTH,
+                () -> ReinodoceSettingsScreen.joinCsv(screen.configDraft().getRuleAllowedUsers()),
+                value -> screen.configDraft().setRuleAllowedUsers(ReinodoceSettingsScreen.parseCsvList(value)));
         screen.addBackButton();
     }
 
@@ -200,8 +228,14 @@ final class ReinodoceSettingsPages {
                 ReinodoceSettingsPages::initOutput),
         CHAT("Chat formatting", "LIVE prefix, rendered chat template, and inline emotes.", "Chat formatting",
                 ReinodoceSettingsPages::initChat),
-        RULES("Rules / moderation", "Filtering rules plus comma-separated blocked word and user lists.",
+        RULES("Rules / moderation", "Choose moderation filters, content lists, or allowlist mode.",
                 "Rules / moderation", ReinodoceSettingsPages::initRules),
+        RULE_BASIC("Rule basics", "Follower, member-level, length, duplicate, and user cooldown rules.",
+                "Rule basics", ReinodoceSettingsPages::initRuleBasic),
+        RULE_CONTENT("Content filters", "Emote-only, link, blocked word, and blocked user filters.",
+                "Content filters", ReinodoceSettingsPages::initRuleContent),
+        RULE_ALLOWLIST("Allowlist", "Only configured allowed users pass when allowlist mode is on.",
+                "Allowlist", ReinodoceSettingsPages::initRuleAllowlist),
         SYNTHETIC("Synthetic events", "Non-chat LIVE events surfaced into local client output.", "Synthetic events",
                 ReinodoceSettingsPages::initSynthetic),
         ALERTS("Alerts / notifications", "Choose which surfaced event type to configure for local alerts.",

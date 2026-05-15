@@ -102,6 +102,7 @@ final class WebsocketMessageDispatcher {
             memberLevelResolver.updateLevel(
                     rawUser.getId(),
                     username,
+                    rawUser.getUsername(),
                     avatarUrl,
                     MemberLevelResolver.resolveRawUserLevel(rawUser));
         }

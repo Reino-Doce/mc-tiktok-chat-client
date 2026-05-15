@@ -2,6 +2,7 @@ package br.com.reinodoce.mctiktok.tiktok;
 
 import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.util.InlineMediaUrls;
+import br.com.reinodoce.mctiktok.util.UsernameValidator;
 import io.github.jwdeveloper.tiktok.data.models.users.User;
 
 import java.util.Map;
@@ -19,6 +20,7 @@ public class MemberLevelResolver {
 
     private final Map<Long, Integer> levels = new ConcurrentHashMap<>();
     private final Map<Long, String> usernames = new ConcurrentHashMap<>();
+    private final Map<Long, String> accountUsernames = new ConcurrentHashMap<>();
     private final Map<Long, String> avatarUrls = new ConcurrentHashMap<>();
 
     /**
@@ -39,6 +41,7 @@ public class MemberLevelResolver {
         }
 
         usernames.putIfAbsent(userId, chooseUserName(user));
+        accountUsernames.putIfAbsent(userId, accountUsername(user.getName()));
         avatarUrls.putIfAbsent(userId, TikTokMediaResolver.resolveUserAvatarUrl(user));
         return 0;
     }
@@ -53,23 +56,49 @@ public class MemberLevelResolver {
      * @return update summary
      */
     public LevelUpdate updateLevel(long userId, String username, String avatarUrl, long newLevel) {
+        return updateLevel(userId, username, username, avatarUrl, newLevel);
+    }
+
+    /**
+     * Applies a membership-level update for a user.
+     *
+     * @param userId TikTok user id
+     * @param username display name from the event
+     * @param accountUsername stable account username from the event
+     * @param avatarUrl avatar URL from the event
+     * @param newLevel newly observed level
+     * @return update summary
+     */
+    public LevelUpdate updateLevel(
+            long userId, String username, String accountUsername, String avatarUrl, long newLevel
+    ) {
         if (userId <= 0) {
-            return new LevelUpdate(userId, chooseUserName(userId, username), chooseAvatarUrl(userId, avatarUrl), 0, 0);
+            return new LevelUpdate(
+                    userId,
+                    chooseUserName(userId, username),
+                    accountUsername(accountUsername),
+                    chooseAvatarUrl(userId, avatarUrl),
+                    0,
+                    0);
         }
 
         String display = chooseUserName(userId, username);
+        String account = chooseAccountUsername(userId, accountUsername);
         String displayAvatar = chooseAvatarUrl(userId, avatarUrl);
         int previous = levels.getOrDefault(userId, 0);
         int normalizedLevel = normalizeLevel(newLevel);
         if (normalizedLevel == 0) {
-            return new LevelUpdate(userId, display, displayAvatar, previous, previous);
+            return new LevelUpdate(userId, display, account, displayAvatar, previous, previous);
         }
 
         int effective = Math.max(previous, normalizedLevel);
         levels.put(userId, effective);
         usernames.put(userId, display);
+        if (!account.isBlank()) {
+            accountUsernames.put(userId, account);
+        }
         avatarUrls.put(userId, displayAvatar);
-        return new LevelUpdate(userId, display, displayAvatar, previous, effective);
+        return new LevelUpdate(userId, display, account, displayAvatar, previous, effective);
     }
 
     /**
@@ -100,6 +129,7 @@ public class MemberLevelResolver {
     public void clear() {
         levels.clear();
         usernames.clear();
+        accountUsernames.clear();
         avatarUrls.clear();
     }
 
@@ -177,6 +207,19 @@ public class MemberLevelResolver {
         return usernames.getOrDefault(userId, Translations.tr("reinodoce.chat.user_unknown"));
     }
 
+    private String chooseAccountUsername(long userId, String username) {
+        String account = accountUsername(username);
+        if (!account.isBlank()) {
+            return account;
+        }
+        return accountUsernames.getOrDefault(userId, "");
+    }
+
+    private static String accountUsername(String username) {
+        String normalized = UsernameValidator.normalize(username);
+        return UsernameValidator.isValid(normalized) ? normalized : "";
+    }
+
     private String chooseAvatarUrl(long userId, String avatarUrl) {
         if (avatarUrl != null && !avatarUrl.isBlank()) {
             return avatarUrl;
@@ -189,11 +232,23 @@ public class MemberLevelResolver {
      *
      * @param userId TikTok user id
      * @param username display name
+     * @param accountUsername stable account username when known
      * @param avatarUrl avatar URL
      * @param previousLevel previous known level
      * @param newLevel effective stored level
      */
-    public record LevelUpdate(long userId, String username, String avatarUrl, int previousLevel, int newLevel) {
+    public record LevelUpdate(
+            long userId,
+            String username,
+            String accountUsername,
+            String avatarUrl,
+            int previousLevel,
+            int newLevel
+    ) {
+        public LevelUpdate(long userId, String username, String avatarUrl, int previousLevel, int newLevel) {
+            this(userId, username, username, avatarUrl, previousLevel, newLevel);
+        }
+
         /**
          * Reports whether this update increased an already-known member level.
          *

@@ -50,6 +50,8 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     private static final int DEDUPLICATION_WINDOW_MINUTES = 3;
     private static final Path DEFAULT_SESSION_LOG_DIRECTORY = Path.of("logs", "reinodoce");
     private static final String DEFAULT_DISPLAY_VALUE = "default";
+    private static final String EMPTY_STATUS_VALUE_KEY = "reinodoce.status.empty_value";
+    private static final String USERNAME_INVALID_KEY = "reinodoce.error.username_invalid";
 
     private final ReinodoceConfigRepository configRepository;
     private final RuntimeSettingsState settingsState;
@@ -231,7 +233,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
             return CommandResult.error(Translations.tr("reinodoce.command.connect.missing_saved"));
         }
         if (!UsernameValidator.isValid(username)) {
-            return CommandResult.error(Translations.tr("reinodoce.error.username_invalid"));
+            return CommandResult.error(Translations.tr(USERNAME_INVALID_KEY));
         }
         return connect(username);
     }
@@ -248,7 +250,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         ReinodoceConfig config = settingsState.getSnapshot();
         LiveSessionState.Snapshot snapshot = tikTokClientFacade.status();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
-        String emptyValue = Translations.tr("reinodoce.status.empty_value");
+        String emptyValue = Translations.tr(EMPTY_STATUS_VALUE_KEY);
 
         List<String> lines = new ArrayList<>();
         lines.add(Translations.tr("reinodoce.status.state", snapshot.state()));
@@ -264,6 +266,13 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.rule_min_member_level", config.getRuleMinMemberLevel()));
         lines.add(Translations.tr("reinodoce.status.rule_blocked_words", config.getRuleBlockedWords().size()));
         lines.add(Translations.tr("reinodoce.status.rule_blocked_users", config.getRuleBlockedUsers().size()));
+        lines.add(Translations.tr("reinodoce.status.rule_emote_only", config.isRuleEmoteOnlyFilterEnabled()));
+        lines.add(Translations.tr("reinodoce.status.rule_links", config.isRuleLinkFilterEnabled()));
+        lines.add(Translations.tr("reinodoce.status.rule_user_cooldown", config.getRuleUserCooldownSeconds()));
+        lines.add(Translations.tr(
+                "reinodoce.status.rule_allowlist",
+                config.isRuleAllowlistMode(),
+                config.getRuleAllowedUsers().size()));
         lines.add(Translations.tr("reinodoce.status.rule_max_message_length", config.getRuleMaxMessageLength()));
         lines.add(Translations.tr("reinodoce.status.rule_duplicate_cooldown",
                 config.getRuleDuplicateCooldownSeconds()));
@@ -297,7 +306,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     public List<String> statsLines() {
         ensureInitialized();
         SessionStatsTracker.Snapshot stats = tikTokClientFacade.stats();
-        String emptyValue = Translations.tr("reinodoce.status.empty_value");
+        String emptyValue = Translations.tr(EMPTY_STATUS_VALUE_KEY);
         String topGifter = stats.topGifter().isBlank()
                 ? emptyValue
                 : Translations.tr("reinodoce.stats.top_gifter_value",
@@ -505,6 +514,24 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     }
 
     @Override
+    public CommandResult importBlockedWords(String words) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setRuleBlockedWords(parseBlockedWordImport(words));
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.rule.block_word.import", config.getRuleBlockedWords().size()));
+    }
+
+    @Override
+    public List<String> blockedWordExportLines() {
+        ensureInitialized();
+        return listLines(
+                Translations.tr("reinodoce.command.rule.block_word.export"),
+                settingsState.getSnapshot().getRuleBlockedWords());
+    }
+
+    @Override
     public List<String> blockedWordLines() {
         ensureInitialized();
         return listLines(
@@ -518,7 +545,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         ReinodoceConfig config = settingsState.getSnapshot();
         String normalized = config.addRuleBlockedUser(username);
         if (normalized.isBlank()) {
-            return CommandResult.error(Translations.tr("reinodoce.error.username_invalid"));
+            return CommandResult.error(Translations.tr(USERNAME_INVALID_KEY));
         }
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.rule.block_user.add", normalized));
@@ -530,10 +557,28 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         ReinodoceConfig config = settingsState.getSnapshot();
         String normalized = config.removeRuleBlockedUser(username);
         if (normalized.isBlank()) {
-            return CommandResult.error(Translations.tr("reinodoce.error.username_invalid"));
+            return CommandResult.error(Translations.tr(USERNAME_INVALID_KEY));
         }
         persist(config);
         return CommandResult.ok(Translations.tr("reinodoce.command.rule.block_user.remove", normalized));
+    }
+
+    @Override
+    public CommandResult importBlockedUsers(String usernames) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setRuleBlockedUsers(parseCsvList(usernames));
+        persist(config);
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.rule.block_user.import", config.getRuleBlockedUsers().size()));
+    }
+
+    @Override
+    public List<String> blockedUserExportLines() {
+        ensureInitialized();
+        return csvLines(
+                Translations.tr("reinodoce.command.rule.block_user.export"),
+                settingsState.getSnapshot().getRuleBlockedUsers());
     }
 
     @Override
@@ -542,6 +587,76 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         return listLines(
                 Translations.tr("reinodoce.command.rule.block_user.list"),
                 settingsState.getSnapshot().getRuleBlockedUsers());
+    }
+
+    @Override
+    public CommandResult setEmoteOnlyFilterRule(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setRuleEmoteOnlyFilterEnabled(enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.emote_only_filter", enabled));
+    }
+
+    @Override
+    public CommandResult setLinkFilterRule(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setRuleLinkFilterEnabled(enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.link_filter", enabled));
+    }
+
+    @Override
+    public CommandResult setUserCooldownRule(int seconds) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setRuleUserCooldownSeconds(seconds);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.user_cooldown", config.getRuleUserCooldownSeconds()));
+    }
+
+    @Override
+    public CommandResult setAllowlistModeRule(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setRuleAllowlistMode(enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.allowlist_mode", enabled));
+    }
+
+    @Override
+    public CommandResult addAllowedUser(String username) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        String normalized = config.addRuleAllowedUser(username);
+        if (normalized.isBlank()) {
+            return CommandResult.error(Translations.tr(USERNAME_INVALID_KEY));
+        }
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.rule.allow_user.add", normalized));
+    }
+
+    @Override
+    public CommandResult removeAllowedUser(String username) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        String normalized = config.removeRuleAllowedUser(username);
+        if (normalized.isBlank()) {
+            return CommandResult.error(Translations.tr(USERNAME_INVALID_KEY));
+        }
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.rule.allow_user.remove", normalized));
+    }
+
+    @Override
+    public List<String> allowedUserLines() {
+        ensureInitialized();
+        return listLines(
+                Translations.tr("reinodoce.command.rule.allow_user.list"),
+                settingsState.getSnapshot().getRuleAllowedUsers());
     }
 
     @Override
@@ -900,11 +1015,42 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         List<String> lines = new ArrayList<>();
         lines.add(title);
         if (values.isEmpty()) {
-            lines.add(Translations.tr("reinodoce.status.empty_value"));
+            lines.add(Translations.tr(EMPTY_STATUS_VALUE_KEY));
         } else {
             lines.addAll(values);
         }
         return lines;
+    }
+
+    private static List<String> csvLines(String title, List<String> values) {
+        List<String> lines = new ArrayList<>();
+        lines.add(title);
+        lines.add(values.isEmpty()
+                ? Translations.tr(EMPTY_STATUS_VALUE_KEY)
+                : String.join(", ", values));
+        return lines;
+    }
+
+    private static List<String> parseBlockedWordImport(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        return List.of(value.trim());
+    }
+
+    private static List<String> parseCsvList(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        String[] values = value.split(",");
+        List<String> parsed = new ArrayList<>(values.length);
+        for (String candidate : values) {
+            String trimmed = candidate.trim();
+            if (!trimmed.isEmpty()) {
+                parsed.add(trimmed);
+            }
+        }
+        return List.copyOf(parsed);
     }
 
     private static String displayDefault(String value) {

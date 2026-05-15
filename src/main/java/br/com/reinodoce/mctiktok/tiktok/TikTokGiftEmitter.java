@@ -53,7 +53,7 @@ final class TikTokGiftEmitter {
 
     void emitFromAsyncFlush(GiftComboAggregator.GiftEmission emission) {
         ReinodoceConfig config = configSupplier.get();
-        if (!ruleEngine.shouldEmitGift(config, toGift(emission))) {
+        if (!ruleEngine.shouldEmitGift(config, toGift(emission), null, emission.accountUsername())) {
             return;
         }
         emit(config, List.of(emission));
@@ -67,6 +67,7 @@ final class TikTokGiftEmitter {
         int diamonds = gift == null ? 0 : Math.max(0, gift.getDiamondCost());
         int combo = Math.max(1, event.getCombo());
         String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user));
+        String accountUsername = TikTokUserNames.resolveAccountUsername(user);
         String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(user);
         String giftName = MessageSanitizer.sanitize(
                 gift == null ? messageFactory.translate(GIFT_UNKNOWN_KEY) : gift.getName());
@@ -74,6 +75,7 @@ final class TikTokGiftEmitter {
         return new GiftComboAggregator.GiftSnapshot(
                 new GiftComboAggregator.GiftKey(userId, giftId),
                 username,
+                accountUsername,
                 avatarUrl,
                 giftName,
                 giftIconUrl,
@@ -84,6 +86,9 @@ final class TikTokGiftEmitter {
 
     private void emit(ReinodoceConfig config, List<GiftComboAggregator.GiftEmission> emissions) {
         for (GiftComboAggregator.GiftEmission emission : emissions) {
+            if (!ruleEngine.shouldEmitGift(config, toGift(emission), null, emission.accountUsername())) {
+                continue;
+            }
             if (giftDeduplicator.isDuplicate(emission.messageId(), emission.count())) {
                 continue;
             }

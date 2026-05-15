@@ -33,7 +33,12 @@ final class MemberMessageHandler {
             logNotRendered(memberMessage, levelText);
             return;
         }
-        MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(userId, username, avatarUrl, level);
+        MemberLevelResolver.LevelUpdate update = memberLevelResolver.updateLevel(
+                userId,
+                username,
+                rawUser == null ? "" : rawUser.getUsername(),
+                avatarUrl,
+                level);
         if (!memberLevelEmitter.emit(update)) {
             logNotRendered(memberMessage, levelText);
         }

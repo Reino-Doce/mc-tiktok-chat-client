@@ -29,6 +29,10 @@ final class TikTokUserNames {
         return Translations.tr(USER_UNKNOWN_KEY);
     }
 
+    static String resolveAccountUsername(User user) {
+        return user == null ? "" : MessageSanitizer.sanitize(user.getName());
+    }
+
     static long resolveUserId(User user) {
         if (user == null || user.getId() == null) {
             return 0L;

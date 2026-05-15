@@ -51,6 +51,11 @@ final class DiagnosticsConfigReport {
         rules.put("minMemberLevel", config.getRuleMinMemberLevel());
         rules.put("blockedWordsCount", config.getRuleBlockedWords().size());
         rules.put("blockedUsersCount", config.getRuleBlockedUsers().size());
+        rules.put("emoteOnlyFilterEnabled", config.isRuleEmoteOnlyFilterEnabled());
+        rules.put("linkFilterEnabled", config.isRuleLinkFilterEnabled());
+        rules.put("userCooldownSeconds", config.getRuleUserCooldownSeconds());
+        rules.put("allowlistMode", config.isRuleAllowlistMode());
+        rules.put("allowedUsersCount", config.getRuleAllowedUsers().size());
         rules.put("maxMessageLength", config.getRuleMaxMessageLength());
         rules.put("duplicateCooldownSeconds", config.getRuleDuplicateCooldownSeconds());
         return rules;

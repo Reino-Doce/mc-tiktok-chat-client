@@ -187,6 +187,21 @@ public interface ReinodoceCommandService {
     CommandResult removeBlockedWord(String word);
 
     /**
+     * Replaces blocked word filters from comma-separated input.
+     *
+     * @param words comma-separated blocked word fragments
+     * @return command result
+     */
+    CommandResult importBlockedWords(String words);
+
+    /**
+     * Returns blocked word filters as export lines.
+     *
+     * @return blocked word export lines
+     */
+    List<String> blockedWordExportLines();
+
+    /**
      * Returns blocked word filter lines.
      *
      * @return blocked word lines
@@ -210,11 +225,81 @@ public interface ReinodoceCommandService {
     CommandResult removeBlockedUser(String username);
 
     /**
+     * Replaces blocked user filters from comma-separated input.
+     *
+     * @param usernames comma-separated usernames
+     * @return command result
+     */
+    CommandResult importBlockedUsers(String usernames);
+
+    /**
+     * Returns blocked user filters as export lines.
+     *
+     * @return blocked user export lines
+     */
+    List<String> blockedUserExportLines();
+
+    /**
      * Returns blocked user filter lines.
      *
      * @return blocked user lines
      */
     List<String> blockedUserLines();
+
+    /**
+     * Updates emote-only comment filtering.
+     *
+     * @param enabled whether emote-only comments should be hidden
+     * @return command result
+     */
+    CommandResult setEmoteOnlyFilterRule(boolean enabled);
+
+    /**
+     * Updates link/URL comment filtering.
+     *
+     * @param enabled whether comments containing links should be hidden
+     * @return command result
+     */
+    CommandResult setLinkFilterRule(boolean enabled);
+
+    /**
+     * Updates repeated-user cooldown.
+     *
+     * @param seconds cooldown seconds, or zero to disable
+     * @return command result
+     */
+    CommandResult setUserCooldownRule(int seconds);
+
+    /**
+     * Updates user allowlist mode.
+     *
+     * @param enabled whether allowlist mode is enabled
+     * @return command result
+     */
+    CommandResult setAllowlistModeRule(boolean enabled);
+
+    /**
+     * Adds an allowed username.
+     *
+     * @param username TikTok username
+     * @return command result
+     */
+    CommandResult addAllowedUser(String username);
+
+    /**
+     * Removes an allowed username.
+     *
+     * @param username TikTok username
+     * @return command result
+     */
+    CommandResult removeAllowedUser(String username);
+
+    /**
+     * Returns allowed user filter lines.
+     *
+     * @return allowed user lines
+     */
+    List<String> allowedUserLines();
 
     /**
      * Updates maximum accepted message length.

@@ -25,7 +25,8 @@ import java.util.Set;
     "PMD.DataClass",
     "PMD.ExcessivePublicCount",
     "PMD.GodClass",
-    "PMD.TooManyFields"
+    "PMD.TooManyFields",
+    "PMD.TooManyMethods"
 })
 public class ReinodoceConfig {
     /** Default prefix used before rendered LIVE chat lines. */
@@ -62,6 +63,11 @@ public class ReinodoceConfig {
     private int ruleMinMemberLevel = 0;
     private List<String> ruleBlockedWords = new ArrayList<>();
     private List<String> ruleBlockedUsers = new ArrayList<>();
+    private boolean ruleEmoteOnlyFilterEnabled = false;
+    private boolean ruleLinkFilterEnabled = false;
+    private int ruleUserCooldownSeconds = 0;
+    private boolean ruleAllowlistMode = false;
+    private List<String> ruleAllowedUsers = new ArrayList<>();
     private int ruleMaxMessageLength = 0;
     private int ruleDuplicateCooldownSeconds = 0;
     private int syntheticGiftMinValue = DEFAULT_SYNTHETIC_GIFT_MIN_VALUE;
@@ -133,17 +139,38 @@ public class ReinodoceConfig {
         copy.setLastUsername(lastUsername);
         copy.setAutoConnectOnStart(autoConnectOnStart);
         copy.setReconnectSeconds(reconnectSeconds);
+        copyRuleSettingsTo(copy);
+        copySyntheticSettingsTo(copy);
+        copyAlertSettingsTo(copy);
+        copyOutputSettingsTo(copy);
+        copyChatSettingsTo(copy);
+        copyPrivacySettingsTo(copy);
+        return copy;
+    }
+
+    private void copyRuleSettingsTo(ReinodoceConfig copy) {
         copy.setRuleFollowerOnly(ruleFollowerOnly);
         copy.setRuleMinMemberLevel(ruleMinMemberLevel);
         copy.setRuleBlockedWords(ruleBlockedWords);
         copy.setRuleBlockedUsers(ruleBlockedUsers);
+        copy.setRuleEmoteOnlyFilterEnabled(ruleEmoteOnlyFilterEnabled);
+        copy.setRuleLinkFilterEnabled(ruleLinkFilterEnabled);
+        copy.setRuleUserCooldownSeconds(ruleUserCooldownSeconds);
+        copy.setRuleAllowlistMode(ruleAllowlistMode);
+        copy.setRuleAllowedUsers(ruleAllowedUsers);
         copy.setRuleMaxMessageLength(ruleMaxMessageLength);
         copy.setRuleDuplicateCooldownSeconds(ruleDuplicateCooldownSeconds);
+    }
+
+    private void copySyntheticSettingsTo(ReinodoceConfig copy) {
         copy.setSyntheticGiftMinValue(syntheticGiftMinValue);
         copy.setSyntheticGiftComboMode(syntheticGiftComboMode);
         copy.setSyntheticFollowEnabled(syntheticFollowEnabled);
         copy.setSyntheticJoinEnabled(syntheticJoinEnabled);
         copy.setSyntheticMemberLevelEnabled(syntheticMemberLevelEnabled);
+    }
+
+    private void copyAlertSettingsTo(ReinodoceConfig copy) {
         copy.setAlertSoundEnabled(AlertEventType.GIFT, alertGiftSoundEnabled);
         copy.setAlertSoundId(AlertEventType.GIFT, alertGiftSoundId);
         copy.setAlertToastEnabled(AlertEventType.GIFT, alertGiftToastEnabled);
@@ -169,6 +196,9 @@ public class ReinodoceConfig {
         copy.setAlertToastTemplate(AlertEventType.MEMBER_LEVEL, alertMemberLevelToastTemplate);
         copy.setAlertMediaMode(AlertEventType.MEMBER_LEVEL, alertMemberLevelMediaMode);
         copy.setAlertCustomImage(AlertEventType.MEMBER_LEVEL, alertMemberLevelCustomImage);
+    }
+
+    private void copyOutputSettingsTo(ReinodoceConfig copy) {
         copy.setOutputMode(outputMode);
         copy.setHudPosition(hudPosition);
         copy.setHudLines(hudLines);
@@ -176,6 +206,9 @@ public class ReinodoceConfig {
         copy.setPinnedOverlayPosition(pinnedOverlayPosition);
         copy.setPinnedMessagesInOutput(pinnedMessagesInOutput);
         copy.setPinnedOverlayMessages(pinnedOverlayMessages);
+    }
+
+    private void copyChatSettingsTo(ReinodoceConfig copy) {
         copy.setChatPrefix(chatPrefix);
         copy.setChatFormat(chatFormat);
         copy.setChatEmotesEnabled(chatEmotesEnabled);
@@ -183,8 +216,6 @@ public class ReinodoceConfig {
         copy.setLanguage(language);
         copy.setSessionLoggingEnabled(sessionLoggingEnabled);
         copy.setSessionLoggingFormat(sessionLoggingFormat);
-        copyPrivacySettingsTo(copy);
-        return copy;
     }
 
     private void copyPrivacySettingsTo(ReinodoceConfig copy) {
@@ -370,6 +401,122 @@ public class ReinodoceConfig {
     public String removeRuleBlockedUser(String username) {
         String normalized = normalizeUsername(username);
         ruleBlockedUsers = remove(ruleBlockedUsers, normalized);
+        return normalized;
+    }
+
+    /**
+     * Returns whether emote-only comments should be hidden.
+     *
+     * @return emote-only filter state
+     */
+    public boolean isRuleEmoteOnlyFilterEnabled() {
+        return ruleEmoteOnlyFilterEnabled;
+    }
+
+    /**
+     * Sets whether emote-only comments should be hidden.
+     *
+     * @param ruleEmoteOnlyFilterEnabled emote-only filter state
+     */
+    public void setRuleEmoteOnlyFilterEnabled(boolean ruleEmoteOnlyFilterEnabled) {
+        this.ruleEmoteOnlyFilterEnabled = ruleEmoteOnlyFilterEnabled;
+    }
+
+    /**
+     * Returns whether comments containing links should be hidden.
+     *
+     * @return link filter state
+     */
+    public boolean isRuleLinkFilterEnabled() {
+        return ruleLinkFilterEnabled;
+    }
+
+    /**
+     * Sets whether comments containing links should be hidden.
+     *
+     * @param ruleLinkFilterEnabled link filter state
+     */
+    public void setRuleLinkFilterEnabled(boolean ruleLinkFilterEnabled) {
+        this.ruleLinkFilterEnabled = ruleLinkFilterEnabled;
+    }
+
+    /**
+     * Returns the repeated-user cooldown.
+     *
+     * @return user cooldown in seconds, or zero when disabled
+     */
+    public int getRuleUserCooldownSeconds() {
+        return ruleUserCooldownSeconds;
+    }
+
+    /**
+     * Sets the repeated-user cooldown.
+     *
+     * @param ruleUserCooldownSeconds cooldown seconds, clamped to zero or greater
+     */
+    public void setRuleUserCooldownSeconds(int ruleUserCooldownSeconds) {
+        this.ruleUserCooldownSeconds = Math.max(0, ruleUserCooldownSeconds);
+    }
+
+    /**
+     * Returns whether allowlist mode is enabled.
+     *
+     * @return allowlist mode state
+     */
+    public boolean isRuleAllowlistMode() {
+        return ruleAllowlistMode;
+    }
+
+    /**
+     * Sets whether allowlist mode is enabled.
+     *
+     * @param ruleAllowlistMode allowlist mode state
+     */
+    public void setRuleAllowlistMode(boolean ruleAllowlistMode) {
+        this.ruleAllowlistMode = ruleAllowlistMode;
+    }
+
+    /**
+     * Returns configured allowed usernames.
+     *
+     * @return allowed usernames
+     */
+    public List<String> getRuleAllowedUsers() {
+        return List.copyOf(ruleAllowedUsers);
+    }
+
+    /**
+     * Replaces configured allowed usernames.
+     *
+     * @param ruleAllowedUsers allowed usernames
+     */
+    public void setRuleAllowedUsers(List<String> ruleAllowedUsers) {
+        this.ruleAllowedUsers = normalizeUsernames(ruleAllowedUsers);
+    }
+
+    /**
+     * Adds an allowed username.
+     *
+     * @param username allowed username
+     * @return normalized username, or blank when invalid
+     */
+    public String addRuleAllowedUser(String username) {
+        String normalized = normalizeUsername(username);
+        if (!normalized.isBlank() && !ruleAllowedUsers.contains(normalized)) {
+            ruleAllowedUsers = append(ruleAllowedUsers, normalized);
+        }
+        return normalized;
+    }
+
+    /**
+     * Removes an allowed username.
+     *
+     * @param username allowed username
+     * @return normalized username, or blank when invalid
+     */
+    public String removeRuleAllowedUser(String username) {
+        String normalized = normalizeUsername(username);
+        ruleAllowedUsers = remove(ruleAllowedUsers, normalized);
         return normalized;
     }
 
