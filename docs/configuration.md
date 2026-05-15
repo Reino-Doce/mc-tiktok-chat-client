@@ -71,6 +71,9 @@ top-level screen. You can also edit the file by hand and run
 | `pinnedOverlayPosition` | string | `"top-right"` | One of `"top-left"`, `"top-right"`, `"bottom-left"`, or `"bottom-right"`. Unknown values fall back to `"top-left"`. |
 | `pinnedMessagesInOutput` | boolean | `false` | When `true`, pinned-message events also appear in the normal mirrored output selected by `outputMode`. |
 | `pinnedOverlayMessages` | integer | `3` | Maximum visible pinned-message overlay entries. Clamped to 1–6. Pinned messages expire after TikTok's supplied display duration when present, otherwise after a short local fallback. |
+| `burstControlEnabled` | boolean | `false` | Enables visible-output burst controls. Disabled preserves the existing output behavior. |
+| `burstCommentsPerSecond` | integer | `0` | Maximum visible chat comments per second for each output route. `0` disables comment rate limiting. Clamped to 0–60. Accepted comments still update stats and session logs. |
+| `burstSyntheticAggregationSeconds` | integer | `0` | Follow/join aggregation window in seconds. `0` disables aggregation. Clamped to 0–60. |
 | `chatPrefix` | string | `"[LIVE]"` | Prefix prepended to every mirrored line. Empty / blank values revert to the default. |
 | `chatFormat` | string | current layout | Template used to arrange mirrored lines. Must include `{prefix}`, `{username}`, and `{message}`; unknown tokens or blank values revert to the default. |
 | `chatEmotesEnabled` | boolean | `true` | Render TikTok chat emotes inline in Minecraft chat. |

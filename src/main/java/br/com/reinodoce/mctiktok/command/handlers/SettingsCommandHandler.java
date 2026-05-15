@@ -150,6 +150,44 @@ public final class SettingsCommandHandler {
     }
 
     /**
+     * Updates burst-control state.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param enabled whether burst controls should be enabled
+     * @return Brigadier command result code
+     */
+    public static int burstEnabled(ReinodoceCommandService service, CommandSourceStack source, boolean enabled) {
+        return CommandFeedback.sendResult(source, service.setBurstControlEnabled(enabled));
+    }
+
+    /**
+     * Updates the visible comment throughput limit.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param commentsPerSecond visible comments per second, or zero for unlimited
+     * @return Brigadier command result code
+     */
+    public static int burstCommentsPerSecond(
+            ReinodoceCommandService service, CommandSourceStack source, int commentsPerSecond
+    ) {
+        return CommandFeedback.sendResult(source, service.setBurstCommentsPerSecond(commentsPerSecond));
+    }
+
+    /**
+     * Updates the join/follow aggregation window.
+     *
+     * @param service command service boundary
+     * @param source command source to receive feedback
+     * @param seconds aggregation window seconds, or zero to disable aggregation
+     * @return Brigadier command result code
+     */
+    public static int burstSyntheticWindow(ReinodoceCommandService service, CommandSourceStack source, int seconds) {
+        return CommandFeedback.sendResult(source, service.setBurstSyntheticAggregationSeconds(seconds));
+    }
+
+    /**
      * Opens the client settings GUI.
      *
      * @param service command service boundary

@@ -75,6 +75,21 @@ abstract class ReinodoceClientCommandBridge implements ReinodoceCommandService {
     }
 
     @Override
+    public CommandResult setBurstControlEnabled(boolean enabled) {
+        return coreService().setBurstControlEnabled(enabled);
+    }
+
+    @Override
+    public CommandResult setBurstCommentsPerSecond(int commentsPerSecond) {
+        return coreService().setBurstCommentsPerSecond(commentsPerSecond);
+    }
+
+    @Override
+    public CommandResult setBurstSyntheticAggregationSeconds(int seconds) {
+        return coreService().setBurstSyntheticAggregationSeconds(seconds);
+    }
+
+    @Override
     public List<String> languageLines() {
         return coreService().languageLines();
     }

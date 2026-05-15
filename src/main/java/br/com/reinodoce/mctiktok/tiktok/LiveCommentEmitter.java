@@ -22,6 +22,7 @@ final class LiveCommentEmitter {
     private final SessionStatsTracker statsTracker;
     private final ModerationDuplicateTracker moderationDuplicateTracker;
     private final UserCooldownTracker userCooldownTracker;
+    private final BurstOutputController burstOutputController;
     private final SessionEventLogger sessionEventLogger;
 
     LiveCommentEmitter(Dependencies dependencies) {
@@ -34,6 +35,7 @@ final class LiveCommentEmitter {
         this.statsTracker = dependencies.statsTracker();
         this.moderationDuplicateTracker = dependencies.moderationDuplicateTracker();
         this.userCooldownTracker = dependencies.userCooldownTracker();
+        this.burstOutputController = dependencies.burstOutputController();
         this.sessionEventLogger = dependencies.sessionEventLogger();
     }
 
@@ -43,18 +45,24 @@ final class LiveCommentEmitter {
         }
         ReinodoceConfig config = configSupplier.get();
         String plainText = MessageSanitizer.sanitize(context.richMessage().plainText());
-        if (!shouldEmit(config, context, plainText)) {
+        if (!shouldLogAccepted(config, context, plainText)) {
             return;
         }
-        renderedTracker.remember(context.username(), plainText);
-        sendComment(config, context, plainText);
         sessionEventLogger.log(logEvent(context, plainText));
-        moderationDuplicateTracker.remember(plainText, config.getRuleDuplicateCooldownSeconds());
-        userCooldownTracker.remember(context.user(), context.username(), config.getRuleUserCooldownSeconds());
         statsTracker.recordComment(TikTokUserNames.resolveUserId(context.user()), context.username());
+        if (burstOutputController.shouldShowComment(config)) {
+            renderedTracker.remember(context.username(), plainText);
+            sendComment(config, context, plainText);
+            moderationDuplicateTracker.remember(plainText, config.getRuleDuplicateCooldownSeconds());
+            userCooldownTracker.remember(context.user(), context.username(), config.getRuleUserCooldownSeconds());
+        }
     }
 
-    private boolean shouldEmit(ReinodoceConfig config, EmissionContext context, String plainText) {
+    private boolean shouldLogAccepted(ReinodoceConfig config, EmissionContext context, String plainText) {
+        return shouldAccept(config, context, plainText) && isUniqueTransportComment(context);
+    }
+
+    private boolean shouldAccept(ReinodoceConfig config, EmissionContext context, String plainText) {
         if (!ruleEngine.shouldDisplayComment(
                 config,
                 context.user(),
@@ -67,10 +75,14 @@ final class LiveCommentEmitter {
         if (plainText.isBlank() && !context.richMessage().hasInlineMedia()) {
             return false;
         }
-        return !commentDeduplicator.isDuplicate(context.richMessage().messageId(), 1)
-                && !moderationDuplicateTracker.isDuplicate(plainText, config.getRuleDuplicateCooldownSeconds())
+        return !moderationDuplicateTracker.isDuplicate(plainText, config.getRuleDuplicateCooldownSeconds())
                 && !userCooldownTracker.isCoolingDown(
                         context.user(), context.username(), config.getRuleUserCooldownSeconds());
+    }
+
+    private boolean isUniqueTransportComment(EmissionContext context) {
+        // Keep TikTok transport-id dedupe ahead of burst gating so hidden duplicates do not reach stats/logs.
+        return !commentDeduplicator.isDuplicate(context.richMessage().messageId(), 1);
     }
 
     private void sendComment(ReinodoceConfig config, EmissionContext context, String plainText) {
@@ -128,6 +140,7 @@ final class LiveCommentEmitter {
             SessionStatsTracker statsTracker,
             ModerationDuplicateTracker moderationDuplicateTracker,
             UserCooldownTracker userCooldownTracker,
+            BurstOutputController burstOutputController,
             SessionEventLogger sessionEventLogger
     ) {
     }

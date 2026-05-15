@@ -148,6 +148,9 @@ class ReinodoceCoreServiceTest {
         CommandResult pinnedPositionResult = service.setPinnedOverlayPosition(BOTTOM_LEFT);
         CommandResult pinnedOutputResult = service.setPinnedMessagesInOutput(true);
         CommandResult pinnedMessagesResult = service.setPinnedOverlayMessages(2);
+        CommandResult burstEnabledResult = service.setBurstControlEnabled(true);
+        CommandResult burstCommentsResult = service.setBurstCommentsPerSecond(7);
+        CommandResult burstWindowResult = service.setBurstSyntheticAggregationSeconds(4);
         ReinodoceConfig loaded = repository.load();
 
         assertTrue(modeResult.success());
@@ -157,6 +160,9 @@ class ReinodoceCoreServiceTest {
         assertTrue(pinnedPositionResult.success());
         assertTrue(pinnedOutputResult.success());
         assertTrue(pinnedMessagesResult.success());
+        assertTrue(burstEnabledResult.success());
+        assertTrue(burstCommentsResult.success());
+        assertTrue(burstWindowResult.success());
         assertEquals(HUD_MODE, loaded.getOutputMode());
         assertEquals(BOTTOM_RIGHT, loaded.getHudPosition());
         assertEquals(4, loaded.getHudLines());
@@ -164,6 +170,9 @@ class ReinodoceCoreServiceTest {
         assertEquals(BOTTOM_LEFT, loaded.getPinnedOverlayPosition());
         assertTrue(loaded.isPinnedMessagesInOutput());
         assertEquals(2, loaded.getPinnedOverlayMessages());
+        assertTrue(loaded.isBurstControlEnabled());
+        assertEquals(7, loaded.getBurstCommentsPerSecond());
+        assertEquals(4, loaded.getBurstSyntheticAggregationSeconds());
     }
 
     @Test
