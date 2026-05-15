@@ -26,6 +26,7 @@ final class SessionLogWriter {
 
     private BufferedWriter writer;
     private SessionLogFormat writerFormat;
+    private SessionLogPrivacyOptions writerOptions;
     private int writerGeneration;
 
     SessionLogWriter(Path logDirectory, Clock clock) {
@@ -33,7 +34,7 @@ final class SessionLogWriter {
         this.clock = clock;
     }
 
-    boolean start(int generation, SessionLogFormat format, String username) {
+    boolean start(int generation, SessionLogFormat format, SessionLogPrivacyOptions options, String username) {
         closeQuietly();
         try {
             Files.createDirectories(logDirectory);
@@ -44,8 +45,11 @@ final class SessionLogWriter {
                     StandardOpenOption.CREATE_NEW,
                     StandardOpenOption.WRITE);
             writerFormat = format;
+            writerOptions = options;
             writerGeneration = generation;
-            ReinodoceLogger.LOGGER.info("TikTok LIVE session logging started for @{} at {}", username, sessionFile);
+            SessionLogRetentionCleaner.clean(logDirectory, clock, options, sessionFile);
+            ReinodoceLogger.LOGGER.info(
+                    "TikTok LIVE session logging started for @{} at {}", logUsername(options, username), sessionFile);
             return true;
         } catch (IOException exception) {
             ReinodoceLogger.LOGGER.warn("Failed to start TikTok LIVE session logging", exception);
@@ -58,7 +62,7 @@ final class SessionLogWriter {
             return true;
         }
         try {
-            writer.write(SessionLogFormatter.format(writerFormat, timestamp, event));
+            writer.write(SessionLogFormatter.format(writerFormat, timestamp, event, writerOptions));
             writer.newLine();
             writer.flush();
             return true;
@@ -80,6 +84,7 @@ final class SessionLogWriter {
         } finally {
             writer = null;
             writerFormat = null;
+            writerOptions = null;
             writerGeneration = 0;
         }
     }
@@ -96,5 +101,9 @@ final class SessionLogWriter {
                 return candidate;
             }
         }
+    }
+
+    private static String logUsername(SessionLogPrivacyOptions options, String username) {
+        return options != null && options.anonymized() ? "<redacted-username>" : username;
     }
 }

@@ -52,6 +52,7 @@ Settings change runtime behavior and are persisted to the client config.
 | `/reinodoce settings pinned-overlay messages <messages>` | integer 1–6 | `3` | Maximum visible pinned-message overlay entries. Entries expire after TikTok's supplied display duration when available. |
 | `/reinodoce settings chat-emotes <true\|false>` | boolean | `true` | When `true`, TikTok chat emotes are rendered inline in the Minecraft chat HUD. |
 | `/reinodoce settings chat-log <true\|false>` | boolean | `false` | When `true`, mirrored TikTok lines are written through Minecraft's chat logger. System/status/error lines remain logged either way. |
+| `/reinodoce settings mask-usernames <true\|false>` | boolean | `false` | Masks TikTok usernames in mirrored chat, actionbar, HUD, and pinned overlay output. Command/status/system feedback is unchanged. |
 | `/reinodoce settings prefix <value>` | text | `"[LIVE]"` | Prefix rendered on every mirrored TikTok line. Blank values fall back to the default. |
 | `/reinodoce settings format <template>` | text containing `{prefix}`, `{username}`, and `{message}` | current layout | Template used to arrange mirrored TikTok lines. Unknown tokens or templates missing a required token fall back to the default. |
 
@@ -78,11 +79,19 @@ files may contain TikTok usernames and chat content.
 | ------- | -------- | ------- | ------ |
 | `/reinodoce logging enabled <true\|false>` | boolean | `false` | Enables or disables local session event logs. When enabled during a connection, logging starts for the current session; disabling closes the active file. |
 | `/reinodoce logging format <jsonl\|text>` | enum | `jsonl` | Selects JSON Lines or plain text key-value output. Format changes apply to the next opened session file. |
+| `/reinodoce logging anonymized <true\|false>` | boolean | `false` | Masks username fields in session log files. |
+| `/reinodoce logging metadata-only <true\|false>` | boolean | `false` | Omits message body fields from session log files while preserving event type, timestamps, member level, gift name, counts, and diamonds when present. |
+| `/reinodoce logging retention-days <days>` | integer ≥ 0 | `0` | Deletes this mod's own `live-*.jsonl` and `live-*.txt` session logs older than the configured number of days when a new session log opens. `0` disables age cleanup. |
+| `/reinodoce logging retention-files <files>` | integer ≥ 0 | `0` | Keeps at most this many of this mod's own session log files after a new session log opens. `0` disables count cleanup. |
 
 Each successful connection opens one file such as
 `logs/reinodoce/live-2026-05-13T20-30-00.jsonl`. A duplicate timestamp
 adds a numeric suffix, for example `live-2026-05-13T20-30-00-2.jsonl`.
 Files close on disconnect, reconnect, or when logging is disabled.
+Format and privacy changes apply to the next opened session file.
+Retention cleanup is non-recursive and only targets `live-*` files with
+known session log extensions in `logs/reinodoce/`; diagnostics exports and
+unrelated files are left alone.
 
 ## Rules (incoming chat filtering)
 

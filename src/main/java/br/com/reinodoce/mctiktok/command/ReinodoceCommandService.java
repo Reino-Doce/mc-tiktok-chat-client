@@ -351,6 +351,14 @@ public interface ReinodoceCommandService {
     CommandResult setChatLogEnabled(boolean enabled);
 
     /**
+     * Updates username masking in mirrored visible output.
+     *
+     * @param enabled whether mirrored output usernames are masked
+     * @return command result
+     */
+    CommandResult setMaskUsernamesInOutput(boolean enabled);
+
+    /**
      * Updates the visible LIVE chat prefix.
      *
      * @param prefix prefix text
@@ -381,6 +389,38 @@ public interface ReinodoceCommandService {
      * @return command result
      */
     CommandResult setSessionLoggingFormat(String format);
+
+    /**
+     * Updates session log retention by maximum age.
+     *
+     * @param days retention days, or zero to disable age cleanup
+     * @return command result
+     */
+    CommandResult setSessionLoggingRetentionDays(int days);
+
+    /**
+     * Updates session log retention by maximum file count.
+     *
+     * @param files retained file count, or zero to disable count cleanup
+     * @return command result
+     */
+    CommandResult setSessionLoggingRetentionFiles(int files);
+
+    /**
+     * Updates session log username masking.
+     *
+     * @param enabled whether session log username fields are masked
+     * @return command result
+     */
+    CommandResult setSessionLoggingAnonymized(boolean enabled);
+
+    /**
+     * Updates whether session logs omit message text bodies.
+     *
+     * @param enabled whether session logs omit message bodies
+     * @return command result
+     */
+    CommandResult setSessionLoggingMetadataOnly(boolean enabled);
 
     /**
      * Reloads persisted configuration.

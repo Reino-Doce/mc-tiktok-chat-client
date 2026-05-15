@@ -108,6 +108,11 @@ public class ReinodoceConfig {
     private String language = DEFAULT_LANGUAGE;
     private boolean sessionLoggingEnabled = false;
     private String sessionLoggingFormat = SessionLogFormat.JSONL.id();
+    private int sessionLoggingRetentionDays = 0;
+    private int sessionLoggingRetentionFiles = 0;
+    private boolean sessionLoggingAnonymized = false;
+    private boolean sessionLoggingMetadataOnly = false;
+    private boolean maskUsernamesInOutput = false;
 
     /**
      * Creates a configuration instance populated with default values.
@@ -178,7 +183,16 @@ public class ReinodoceConfig {
         copy.setLanguage(language);
         copy.setSessionLoggingEnabled(sessionLoggingEnabled);
         copy.setSessionLoggingFormat(sessionLoggingFormat);
+        copyPrivacySettingsTo(copy);
         return copy;
+    }
+
+    private void copyPrivacySettingsTo(ReinodoceConfig copy) {
+        copy.setSessionLoggingRetentionDays(sessionLoggingRetentionDays);
+        copy.setSessionLoggingRetentionFiles(sessionLoggingRetentionFiles);
+        copy.setSessionLoggingAnonymized(sessionLoggingAnonymized);
+        copy.setSessionLoggingMetadataOnly(sessionLoggingMetadataOnly);
+        copy.setMaskUsernamesInOutput(maskUsernamesInOutput);
     }
 
     /**
@@ -908,6 +922,96 @@ public class ReinodoceConfig {
      */
     public void setSessionLoggingFormat(String sessionLoggingFormat) {
         this.sessionLoggingFormat = SessionLogFormat.fromString(sessionLoggingFormat).id();
+    }
+
+    /**
+     * Returns the maximum age for retained session log files.
+     *
+     * @return retention days, or {@code 0} when age cleanup is disabled
+     */
+    public int getSessionLoggingRetentionDays() {
+        return sessionLoggingRetentionDays;
+    }
+
+    /**
+     * Sets the maximum age for retained session log files.
+     *
+     * @param sessionLoggingRetentionDays retention days, or {@code 0} to disable age cleanup
+     */
+    public void setSessionLoggingRetentionDays(int sessionLoggingRetentionDays) {
+        this.sessionLoggingRetentionDays = Math.max(0, sessionLoggingRetentionDays);
+    }
+
+    /**
+     * Returns the maximum number of retained session log files.
+     *
+     * @return retained file count, or {@code 0} when count cleanup is disabled
+     */
+    public int getSessionLoggingRetentionFiles() {
+        return sessionLoggingRetentionFiles;
+    }
+
+    /**
+     * Sets the maximum number of retained session log files.
+     *
+     * @param sessionLoggingRetentionFiles retained file count, or {@code 0} to disable count cleanup
+     */
+    public void setSessionLoggingRetentionFiles(int sessionLoggingRetentionFiles) {
+        this.sessionLoggingRetentionFiles = Math.max(0, sessionLoggingRetentionFiles);
+    }
+
+    /**
+     * Returns whether session log usernames are masked.
+     *
+     * @return true when session log usernames are masked
+     */
+    public boolean isSessionLoggingAnonymized() {
+        return sessionLoggingAnonymized;
+    }
+
+    /**
+     * Sets whether session log usernames are masked.
+     *
+     * @param sessionLoggingAnonymized true to mask session log usernames
+     */
+    public void setSessionLoggingAnonymized(boolean sessionLoggingAnonymized) {
+        this.sessionLoggingAnonymized = sessionLoggingAnonymized;
+    }
+
+    /**
+     * Returns whether session logs omit message text bodies.
+     *
+     * @return true when session logs omit message bodies
+     */
+    public boolean isSessionLoggingMetadataOnly() {
+        return sessionLoggingMetadataOnly;
+    }
+
+    /**
+     * Sets whether session logs omit message text bodies.
+     *
+     * @param sessionLoggingMetadataOnly true to omit message bodies
+     */
+    public void setSessionLoggingMetadataOnly(boolean sessionLoggingMetadataOnly) {
+        this.sessionLoggingMetadataOnly = sessionLoggingMetadataOnly;
+    }
+
+    /**
+     * Returns whether mirrored visible output masks usernames.
+     *
+     * @return true when mirrored output usernames are masked
+     */
+    public boolean isMaskUsernamesInOutput() {
+        return maskUsernamesInOutput;
+    }
+
+    /**
+     * Sets whether mirrored visible output masks usernames.
+     *
+     * @param maskUsernamesInOutput true to mask usernames in mirrored output
+     */
+    public void setMaskUsernamesInOutput(boolean maskUsernamesInOutput) {
+        this.maskUsernamesInOutput = maskUsernamesInOutput;
     }
 
     private static List<String> normalizeTerms(List<String> values) {

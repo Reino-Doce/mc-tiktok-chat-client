@@ -7,6 +7,7 @@ import br.com.reinodoce.mctiktok.config.OutputMode;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.i18n.Translations;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
+import br.com.reinodoce.mctiktok.privacy.VisibleUsernameMasker;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
@@ -44,22 +45,26 @@ public class MinecraftChatGateway implements ChatEventSink {
 
     @Override
     public void sendLiveComment(ReinodoceConfig config, String username, String message) {
-        send(config, formatter.formatLiveComment(ChatMessageStyle.from(config), username, message));
+        send(config, formatter.formatLiveComment(
+                ChatMessageStyle.from(config), VisibleUsernameMasker.username(config, username), message));
     }
 
     @Override
     public void sendLiveComment(ReinodoceConfig config, RichLiveMessage message) {
-        sendTracked(config, formatter.formatLiveComment(ChatMessageStyle.from(config), message));
+        sendTracked(config, formatter.formatLiveComment(
+                ChatMessageStyle.from(config), VisibleUsernameMasker.message(config, message)));
     }
 
     @Override
     public void sendStarComment(ReinodoceConfig config, String username, String message) {
-        send(config, formatter.formatStarComment(ChatMessageStyle.from(config), username, message));
+        send(config, formatter.formatStarComment(
+                ChatMessageStyle.from(config), VisibleUsernameMasker.username(config, username), message));
     }
 
     @Override
     public void sendStarComment(ReinodoceConfig config, RichLiveMessage message) {
-        sendTracked(config, formatter.formatStarComment(ChatMessageStyle.from(config), message));
+        sendTracked(config, formatter.formatStarComment(
+                ChatMessageStyle.from(config), VisibleUsernameMasker.message(config, message)));
     }
 
     @Override
@@ -67,7 +72,7 @@ public class MinecraftChatGateway implements ChatEventSink {
         ChatMessageStyle style = ChatMessageStyle.from(config);
         RichLiveMessage pinnedMessage = new RichLiveMessage(
                 0L,
-                username,
+                VisibleUsernameMasker.username(config, username),
                 List.of(new RichLiveMessage.TextSegment(pinnedPrefix(config) + message)));
         send(config, formatter.formatRichLine(style, pinnedMessage, ChatFormatting.GOLD).component());
     }
@@ -75,54 +80,63 @@ public class MinecraftChatGateway implements ChatEventSink {
     @Override
     public void sendPinnedComment(ReinodoceConfig config, RichLiveMessage message) {
         ChatMessageStyle style = ChatMessageStyle.from(config);
-        sendTracked(config, formatter.formatRichLine(style, withPinnedPrefix(config, message), ChatFormatting.GOLD));
+        RichLiveMessage visibleMessage = VisibleUsernameMasker.message(config, message);
+        sendTracked(config, formatter.formatRichLine(style, withPinnedPrefix(config, visibleMessage), ChatFormatting.GOLD));
     }
 
     @Override
     public void sendSyntheticGift(ReinodoceConfig config, String username, String giftName, int count) {
         ChatMessageStyle style = ChatMessageStyle.from(config);
-        send(config, formatter.formatSyntheticGift(style, username, giftName, count, fixedTextLanguage(config)));
+        send(config, formatter.formatSyntheticGift(
+                style, VisibleUsernameMasker.username(config, username), giftName, count, fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticGift(ReinodoceConfig config, RichLiveMessage message) {
-        sendTracked(config, formatter.formatSyntheticGift(ChatMessageStyle.from(config), message));
+        sendTracked(config, formatter.formatSyntheticGift(
+                ChatMessageStyle.from(config), VisibleUsernameMasker.message(config, message)));
     }
 
     @Override
     public void sendSyntheticFollow(ReinodoceConfig config, String username) {
         ChatMessageStyle style = ChatMessageStyle.from(config);
-        send(config, formatter.formatSyntheticFollow(style, username, fixedTextLanguage(config)));
+        send(config, formatter.formatSyntheticFollow(
+                style, VisibleUsernameMasker.username(config, username), fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticFollow(ReinodoceConfig config, RichLiveMessage message) {
         ChatMessageStyle style = ChatMessageStyle.from(config);
-        sendTracked(config, formatter.formatSyntheticFollow(style, message, fixedTextLanguage(config)));
+        sendTracked(config, formatter.formatSyntheticFollow(
+                style, VisibleUsernameMasker.message(config, message), fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticJoin(ReinodoceConfig config, String username) {
         ChatMessageStyle style = ChatMessageStyle.from(config);
-        send(config, formatter.formatSyntheticJoin(style, username, fixedTextLanguage(config)));
+        send(config, formatter.formatSyntheticJoin(
+                style, VisibleUsernameMasker.username(config, username), fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticJoin(ReinodoceConfig config, RichLiveMessage message) {
         ChatMessageStyle style = ChatMessageStyle.from(config);
-        sendTracked(config, formatter.formatSyntheticJoin(style, message, fixedTextLanguage(config)));
+        sendTracked(config, formatter.formatSyntheticJoin(
+                style, VisibleUsernameMasker.message(config, message), fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticMemberLevel(ReinodoceConfig config, String username, int memberLevel) {
         ChatMessageStyle style = ChatMessageStyle.from(config);
-        send(config, formatter.formatSyntheticMemberLevel(style, username, memberLevel, fixedTextLanguage(config)));
+        send(config, formatter.formatSyntheticMemberLevel(
+                style, VisibleUsernameMasker.username(config, username), memberLevel, fixedTextLanguage(config)));
     }
 
     @Override
     public void sendSyntheticMemberLevel(ReinodoceConfig config, RichLiveMessage message, int memberLevel) {
         ChatMessageStyle style = ChatMessageStyle.from(config);
-        sendTracked(config, formatter.formatSyntheticMemberLevel(style, message, memberLevel, fixedTextLanguage(config)));
+        sendTracked(config, formatter.formatSyntheticMemberLevel(
+                style, VisibleUsernameMasker.message(config, message), memberLevel, fixedTextLanguage(config)));
     }
 
     @Override

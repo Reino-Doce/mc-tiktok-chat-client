@@ -30,6 +30,8 @@ class ReinodoceCommandTreeTest {
     private static final String POSITION_ARGUMENT = "position";
     private static final String LINES_ARGUMENT = "lines";
     private static final String MESSAGES_ARGUMENT = "messages";
+    private static final String DAYS_ARGUMENT = "days";
+    private static final String FILES_ARGUMENT = "files";
     private static final String LOCALE_ARGUMENT = "locale";
     private static final String CUSTOM_IMAGE_ARGUMENT = "customImage";
 
@@ -70,6 +72,10 @@ class ReinodoceCommandTreeTest {
         CommandNode<CommandSourceStack> logging = root.getChild("logging");
         assertNotNull(logging.getChild("enabled").getChild(ENABLED_ARGUMENT));
         assertNotNull(logging.getChild("format").getChild("format"));
+        assertNotNull(logging.getChild("retention-days").getChild(DAYS_ARGUMENT));
+        assertNotNull(logging.getChild("retention-files").getChild(FILES_ARGUMENT));
+        assertNotNull(logging.getChild("anonymized").getChild(ENABLED_ARGUMENT));
+        assertNotNull(logging.getChild("metadata-only").getChild(ENABLED_ARGUMENT));
     }
 
     @Test
@@ -126,6 +132,7 @@ class ReinodoceCommandTreeTest {
         assertNotNull(settings.getChild("gui").getCommand());
         assertNotNull(settings.getChild("chat-emotes").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("chat-log").getChild(ENABLED_ARGUMENT));
+        assertNotNull(settings.getChild("mask-usernames").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("prefix").getChild(VALUE_ARGUMENT));
         assertNotNull(settings.getChild("format").getChild("template"));
     }
@@ -349,6 +356,11 @@ class ReinodoceCommandTreeTest {
         }
 
         @Override
+        public CommandResult setMaskUsernamesInOutput(boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
         public CommandResult setChatPrefix(String prefix) {
             return unsupported();
         }
@@ -365,6 +377,26 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult setSessionLoggingFormat(String format) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setSessionLoggingRetentionDays(int days) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setSessionLoggingRetentionFiles(int files) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setSessionLoggingAnonymized(boolean enabled) {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult setSessionLoggingMetadataOnly(boolean enabled) {
             return unsupported();
         }
 

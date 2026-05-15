@@ -4,6 +4,7 @@ import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.pinned.PinnedLiveMessage;
 import br.com.reinodoce.mctiktok.pinned.PinnedMessageSink;
 import br.com.reinodoce.mctiktok.platform.MinecraftPlatformBridge;
+import br.com.reinodoce.mctiktok.privacy.VisibleUsernameMasker;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -33,7 +34,7 @@ public class MinecraftPinnedMessageGateway implements PinnedMessageSink {
         if (config == null || message == null || message.message().isBlank()) {
             return;
         }
-        Component component = format(message);
+        Component component = format(config, message);
         platformBridge.runOnClientThread(() -> messageStore.add(
                 message.pinId(),
                 component,
@@ -46,11 +47,12 @@ public class MinecraftPinnedMessageGateway implements PinnedMessageSink {
         platformBridge.runOnClientThread(messageStore::clear);
     }
 
-    private static Component format(PinnedLiveMessage message) {
+    private static Component format(ReinodoceConfig config, PinnedLiveMessage message) {
         MutableComponent component = Component.empty();
         component.append(Component.translatable("reinodoce.pinned.label").withStyle(ChatFormatting.GOLD));
         component.append(Component.literal(" @").withStyle(ChatFormatting.DARK_AQUA));
-        component.append(Component.literal(message.username()).withStyle(ChatFormatting.WHITE));
+        component.append(Component.literal(VisibleUsernameMasker.username(config, message.username()))
+                .withStyle(ChatFormatting.WHITE));
         component.append(Component.literal(": ").withStyle(ChatFormatting.WHITE));
         component.append(Component.literal(message.message()).withStyle(ChatFormatting.GRAY));
         return component;

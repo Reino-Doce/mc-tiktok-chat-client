@@ -277,8 +277,13 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         lines.add(Translations.tr("reinodoce.status.chat_format", config.getChatFormat()));
         lines.add(Translations.tr("reinodoce.status.chat_emotes", config.isChatEmotesEnabled()));
         lines.add(Translations.tr("reinodoce.status.chat_log", config.isChatLogEnabled()));
+        lines.add(Translations.tr("reinodoce.status.mask_usernames", config.isMaskUsernamesInOutput()));
         lines.add(Translations.tr("reinodoce.status.session_logging", config.isSessionLoggingEnabled()));
         lines.add(Translations.tr("reinodoce.status.session_logging_format", config.getSessionLoggingFormat()));
+        lines.add(Translations.tr("reinodoce.status.session_logging_retention",
+                config.getSessionLoggingRetentionDays(), config.getSessionLoggingRetentionFiles()));
+        lines.add(Translations.tr("reinodoce.status.session_logging_privacy",
+                config.isSessionLoggingAnonymized(), config.isSessionLoggingMetadataOnly()));
         SessionStatsTracker.Snapshot stats = tikTokClientFacade.stats();
         lines.add(Translations.tr("reinodoce.status.session_stats",
                 stats.messages(), stats.uniqueChatters(), stats.gifts(), stats.diamonds()));
@@ -719,6 +724,15 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
     }
 
     @Override
+    public CommandResult setMaskUsernamesInOutput(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setMaskUsernamesInOutput(enabled);
+        persist(config);
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.mask_usernames", enabled));
+    }
+
+    @Override
     public CommandResult setChatPrefix(String prefix) {
         ensureInitialized();
         ReinodoceConfig config = settingsState.getSnapshot();
@@ -755,6 +769,50 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         persist(config);
         tikTokClientFacade.onConfigUpdated();
         return CommandResult.ok(Translations.tr("reinodoce.command.set.session_logging_format", parsed.id()));
+    }
+
+    @Override
+    public CommandResult setSessionLoggingRetentionDays(int days) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setSessionLoggingRetentionDays(days);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.session_logging_retention_days",
+                config.getSessionLoggingRetentionDays()));
+    }
+
+    @Override
+    public CommandResult setSessionLoggingRetentionFiles(int files) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setSessionLoggingRetentionFiles(files);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.session_logging_retention_files",
+                config.getSessionLoggingRetentionFiles()));
+    }
+
+    @Override
+    public CommandResult setSessionLoggingAnonymized(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setSessionLoggingAnonymized(enabled);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.session_logging_anonymized", enabled));
+    }
+
+    @Override
+    public CommandResult setSessionLoggingMetadataOnly(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setSessionLoggingMetadataOnly(enabled);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.session_logging_metadata_only", enabled));
     }
 
     @Override

@@ -44,6 +44,8 @@ public final class ReinodoceCommandTree {
     private static final String ARG_POSITION = "position";
     private static final String ARG_LINES = "lines";
     private static final String ARG_MESSAGES = "messages";
+    private static final String ARG_DAYS = "days";
+    private static final String ARG_FILES = "files";
     private static final String ARG_LOCALE = "locale";
     private static final String ARG_SOUND_ID = "soundId";
     private static final String ARG_CUSTOM_IMAGE = "customImage";
@@ -139,6 +141,12 @@ public final class ReinodoceCommandTree {
                 .then(Commands.literal("chat-log")
                         .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
                                 .executes(ctx -> SettingsCommandHandler.chatLog(
+                                        service,
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal("mask-usernames")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> SettingsCommandHandler.maskUsernames(
                                         service,
                                         ctx.getSource(),
                                         BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
@@ -391,7 +399,31 @@ public final class ReinodoceCommandTree {
                                 .executes(ctx -> LoggingCommandHandler.format(
                                         service,
                                         ctx.getSource(),
-                                        StringArgumentType.getString(ctx, ARG_FORMAT)))));
+                                        StringArgumentType.getString(ctx, ARG_FORMAT)))))
+                .then(Commands.literal("retention-days")
+                        .then(Commands.argument(ARG_DAYS, IntegerArgumentType.integer(0))
+                                .executes(ctx -> LoggingCommandHandler.retentionDays(
+                                        service,
+                                        ctx.getSource(),
+                                        IntegerArgumentType.getInteger(ctx, ARG_DAYS)))))
+                .then(Commands.literal("retention-files")
+                        .then(Commands.argument(ARG_FILES, IntegerArgumentType.integer(0))
+                                .executes(ctx -> LoggingCommandHandler.retentionFiles(
+                                        service,
+                                        ctx.getSource(),
+                                        IntegerArgumentType.getInteger(ctx, ARG_FILES)))))
+                .then(Commands.literal("anonymized")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> LoggingCommandHandler.anonymized(
+                                        service,
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal("metadata-only")
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> LoggingCommandHandler.metadataOnly(
+                                        service,
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> syntheticToggle(

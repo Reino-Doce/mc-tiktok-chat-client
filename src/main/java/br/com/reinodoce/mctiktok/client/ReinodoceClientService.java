@@ -1,6 +1,5 @@
 package br.com.reinodoce.mctiktok.client;
 
-import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import br.com.reinodoce.mctiktok.alert.MinecraftAlertGateway;
 import br.com.reinodoce.mctiktok.chat.LiveMessageFormatter;
 import br.com.reinodoce.mctiktok.chat.MinecraftChatGateway;
@@ -9,7 +8,6 @@ import br.com.reinodoce.mctiktok.client.font.InlineMediaTokenRegistry;
 import br.com.reinodoce.mctiktok.client.gui.ReinodoceSettingsScreen;
 import br.com.reinodoce.mctiktok.client.overlay.InlineMediaCache;
 import br.com.reinodoce.mctiktok.command.CommandResult;
-import br.com.reinodoce.mctiktok.command.ReinodoceCommandService;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfig;
 import br.com.reinodoce.mctiktok.config.ReinodoceConfigRepository;
 import br.com.reinodoce.mctiktok.core.ReinodoceCoreService;
@@ -28,8 +26,8 @@ import java.util.Objects;
  */
 // Command-service facade intentionally mirrors the public command contract.
 @SuppressWarnings("PMD.ExcessivePublicCount")
-public class ReinodoceClientService implements ReinodoceCommandService {
-    private final ReinodoceCoreService coreService;
+public class ReinodoceClientService extends ReinodoceClientPrivacyCommandBridge {
+    private final ReinodoceCoreService core;
     private final InlineMediaCache inlineMediaCache;
     private final InlineMediaTokenRegistry inlineMediaTokenRegistry;
     private final ClientOverlayServices overlays;
@@ -47,7 +45,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
         this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
         this.overlays = new ClientOverlayServices();
         InlineMediaFontHooks.installRegistry(inlineMediaTokenRegistry);
-        this.coreService = new ReinodoceCoreService(
+        this.core = new ReinodoceCoreService(
                 new TikTokRuntimeServices.SideEffects(
                         new MinecraftChatGateway(
                                 safePlatformBridge,
@@ -72,14 +70,14 @@ public class ReinodoceClientService implements ReinodoceCommandService {
         this.inlineMediaCache = new InlineMediaCache();
         this.inlineMediaTokenRegistry = new InlineMediaTokenRegistry(inlineMediaCache);
         this.overlays = Objects.requireNonNull(overlays, "overlays");
-        this.coreService = Objects.requireNonNull(coreService, "coreService");
+        this.core = Objects.requireNonNull(coreService, "coreService");
     }
 
     /**
      * Initializes core service state.
      */
     public void initialize() {
-        coreService.initialize();
+        core.initialize();
     }
 
     /**
@@ -90,7 +88,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
      * @param screenHeight current screen height
      */
     public void renderHud(GuiGraphics graphics, int screenWidth, int screenHeight) {
-        ReinodoceConfig config = coreService.currentConfig();
+        ReinodoceConfig config = core.currentConfig();
         overlays.renderHud(graphics, screenWidth, screenHeight, config);
     }
 
@@ -102,7 +100,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
      * @param screenHeight current screen height
      */
     public void renderOverlays(GuiGraphics graphics, int screenWidth, int screenHeight) {
-        overlays.renderOverlays(graphics, screenWidth, screenHeight, coreService.currentConfig());
+        overlays.renderOverlays(graphics, screenWidth, screenHeight, core.currentConfig());
     }
 
     /**
@@ -112,7 +110,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
      * @return command result
      */
     public CommandResult saveSettingsDraft(ReinodoceConfig config) {
-        CommandResult result = coreService.replaceConfig(config);
+        CommandResult result = core.replaceConfig(config);
         if (result.success()) {
             overlays.clearHudMessagesIfOutputHidden(config.getOutputMode());
             overlays.clearPinnedMessagesIfOverlayHidden(config.isPinnedOverlayEnabled());
@@ -126,61 +124,31 @@ public class ReinodoceClientService implements ReinodoceCommandService {
      * @return current configuration
      */
     public ReinodoceConfig currentConfig() {
-        return coreService.currentConfig();
+        return core.currentConfig();
     }
 
     @Override
-    public CommandResult connect(String username) {
-        return coreService.connect(username);
-    }
-
-    @Override
-    public CommandResult connectLast() {
-        return coreService.connectLast();
-    }
-
-    @Override
-    public CommandResult disconnect() {
-        return coreService.disconnect();
+    protected ReinodoceCoreService coreService() {
+        return core;
     }
 
     @Override
     public List<String> statusLines() {
-        List<String> lines = new ArrayList<>(coreService.statusLines());
+        List<String> lines = new ArrayList<>(core.statusLines());
         lines.addAll(InlineMediaDiagnostics.statusLines(inlineMediaTokenRegistry, inlineMediaCache));
         return lines;
     }
 
     @Override
-    public List<String> statsLines() {
-        return coreService.statsLines();
-    }
-
-    @Override
-    public CommandResult resetStats() {
-        return coreService.resetStats();
-    }
-
-    @Override
     public CommandResult exportDiagnostics() {
-        return coreService.exportDiagnostics(InlineMediaDiagnostics.report(
+        return core.exportDiagnostics(InlineMediaDiagnostics.report(
                 inlineMediaTokenRegistry,
                 inlineMediaCache));
     }
 
     @Override
-    public CommandResult setReconnectSeconds(int seconds) {
-        return coreService.setReconnectSeconds(seconds);
-    }
-
-    @Override
-    public CommandResult setAutoConnectOnStart(boolean enabled) {
-        return coreService.setAutoConnectOnStart(enabled);
-    }
-
-    @Override
     public CommandResult setOutputMode(String mode) {
-        CommandResult result = coreService.setOutputMode(mode);
+        CommandResult result = core.setOutputMode(mode);
         if (result.success()) {
             overlays.clearHudMessagesIfOutputHidden(mode);
         }
@@ -188,47 +156,12 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     }
 
     @Override
-    public CommandResult setHudPosition(String position) {
-        return coreService.setHudPosition(position);
-    }
-
-    @Override
-    public CommandResult setHudLines(int lines) {
-        return coreService.setHudLines(lines);
-    }
-
-    @Override
     public CommandResult setPinnedOverlayEnabled(boolean enabled) {
-        CommandResult result = coreService.setPinnedOverlayEnabled(enabled);
+        CommandResult result = core.setPinnedOverlayEnabled(enabled);
         if (result.success()) {
             overlays.clearPinnedMessagesIfOverlayHidden(enabled);
         }
         return result;
-    }
-
-    @Override
-    public CommandResult setPinnedOverlayPosition(String position) {
-        return coreService.setPinnedOverlayPosition(position);
-    }
-
-    @Override
-    public CommandResult setPinnedMessagesInOutput(boolean enabled) {
-        return coreService.setPinnedMessagesInOutput(enabled);
-    }
-
-    @Override
-    public CommandResult setPinnedOverlayMessages(int messages) {
-        return coreService.setPinnedOverlayMessages(messages);
-    }
-
-    @Override
-    public List<String> languageLines() {
-        return coreService.languageLines();
-    }
-
-    @Override
-    public CommandResult setLanguage(String language) {
-        return coreService.setLanguage(language);
     }
 
     @Override
@@ -241,151 +174,11 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     }
 
     @Override
-    public CommandResult setFollowerRule(boolean enabled) {
-        return coreService.setFollowerRule(enabled);
-    }
-
-    @Override
-    public CommandResult setMinMemberLevelRule(int level) {
-        return coreService.setMinMemberLevelRule(level);
-    }
-
-    @Override
-    public CommandResult addBlockedWord(String word) {
-        return coreService.addBlockedWord(word);
-    }
-
-    @Override
-    public CommandResult removeBlockedWord(String word) {
-        return coreService.removeBlockedWord(word);
-    }
-
-    @Override
-    public List<String> blockedWordLines() {
-        return coreService.blockedWordLines();
-    }
-
-    @Override
-    public CommandResult addBlockedUser(String username) {
-        return coreService.addBlockedUser(username);
-    }
-
-    @Override
-    public CommandResult removeBlockedUser(String username) {
-        return coreService.removeBlockedUser(username);
-    }
-
-    @Override
-    public List<String> blockedUserLines() {
-        return coreService.blockedUserLines();
-    }
-
-    @Override
-    public CommandResult setMaxMessageLengthRule(int length) {
-        return coreService.setMaxMessageLengthRule(length);
-    }
-
-    @Override
-    public CommandResult setDuplicateCooldownRule(int seconds) {
-        return coreService.setDuplicateCooldownRule(seconds);
-    }
-
-    @Override
-    public CommandResult setSyntheticGift(int value) {
-        return coreService.setSyntheticGift(value);
-    }
-
-    @Override
-    public CommandResult setSyntheticGiftComboMode(String mode) {
-        return coreService.setSyntheticGiftComboMode(mode);
-    }
-
-    @Override
-    public CommandResult setSyntheticFollow(boolean enabled) {
-        return coreService.setSyntheticFollow(enabled);
-    }
-
-    @Override
-    public CommandResult setSyntheticJoin(boolean enabled) {
-        return coreService.setSyntheticJoin(enabled);
-    }
-
-    @Override
-    public CommandResult setSyntheticMemberLevel(boolean enabled) {
-        return coreService.setSyntheticMemberLevel(enabled);
-    }
-
-    @Override
-    public CommandResult setAlertSound(AlertEventType eventType, boolean enabled) {
-        return coreService.setAlertSound(eventType, enabled);
-    }
-
-    @Override
-    public CommandResult setAlertSoundId(AlertEventType eventType, String soundId) {
-        return coreService.setAlertSoundId(eventType, soundId);
-    }
-
-    @Override
-    public CommandResult setAlertToast(AlertEventType eventType, boolean enabled) {
-        return coreService.setAlertToast(eventType, enabled);
-    }
-
-    @Override
-    public CommandResult setAlertToastTemplate(AlertEventType eventType, String template) {
-        return coreService.setAlertToastTemplate(eventType, template);
-    }
-
-    @Override
-    public CommandResult setAlertMediaMode(AlertEventType eventType, String mediaMode) {
-        return coreService.setAlertMediaMode(eventType, mediaMode);
-    }
-
-    @Override
-    public CommandResult setAlertCustomImage(AlertEventType eventType, String customImage) {
-        return coreService.setAlertCustomImage(eventType, customImage);
-    }
-
-    @Override
-    public CommandResult setAlertGiftMinValue(int value) {
-        return coreService.setAlertGiftMinValue(value);
-    }
-
-    @Override
-    public CommandResult setChatEmotesEnabled(boolean enabled) {
-        return coreService.setChatEmotesEnabled(enabled);
-    }
-
-    @Override
-    public CommandResult setChatLogEnabled(boolean enabled) {
-        return coreService.setChatLogEnabled(enabled);
-    }
-
-    @Override
-    public CommandResult setChatPrefix(String prefix) {
-        return coreService.setChatPrefix(prefix);
-    }
-
-    @Override
-    public CommandResult setChatFormat(String format) {
-        return coreService.setChatFormat(format);
-    }
-
-    @Override
-    public CommandResult setSessionLoggingEnabled(boolean enabled) {
-        return coreService.setSessionLoggingEnabled(enabled);
-    }
-
-    @Override
-    public CommandResult setSessionLoggingFormat(String format) {
-        return coreService.setSessionLoggingFormat(format);
-    }
-
-    @Override
     public CommandResult reload() {
-        CommandResult result = coreService.reload();
+        CommandResult result = core.reload();
         if (result.success()) {
-            overlays.clearHudMessagesIfOutputHidden(coreService.currentConfig().getOutputMode());
-            overlays.clearPinnedMessagesIfOverlayHidden(coreService.currentConfig().isPinnedOverlayEnabled());
+            overlays.clearHudMessagesIfOutputHidden(core.currentConfig().getOutputMode());
+            overlays.clearPinnedMessagesIfOverlayHidden(core.currentConfig().isPinnedOverlayEnabled());
         }
         return result;
     }

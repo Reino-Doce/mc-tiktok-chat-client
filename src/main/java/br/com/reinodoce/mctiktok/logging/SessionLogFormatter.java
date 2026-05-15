@@ -18,19 +18,31 @@ final class SessionLogFormatter {
     private SessionLogFormatter() {
     }
 
-    static String format(SessionLogFormat format, Instant timestamp, SessionLogEvent event) {
+    static String format(
+            SessionLogFormat format,
+            Instant timestamp,
+            SessionLogEvent event,
+            SessionLogPrivacyOptions options
+    ) {
+        SessionLogPrivacyOptions privacyOptions = options == null
+                ? new SessionLogPrivacyOptions(false, false, 0, 0)
+                : options;
         if (format == SessionLogFormat.TEXT) {
-            return formatText(timestamp, event);
+            return formatText(timestamp, event, privacyOptions);
         }
-        return GSON.toJson(toJson(timestamp, event));
+        return GSON.toJson(toJson(timestamp, event, privacyOptions));
     }
 
-    private static Map<String, Object> toJson(Instant timestamp, SessionLogEvent event) {
+    private static Map<String, Object> toJson(
+            Instant timestamp, SessionLogEvent event, SessionLogPrivacyOptions options
+    ) {
         Map<String, Object> json = new LinkedHashMap<>();
         json.put("type", event.type());
         json.put("timestamp", EVENT_TIMESTAMP_FORMAT.format(timestamp));
-        putIfPresent(json, "username", event.username());
-        putIfPresent(json, "message", event.message());
+        putIfPresent(json, "username", username(event, options));
+        if (!options.metadataOnly()) {
+            putIfPresent(json, "message", event.message());
+        }
         if (event.hasMemberLevel()) {
             json.put("memberLevel", event.memberLevel());
         }
@@ -44,12 +56,14 @@ final class SessionLogFormatter {
         return json;
     }
 
-    private static String formatText(Instant timestamp, SessionLogEvent event) {
+    private static String formatText(Instant timestamp, SessionLogEvent event, SessionLogPrivacyOptions options) {
         StringBuilder builder = new StringBuilder()
                 .append("timestamp=").append(EVENT_TIMESTAMP_FORMAT.format(timestamp))
                 .append('\t').append("type=").append(escapeText(event.type()));
-        appendText(builder, "username", event.username());
-        appendText(builder, "message", event.message());
+        appendText(builder, "username", username(event, options));
+        if (!options.metadataOnly()) {
+            appendText(builder, "message", event.message());
+        }
         if (event.hasMemberLevel()) {
             builder.append('\t').append("memberLevel=").append(event.memberLevel());
         }
@@ -61,6 +75,13 @@ final class SessionLogFormatter {
             builder.append('\t').append("diamonds=").append(event.diamonds());
         }
         return builder.toString();
+    }
+
+    private static String username(SessionLogEvent event, SessionLogPrivacyOptions options) {
+        if (event.username() == null || event.username().isBlank()) {
+            return "";
+        }
+        return options.anonymized() ? "<redacted-username>" : event.username();
     }
 
     private static void putIfPresent(Map<String, Object> json, String key, String value) {
