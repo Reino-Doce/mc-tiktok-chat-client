@@ -129,18 +129,21 @@ suffix policy as Modrinth:
 - `*-beta.N`, `*-rc.N`, and `*-pre` publish as CurseForge `beta`.
 - All other versions publish as CurseForge `release`.
 
-The workflow ensures the GitHub Release exists before uploading to
+The workflow ensures a draft GitHub Release exists before uploading to
 CurseForge, then writes a temporary `curseforge-upload-started.json`
 asset before calling CurseForge. After a successful CurseForge upload it
 writes `curseforge-publish.json` into the GitHub Release assets and
-removes the temporary marker. The final marker contains the tag,
-CurseForge project id, returned file id, uploaded artifact name, and
-artifact SHA-256. On a rerun, the workflow reuses the final marker when
-the tag, project id, and artifact hash match, so it does not upload the
-same jar again. If a GitHub Release has a temporary started marker or
-distribution assets for the tag without the final marker, the workflow
-fails intentionally because the previous CurseForge state is ambiguous
-and should be checked manually.
+removes the temporary marker on a best-effort basis. The final marker
+contains the tag, CurseForge project id, returned file id, uploaded
+artifact name, and artifact SHA-256. On a rerun, the workflow reuses the
+final marker when the tag, project id, and artifact hash match, so it
+does not upload the same jar again. If a GitHub Release has a temporary
+started marker without the final marker, or has distribution assets for
+the tag without the final marker, the workflow fails intentionally
+because the previous CurseForge state is ambiguous and should be checked
+manually. If a rerun has to create a new release before the first
+CurseForge marker exists, it also fails closed so maintainers can verify
+whether any earlier attempt reached CurseForge.
 
 `workflow_dispatch` remains a build-only dry run when executed from a
 branch. It produces the release artifacts but does not create a GitHub
