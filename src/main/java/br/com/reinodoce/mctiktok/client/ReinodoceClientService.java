@@ -147,21 +147,7 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     @Override
     public List<String> statusLines() {
         List<String> lines = new ArrayList<>(coreService.statusLines());
-        lines.add("Inline media renderer: font-coremod");
-        lines.add("Coremod loaded: " + InlineMediaFontHooks.coremodLoaded());
-        lines.add("Token registry: " + inlineMediaTokenRegistry.size());
-        InlineMediaCache.Snapshot mediaSnapshot = inlineMediaCache.snapshot();
-        lines.add("Media cache: resident=" + mediaSnapshot.resident()
-                + " ready=" + mediaSnapshot.ready()
-                + " loading=" + mediaSnapshot.loading()
-                + " error=" + mediaSnapshot.error());
-        lines.add("Downloads: started=" + mediaSnapshot.downloadsStarted()
-                + " success=" + mediaSnapshot.downloadsSucceeded()
-                + " fail=" + mediaSnapshot.downloadsFailed()
-                + " disk=" + mediaSnapshot.diskHits()
-                + " diskReloads=" + mediaSnapshot.diskReloads()
-                + " memory=" + mediaSnapshot.memoryHits());
-        lines.add("Cache evictions: ttl=" + mediaSnapshot.ttlEvictions() + " capacity=" + mediaSnapshot.capacityEvictions());
+        lines.addAll(InlineMediaDiagnostics.statusLines(inlineMediaTokenRegistry, inlineMediaCache));
         return lines;
     }
 
@@ -173,6 +159,13 @@ public class ReinodoceClientService implements ReinodoceCommandService {
     @Override
     public CommandResult resetStats() {
         return coreService.resetStats();
+    }
+
+    @Override
+    public CommandResult exportDiagnostics() {
+        return coreService.exportDiagnostics(InlineMediaDiagnostics.report(
+                inlineMediaTokenRegistry,
+                inlineMediaCache));
     }
 
     @Override

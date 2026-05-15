@@ -16,7 +16,21 @@ Bare `/reinodoce` (no subcommand) is equivalent to `/reinodoce status`.
 | `/reinodoce status` | — | Prints connection state, target username, reconnect timing, active rules, last error (if any), inline media renderer state, token count, cache stats, download counters, and cache eviction counters. |
 | `/reinodoce stats` | — | Prints counters for the current LIVE session, including messages, unique chatters, follows, joins, gifts, diamonds, member-level events, and the top gifter. |
 | `/reinodoce stats reset` | — | Clears the current session counters without disconnecting. |
+| `/reinodoce diagnostics export` | — | Writes a sanitized support report under `logs/reinodoce/diagnostics/` and prints the created file path in game. The report redacts usernames and does not include raw chat messages, session log contents, credentials, cookies, or full local home paths. |
 | `/reinodoce reload` | — | Re-reads `config/reinodoce-mc-tiktok-client.json` from disk and propagates the new values to the active TikTok session. Use it after editing the file by hand. |
+
+## Diagnostics
+
+`/reinodoce diagnostics export` creates a local JSON report for support
+cases where `/reinodoce status` is not enough. Files are written to
+`logs/reinodoce/diagnostics/` with names like
+`reinodoce-diagnostics-20260515-120000.json`.
+
+The export is intentionally sanitized: it records configuration toggles,
+connection state, counters, cache-independent runtime metadata, and safe
+paths only. It does not read `latest.log` or local session log files, and
+it redacts usernames, credential-like values, cookies, URL queries, and
+full home-directory paths by default.
 
 ## Settings
 

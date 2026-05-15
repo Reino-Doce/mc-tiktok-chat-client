@@ -43,6 +43,7 @@ class ReinodoceCommandTreeTest {
         assertNotNull(root.getChild("disconnect"));
         assertNotNull(root.getChild("status"));
         assertNotNull(root.getChild("stats").getChild("reset"));
+        assertNotNull(root.getChild("diagnostics").getChild("export"));
         assertNotNull(root.getChild("reload"));
 
         assertSettingsSurface(root.getChild("settings"));
@@ -159,6 +160,11 @@ class ReinodoceCommandTreeTest {
 
         @Override
         public CommandResult resetStats() {
+            return unsupported();
+        }
+
+        @Override
+        public CommandResult exportDiagnostics() {
             return unsupported();
         }
 

@@ -54,6 +54,13 @@ public interface ReinodoceCommandService {
     CommandResult resetStats();
 
     /**
+     * Writes a sanitized local support diagnostics report.
+     *
+     * @return command result with the created file path
+     */
+    CommandResult exportDiagnostics();
+
+    /**
      * Updates reconnect delay.
      *
      * @param seconds reconnect delay in seconds

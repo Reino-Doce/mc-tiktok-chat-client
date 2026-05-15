@@ -91,6 +91,8 @@
   "reinodoce.command.settings_gui.open": "Opening settings GUI.",
   "reinodoce.command.settings_gui.saved": "Settings saved.",
   "reinodoce.command.settings_gui.client_only": "Settings GUI is only available in the Minecraft client.",
+  "reinodoce.command.diagnostics.export": "Diagnostics exported to %s.",
+  "reinodoce.command.diagnostics.export_failed": "Diagnostics export failed: %s.",
   "reinodoce.command.reload.ok": "Configuration reloaded.",
 
 

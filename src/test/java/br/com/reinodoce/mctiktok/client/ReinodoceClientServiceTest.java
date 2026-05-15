@@ -12,8 +12,11 @@ import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -97,6 +100,21 @@ class ReinodoceClientServiceTest {
 
         assertTrue(result.success());
         assertExpandedDraft(service.currentConfig());
+    }
+
+    @Test
+    void diagnosticsExportIncludesClientRendererCounters() throws IOException {
+        ReinodoceClientService service = service(new HudMessageStore());
+
+        CommandResult result = service.exportDiagnostics();
+
+        assertTrue(result.success());
+        Path reportPath = singleDiagnosticsFile(tempDir.resolve("logs").resolve("diagnostics"));
+        String report = Files.readString(reportPath);
+        assertTrue(report.contains("\"inlineMediaRenderer\""));
+        assertTrue(report.contains("\"tokenRegistrySize\""));
+        assertTrue(report.contains("\"inlineMediaCache\""));
+        assertTrue(report.contains("\"downloadsStarted\""));
     }
 
     private ReinodoceClientService service(HudMessageStore hudMessageStore) {
@@ -192,6 +210,15 @@ class ReinodoceClientServiceTest {
         assertEquals("pt_br", saved.getLanguage());
         assertTrue(saved.isSessionLoggingEnabled());
         assertEquals("text", saved.getSessionLoggingFormat());
+    }
+
+    private static Path singleDiagnosticsFile(Path diagnosticsDirectory) throws IOException {
+        try (Stream<Path> files = Files.list(diagnosticsDirectory)) {
+            return files
+                    .filter(path -> path.getFileName().toString().startsWith("reinodoce-diagnostics-"))
+                    .findFirst()
+                    .orElseThrow();
+        }
     }
 
     private static final class RecordingPlatformBridge implements MinecraftPlatformBridge {

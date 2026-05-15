@@ -44,3 +44,14 @@ endpoints reliably from that network.
 **Comments are filtered out.**
 Check `/reinodoce status` for active filters, then relax `rule follower`
 or `rule min-member-level`. See [commands.md](commands.md).
+
+**Support asks for diagnostics.**
+Run `/reinodoce diagnostics export` in game. The command writes a JSON
+report under `logs/reinodoce/diagnostics/` inside the Minecraft instance
+and prints the created file path in chat.
+
+Use this export when a connection, filtering, output, alert, or packaging
+problem needs more context than `/reinodoce status` shows. The report is
+sanitized by default: usernames are redacted, raw chat messages and
+session log contents are not included, and credential-like values,
+cookies, URL queries, and full home-directory paths are removed.
