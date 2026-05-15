@@ -264,6 +264,88 @@ jobs:
             echo "jar_sha256=${jar_sha256}"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Ensure GitHub Release exists
+        id: github_release
+        if: startsWith(github.ref, 'refs/tags/mc')
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_NAME: ${{ steps.vars.outputs.artifact_base }} v${{ steps.vars.outputs.mod_version }} (MC ${{ steps.vars.outputs.mc_version }})
+          PRERELEASE: ${{ steps.vars.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+
+          api_url="https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}"
+          http_code=$(curl --silent --show-error \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -o gh-release.json \
+            -w '%{http_code}' \
+            "${api_url}")
+
+          if [ "${http_code}" = "404" ]; then
+            python - <<'PY'
+          import json
+          import os
+
+          prerelease = os.environ["PRERELEASE"].strip().lower() == "true"
+          with open("release-notes.md", "r", encoding="utf-8") as fh:
+              body = fh.read()
+
+          payload = {
+              "tag_name": os.environ["GITHUB_REF_NAME"],
+              "name": os.environ["RELEASE_NAME"],
+              "body": body,
+              "draft": False,
+              "prerelease": prerelease,
+          }
+
+          with open("gh-release-request.json", "w", encoding="utf-8") as fh:
+              json.dump(payload, fh)
+          PY
+
+            create_code=$(curl --silent --show-error \
+              -X POST \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              --data-binary @gh-release-request.json \
+              -o gh-release.json \
+              -w '%{http_code}' \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases")
+
+            if [ "${create_code}" -lt 200 ] || [ "${create_code}" -ge 300 ]; then
+              echo "::error::Failed to create GitHub release for tag '${GITHUB_REF_NAME}' (HTTP ${create_code})."
+              cat gh-release.json
+              exit 1
+            fi
+          elif [ "${http_code}" != "200" ]; then
+            echo "::error::Failed to query GitHub release for tag '${GITHUB_REF_NAME}' (HTTP ${http_code})."
+            cat gh-release.json
+            exit 1
+          fi
+
+          python - <<'PY'
+          import json
+          import os
+          import sys
+
+          with open("gh-release.json", "r", encoding="utf-8") as fh:
+              release = json.load(fh)
+
+          release_id = release.get("id")
+          upload_url = str(release.get("upload_url", "")).split("{", 1)[0]
+          if not release_id or not upload_url:
+              print("::error::GitHub release response did not include id and upload_url.")
+              print(json.dumps(release, indent=2))
+              sys.exit(1)
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"release_id={release_id}\n")
+              fh.write(f"upload_url={upload_url}\n")
+          PY
+
       - name: Detect existing CurseForge publish marker
         id: cf_marker
         if: startsWith(github.ref, 'refs/tags/mc')
@@ -321,11 +403,23 @@ jobs:
 
           assets = release.get("assets", [])
           marker = next((asset for asset in assets if asset.get("name") == "curseforge-publish.json"), None)
+          started_marker = next((asset for asset in assets if asset.get("name") == "curseforge-upload-started.json"), None)
+
+          if marker is None and started_marker is not None:
+              print("::error::A previous run marked the CurseForge upload as started but did not publish the final marker.")
+              print("::error::Inspect CurseForge manually before rerunning to avoid uploading the same jar twice.")
+              sys.exit(1)
 
           if marker is None:
-              print("::error::A GitHub release already exists for this tag, but it has no curseforge-publish.json marker.")
-              print("::error::Refusing to upload to CurseForge because the previous publish state is ambiguous.")
-              sys.exit(1)
+              if assets:
+                  asset_names = sorted(str(asset.get("name", "")) for asset in assets)
+                  print("::error::A GitHub release already has assets for this tag, but it has no curseforge-publish.json marker.")
+                  print("::error::Refusing to upload to CurseForge because the previous publish state is ambiguous.")
+                  print(json.dumps({"assets": asset_names}, indent=2))
+                  sys.exit(1)
+              write_output("skip", "false")
+              write_output("existing_file_id", "")
+              sys.exit(0)
 
           marker_url = marker.get("url")
           if not marker_url:
@@ -360,6 +454,80 @@ jobs:
 
           write_output("skip", "true")
           write_output("existing_file_id", str(marker_data.get("file_id", "")))
+          PY
+
+      - name: Mark CurseForge upload as started
+        id: cf_started
+        if: startsWith(github.ref, 'refs/tags/mc') && steps.cf_marker.outputs.skip != 'true'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_UPLOAD_URL: ${{ steps.github_release.outputs.upload_url }}
+          CURSEFORGE_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          MOD_JAR: ${{ steps.vars.outputs.mod_jar }}
+          ARTIFACT_SHA256: ${{ steps.digests.outputs.jar_sha256 }}
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          import datetime
+          import json
+          import os
+
+          marker = {
+              "tag": os.environ["GITHUB_REF_NAME"],
+              "project_id": os.environ["CURSEFORGE_PROJECT_ID"],
+              "artifact_name": os.environ["MOD_JAR"],
+              "artifact_sha256": os.environ["ARTIFACT_SHA256"],
+              "status": "upload_started",
+              "started_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+          }
+
+          with open("curseforge-upload-started.json", "w", encoding="utf-8") as fh:
+              json.dump(marker, fh, indent=2, ensure_ascii=False)
+              fh.write("\n")
+          PY
+
+          marker_name=$(python - <<'PY'
+          import urllib.parse
+
+          print(urllib.parse.quote("curseforge-upload-started.json", safe=""))
+          PY
+          )
+
+          http_code=$(curl --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            --data-binary @curseforge-upload-started.json \
+            -o gh-started-marker-upload.json \
+            -w '%{http_code}' \
+            "${RELEASE_UPLOAD_URL}?name=${marker_name}")
+
+          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 300 ]; then
+            echo "::error::Failed to upload CurseForge started marker to GitHub Release (HTTP ${http_code})."
+            cat gh-started-marker-upload.json
+            exit 1
+          fi
+
+          python - <<'PY'
+          import json
+          import os
+          import sys
+
+          with open("gh-started-marker-upload.json", "r", encoding="utf-8") as fh:
+              response = json.load(fh)
+
+          asset_id = response.get("id")
+          if not asset_id:
+              print("::error::GitHub did not return an asset id for the CurseForge started marker.")
+              print(json.dumps(response, indent=2))
+              sys.exit(1)
+
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+              fh.write(f"asset_id={asset_id}\n")
           PY
 
       - name: Publish to CurseForge
@@ -460,6 +628,70 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
               fh.write(f"file_id={file_id}\n")
           PY
+
+      - name: Upload CurseForge publish marker
+        if: startsWith(github.ref, 'refs/tags/mc') && steps.cf_marker.outputs.skip != 'true'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_UPLOAD_URL: ${{ steps.github_release.outputs.upload_url }}
+        run: |
+          set -euo pipefail
+
+          marker_path="release-assets/curseforge-publish.json"
+          test -f "${marker_path}"
+
+          marker_name=$(python - <<'PY'
+          import urllib.parse
+
+          print(urllib.parse.quote("curseforge-publish.json", safe=""))
+          PY
+          )
+
+          http_code=$(curl --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            --data-binary @"${marker_path}" \
+            -o gh-marker-upload.json \
+            -w '%{http_code}' \
+            "${RELEASE_UPLOAD_URL}?name=${marker_name}")
+
+          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 300 ]; then
+            echo "::error::Failed to upload CurseForge marker to GitHub Release (HTTP ${http_code})."
+            cat gh-marker-upload.json
+            exit 1
+          fi
+
+      - name: Remove CurseForge started marker
+        if: startsWith(github.ref, 'refs/tags/mc') && steps.cf_marker.outputs.skip != 'true'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STARTED_MARKER_ASSET_ID: ${{ steps.cf_started.outputs.asset_id }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${STARTED_MARKER_ASSET_ID}" ]; then
+            echo "::error::Missing started marker asset id."
+            exit 1
+          fi
+
+          http_code=$(curl --silent --show-error \
+            -X DELETE \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -o gh-started-marker-delete.json \
+            -w '%{http_code}' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/assets/${STARTED_MARKER_ASSET_ID}")
+
+          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 300 ]; then
+            echo "::warning::Failed to remove CurseForge started marker from GitHub Release (HTTP ${http_code})."
+            cat gh-started-marker-delete.json
+          fi
 
       - name: Reuse existing CurseForge marker
         if: startsWith(github.ref, 'refs/tags/mc') && steps.cf_marker.outputs.skip == 'true'

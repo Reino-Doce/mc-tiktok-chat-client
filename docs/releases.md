@@ -8,13 +8,15 @@ Two workflows live in `.github/workflows/`:
   `SHA256SUMS.txt` / `SHA512SUMS.txt` so any commit produces a downloadable
   build under the Actions tab. Use this for verifying changes, sharing a
   preview build, or grabbing a snapshot jar without cutting a tag.
-- **`release.yml`** — the publishing pipeline. Runs only on
-  `mc*-v*` tag pushes (and `workflow_dispatch`) and attaches the same
-  artifacts to a real GitHub Release. Tagged releases also publish the
-  release jar to Modrinth through MC-Publish and to CurseForge through
-  the CurseForge upload API. Modrinth requires the repository secret
-  `MODRINTH_TOKEN`; CurseForge requires the repository secret
-  `CURSEFORGE_API_TOKEN` and repository variables described below.
+- **`release.yml`** — the release build and publishing pipeline.
+  `workflow_dispatch` branch runs are build-only: they produce the
+  Actions artifacts but do not create a GitHub Release or publish to
+  Modrinth or CurseForge. Only `mc*-v*` tag refs create or update a
+  GitHub Release and publish the release jar to Modrinth through
+  MC-Publish and to CurseForge through the CurseForge upload API.
+  Modrinth requires the repository secret `MODRINTH_TOKEN`; CurseForge
+  requires the repository secret `CURSEFORGE_API_TOKEN` and repository
+  variables described below.
 
 ## When a tagged release fires
 
@@ -127,14 +129,18 @@ suffix policy as Modrinth:
 - `*-beta.N`, `*-rc.N`, and `*-pre` publish as CurseForge `beta`.
 - All other versions publish as CurseForge `release`.
 
-The upload step writes `curseforge-publish.json` into the GitHub Release
-assets after a successful CurseForge upload. The marker contains the
-tag, CurseForge project id, returned file id, uploaded artifact name, and
-artifact SHA-256. On a rerun, the workflow reuses the marker when the
-tag, project id, and artifact hash match, so it does not upload the same
-jar again. If a GitHub Release already exists for the tag without that
-marker, the workflow fails intentionally because the previous
-CurseForge state is ambiguous and should be checked manually.
+The workflow ensures the GitHub Release exists before uploading to
+CurseForge, then writes a temporary `curseforge-upload-started.json`
+asset before calling CurseForge. After a successful CurseForge upload it
+writes `curseforge-publish.json` into the GitHub Release assets and
+removes the temporary marker. The final marker contains the tag,
+CurseForge project id, returned file id, uploaded artifact name, and
+artifact SHA-256. On a rerun, the workflow reuses the final marker when
+the tag, project id, and artifact hash match, so it does not upload the
+same jar again. If a GitHub Release has a temporary started marker or
+distribution assets for the tag without the final marker, the workflow
+fails intentionally because the previous CurseForge state is ambiguous
+and should be checked manually.
 
 `workflow_dispatch` remains a build-only dry run when executed from a
 branch. It produces the release artifacts but does not create a GitHub
