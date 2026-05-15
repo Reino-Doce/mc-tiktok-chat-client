@@ -8,11 +8,15 @@ Two workflows live in `.github/workflows/`:
   `SHA256SUMS.txt` / `SHA512SUMS.txt` so any commit produces a downloadable
   build under the Actions tab. Use this for verifying changes, sharing a
   preview build, or grabbing a snapshot jar without cutting a tag.
-- **`release.yml`** — the publishing pipeline. Runs only on
-  `mc*-v*` tag pushes (and `workflow_dispatch`) and attaches the same
-  artifacts to a real GitHub Release. Tagged releases also publish the
-  release jar to Modrinth through MC-Publish and require the repository
-  secret `MODRINTH_TOKEN`.
+- **`release.yml`** — the release build and publishing pipeline.
+  `workflow_dispatch` branch runs are build-only: they produce the
+  Actions artifacts but do not create a GitHub Release or publish to
+  Modrinth or CurseForge. Only `mc*-v*` tag refs create or update a
+  GitHub Release and publish the release jar to Modrinth through
+  MC-Publish and to CurseForge through the CurseForge upload API.
+  Modrinth requires the repository secret `MODRINTH_TOKEN`; CurseForge
+  requires the repository secret `CURSEFORGE_API_TOKEN` and repository
+  variables described below.
 
 ## When a tagged release fires
 
@@ -39,14 +43,19 @@ publish tags independently without colliding in the same namespace.
   extracted into `release-notes.md` for Modrinth.
 - Fails tagged releases before the build if `MODRINTH_TOKEN` is not
   configured.
+- Fails tagged releases before the build if the CurseForge token,
+  project id, or game version ids are missing or malformed.
 - Runs `./gradlew clean check build prismBundle verifyPrismMetadata`,
   including the `verifyEmbeddedPackages` and `verifyCoremodResources`
   gates wired into `check`.
 - Packages `build/prism-bundle/` into a Packwiz helper zip and builds
   `build/distributions/<artifact>.mrpack`.
-- Generates `SHA256SUMS.txt` and `SHA512SUMS.txt` for all artifacts.
-- Attaches the mod `.jar`, `.mrpack`, Packwiz zip, and checksum files to
-  the release, with notes auto-generated from history.
+- Generates `SHA256SUMS.txt` and `SHA512SUMS.txt` for all distribution
+  artifacts.
+- Uploads the bare Forge mod jar to CurseForge for tagged releases,
+  using the `CHANGELOG.md` section as the CurseForge changelog.
+- Attaches the mod `.jar`, `.mrpack`, Packwiz zip, checksum files, and
+  CurseForge publish marker to the GitHub Release.
 - Publishes the bare Forge mod jar to the Modrinth project using
   `secrets.MODRINTH_TOKEN`. The `.mrpack` and Packwiz helper zip remain
   GitHub Release artifacts.
@@ -63,6 +72,9 @@ publish tags independently without colliding in the same namespace.
 - Modrinth credentials must be stored only as the GitHub Actions
   repository secret `MODRINTH_TOKEN`; do not commit API tokens or local
   `.env` files.
+- CurseForge credentials must be stored only as the GitHub Actions
+  repository secret `CURSEFORGE_API_TOKEN`. The workflow sends the token
+  in the `X-Api-Token` header, never in a URL.
 - Releases are reproducible: the tag-gate and changelog-gate prevent
   accidental releases, and the checksums allow post-download integrity
   verification.
@@ -86,6 +98,63 @@ Version type is derived from `mod_version`:
 The Modrinth upload uses the exact jar built by Gradle:
 `build/libs/reinodoce-mc-tiktok-<mc_version>-<mod_version>.jar`, with
 loader `forge`, game version from `minecraftVersion`, and Java `17`.
+
+## CurseForge publishing
+
+Tagged releases publish the same bare Forge mod jar to CurseForge through
+the official upload API. The workflow does **not** upload the Packwiz
+helper zip as the CurseForge primary file because this project ships a
+client-side Forge mod, not a CurseForge modpack. The `.mrpack` and
+Packwiz helper zip remain attached to the GitHub Release for launcher
+and Prism/Packwiz workflows.
+
+Before the first tagged release, configure these GitHub Actions values:
+
+| Type | Name | Required | Notes |
+| ---- | ---- | -------- | ----- |
+| Secret | `CURSEFORGE_API_TOKEN` | yes | CurseForge author token used in the `X-Api-Token` header. |
+| Variable | `CURSEFORGE_PROJECT_ID` | yes | Numeric CurseForge project id. |
+| Variable | `CURSEFORGE_GAME_VERSIONS` | yes | Comma-separated numeric CurseForge game version ids. Include the ids CurseForge expects for this Minecraft/Forge release. |
+| Variable | `CURSEFORGE_MANUAL_RELEASE` | no | Set to `true` to mark uploaded files for manual release in CurseForge. |
+
+Use CurseForge's game versions API or the project dashboard to confirm
+the exact numeric ids for Minecraft, Forge, and any required loader tags.
+Those ids are CurseForge data, so they are intentionally not hard-coded
+in this repository.
+
+CurseForge release type is derived from `mod_version` using the same
+suffix policy as Modrinth:
+
+- `*-alpha.N` and `*-snapshot` publish as CurseForge `alpha`.
+- `*-beta.N`, `*-rc.N`, and `*-pre` publish as CurseForge `beta`.
+- All other versions publish as CurseForge `release`.
+
+The workflow ensures a draft GitHub Release exists before uploading to
+CurseForge, then writes a temporary `curseforge-upload-started.json`
+asset before calling CurseForge. After a successful CurseForge upload it
+writes `curseforge-publish.json` into the GitHub Release assets and
+removes the temporary marker on a best-effort basis. The final marker
+contains the tag, CurseForge project id, returned file id, uploaded
+artifact name, and artifact SHA-256. On a rerun, the workflow reuses the
+final marker when the tag, project id, and artifact hash match, so it
+does not upload the same jar again. If a GitHub Release has a temporary
+started marker without the final marker, or has distribution assets for
+the tag without the final marker, the workflow fails intentionally
+because the previous CurseForge state is ambiguous and should be checked
+manually. If a rerun has to create a new release before the first
+CurseForge marker exists, it also fails closed so maintainers can verify
+whether any earlier attempt reached CurseForge.
+
+`workflow_dispatch` remains a build-only dry run when executed from a
+branch. It produces the release artifacts but does not create a GitHub
+Release or publish to Modrinth or CurseForge. For a real CurseForge
+upload test, use a separate experimental CurseForge project, set
+`CURSEFORGE_PROJECT_ID` and `CURSEFORGE_GAME_VERSIONS` to that project,
+and consider `CURSEFORGE_MANUAL_RELEASE=true`.
+
+If a CurseForge file needs to be withdrawn after upload, prefer archiving
+it in the CurseForge dashboard first. Delete only when archiving is not
+enough, then fix the repository and cut a new release tag.
 
 ## Cutting a release
 
