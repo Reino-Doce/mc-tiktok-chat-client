@@ -68,6 +68,7 @@ final class BarrageMessageHandler {
                 rawUser.getId(),
                 TikTokUserNames.sanitizeUserName(
                         TikTokUserNames.chooseRawUserName(rawUser.getNickname(), rawUser.getUsername())),
+                rawUser.getUsername(),
                 TikTokMediaResolver.resolveUserAvatarUrl(rawUser),
                 fansLevelParam.getCurrentGrade());
         if (!memberLevelEmitter.emit(update)) {

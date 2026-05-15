@@ -63,6 +63,7 @@ public class GiftComboAggregator {
             return List.of(new GiftEmission(
                     snapshot.key().userId(),
                     snapshot.username(),
+                    snapshot.accountUsername(),
                     snapshot.avatarUrl(),
                     snapshot.giftName(),
                     snapshot.giftIconUrl(),
@@ -81,6 +82,7 @@ public class GiftComboAggregator {
             return List.of(new GiftEmission(
                     snapshot.key().userId(),
                     snapshot.username(),
+                    snapshot.accountUsername(),
                     snapshot.avatarUrl(),
                     snapshot.giftName(),
                     snapshot.giftIconUrl(),
@@ -124,6 +126,7 @@ public class GiftComboAggregator {
         return List.of(new GiftEmission(
                 snapshot.key().userId(),
                 snapshot.username(),
+                snapshot.accountUsername(),
                 snapshot.avatarUrl(),
                 snapshot.giftName(),
                 snapshot.giftIconUrl(),
@@ -153,6 +156,7 @@ public class GiftComboAggregator {
         return List.of(new GiftEmission(
                 snapshot.key().userId(),
                 snapshot.username(),
+                snapshot.accountUsername(),
                 snapshot.avatarUrl(),
                 snapshot.giftName(),
                 snapshot.giftIconUrl(),
@@ -172,6 +176,7 @@ public class GiftComboAggregator {
         GiftSnapshot normalizedSnapshot = new GiftSnapshot(
                 snapshot.key(),
                 snapshot.username(),
+                snapshot.accountUsername(),
                 snapshot.avatarUrl(),
                 snapshot.giftName(),
                 snapshot.giftIconUrl(),
@@ -224,6 +229,7 @@ public class GiftComboAggregator {
         return new GiftEmission(
                 snapshot.key().userId(),
                 snapshot.username(),
+                snapshot.accountUsername(),
                 snapshot.avatarUrl(),
                 snapshot.giftName(),
                 snapshot.giftIconUrl(),
@@ -266,6 +272,7 @@ public class GiftComboAggregator {
      *
      * @param key gift-combo identity
      * @param username sender display name
+     * @param accountUsername stable sender account username when known
      * @param avatarUrl sender avatar URL
      * @param giftName gift display name
      * @param giftIconUrl gift icon URL
@@ -276,6 +283,7 @@ public class GiftComboAggregator {
     public record GiftSnapshot(
             GiftKey key,
             String username,
+            String accountUsername,
             String avatarUrl,
             String giftName,
             String giftIconUrl,
@@ -290,6 +298,7 @@ public class GiftComboAggregator {
      *
      * @param userId stable TikTok user id, or zero when unavailable
      * @param username sender display name
+     * @param accountUsername stable sender account username when known
      * @param avatarUrl sender avatar URL
      * @param giftName gift display name
      * @param giftIconUrl gift icon URL
@@ -301,6 +310,7 @@ public class GiftComboAggregator {
     public record GiftEmission(
             long userId,
             String username,
+            String accountUsername,
             String avatarUrl,
             String giftName,
             String giftIconUrl,

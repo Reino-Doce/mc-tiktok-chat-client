@@ -50,7 +50,9 @@ final class PinnedMessageEmitter {
         RichLiveMessage richMessage = richMessageParser.parseChatMessage(chatMessage, username);
         String plainText = MessageSanitizer.sanitize(richMessage.plainText());
         String overlayText = overlayText(plainText, richMessage);
-        if (!shouldEmit(config, user, memberLevel, username, overlayText)) {
+        PinnedCommentCandidate candidate = new PinnedCommentCandidate(
+                user, memberLevel, username, plainText, overlayText, richMessage.hasInlineMedia());
+        if (!shouldEmit(config, candidate)) {
             return;
         }
 
@@ -75,19 +77,23 @@ final class PinnedMessageEmitter {
         memberLevelResolver.updateLevel(
                 chatMessage.getUser().getId(),
                 username,
+                chatMessage.getUser().getUsername(),
                 avatarUrl,
                 (int) chatMessage.getUser().getFansClubInfo().getFansLevel());
         return memberLevelResolver.resolveLevel(user);
     }
 
     private boolean shouldEmit(
-            ReinodoceConfig config,
-            User user,
-            int memberLevel,
-            String username,
-            String message
+            ReinodoceConfig config, PinnedCommentCandidate candidate
     ) {
-        return !message.isBlank() && ruleEngine.shouldDisplayComment(config, user, memberLevel, username, message);
+        return !candidate.outputMessage().isBlank()
+                && ruleEngine.shouldDisplayComment(
+                        config,
+                        candidate.user(),
+                        candidate.memberLevel(),
+                        candidate.username(),
+                        candidate.ruleMessage(),
+                        candidate.hasInlineMedia());
     }
 
     private void sendMirroredPinnedMessage(
@@ -146,6 +152,16 @@ final class PinnedMessageEmitter {
             MemberLevelResolver memberLevelResolver,
             TikTokRichMessageParser richMessageParser,
             RichLiveMessageFactory messageFactory
+    ) {
+    }
+
+    private record PinnedCommentCandidate(
+            User user,
+            int memberLevel,
+            String username,
+            String ruleMessage,
+            String outputMessage,
+            boolean hasInlineMedia
     ) {
     }
 }

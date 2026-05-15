@@ -40,6 +40,7 @@ final class TikTokEventDispatcher {
             GiftComboAggregator giftComboAggregator,
             SessionStatsTracker statsTracker,
             ModerationDuplicateTracker moderationDuplicateTracker,
+            UserCooldownTracker userCooldownTracker,
             SessionEventLogger sessionEventLogger,
             AlertService alertService
     ) {
@@ -58,13 +59,16 @@ final class TikTokEventDispatcher {
                 config, user, memberLevel, username, message)
                 || dependencies.renderedTracker().wasRecentlyRendered(username, message)
                 || dependencies.moderationDuplicateTracker().isDuplicate(
-                        message, config.getRuleDuplicateCooldownSeconds())) {
+                        message, config.getRuleDuplicateCooldownSeconds())
+                || dependencies.userCooldownTracker().isCoolingDown(
+                        user, username, config.getRuleUserCooldownSeconds())) {
             return;
         }
         dependencies.renderedTracker().remember(username, message);
         sendComment(config, username, user, message);
         dependencies.sessionEventLogger().log(SessionLogEvent.chat(username, message, memberLevel));
         dependencies.moderationDuplicateTracker().remember(message, config.getRuleDuplicateCooldownSeconds());
+        dependencies.userCooldownTracker().remember(user, username, config.getRuleUserCooldownSeconds());
         dependencies.statsTracker().recordComment(TikTokUserNames.resolveUserId(user), username);
     }
 
@@ -73,7 +77,11 @@ final class TikTokEventDispatcher {
         if (!tokenCheck.test(token) || !config.isSyntheticFollowEnabled()) {
             return;
         }
-        SyntheticAuthorNotice notice = sendSyntheticAuthorNotice(SyntheticAuthorKind.FOLLOW, config, event.getUser());
+        SyntheticAuthorNotice notice = syntheticAuthorNotice(event.getUser());
+        if (!dependencies.ruleEngine().shouldRouteSyntheticUser(config, event.getUser(), notice.username())) {
+            return;
+        }
+        sendSyntheticAuthorNotice(SyntheticAuthorKind.FOLLOW, config, notice);
         dependencies.alertService().follow(config, notice.username(), notice.avatarUrl());
         dependencies.statsTracker().recordFollow();
     }
@@ -83,14 +91,20 @@ final class TikTokEventDispatcher {
         if (!tokenCheck.test(token) || !config.isSyntheticJoinEnabled()) {
             return;
         }
-        SyntheticAuthorNotice notice = sendSyntheticAuthorNotice(SyntheticAuthorKind.JOIN, config, event.getUser());
+        SyntheticAuthorNotice notice = syntheticAuthorNotice(event.getUser());
+        if (!dependencies.ruleEngine().shouldRouteSyntheticUser(config, event.getUser(), notice.username())) {
+            return;
+        }
+        sendSyntheticAuthorNotice(SyntheticAuthorKind.JOIN, config, notice);
         dependencies.alertService().join(config, notice.username(), notice.avatarUrl());
         dependencies.statsTracker().recordJoin();
     }
 
     void onGift(long token, TikTokGiftEvent event) {
         ReinodoceConfig config = dependencies.configSupplier().get();
-        if (!tokenCheck.test(token) || !dependencies.ruleEngine().shouldEmitGift(config, event.getGift())) {
+        String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(event.getUser()));
+        if (!tokenCheck.test(token)
+                || !dependencies.ruleEngine().shouldEmitGift(config, event.getGift(), event.getUser(), username)) {
             return;
         }
         GiftComboMode mode = GiftComboMode.fromString(config.getSyntheticGiftComboMode());
@@ -100,7 +114,9 @@ final class TikTokEventDispatcher {
 
     void onGiftCombo(long token, TikTokGiftComboEvent event) {
         ReinodoceConfig config = dependencies.configSupplier().get();
-        if (!tokenCheck.test(token) || !dependencies.ruleEngine().shouldEmitGift(config, event.getGift())) {
+        String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(event.getUser()));
+        if (!tokenCheck.test(token)
+                || !dependencies.ruleEngine().shouldEmitGift(config, event.getGift(), event.getUser(), username)) {
             return;
         }
         GiftComboMode mode = GiftComboMode.fromString(config.getSyntheticGiftComboMode());
@@ -124,18 +140,23 @@ final class TikTokEventDispatcher {
         }
     }
 
-    private SyntheticAuthorNotice sendSyntheticAuthorNotice(SyntheticAuthorKind kind, ReinodoceConfig config, User user) {
-        String username = TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user));
-        String avatarUrl = TikTokMediaResolver.resolveUserAvatarUrl(user);
+    private void sendSyntheticAuthorNotice(
+            SyntheticAuthorKind kind, ReinodoceConfig config, SyntheticAuthorNotice notice
+    ) {
         if (config.isChatEmotesEnabled()) {
             RichLiveMessage rich = dependencies.messageFactory().richAuthorOnlyMessage(
-                    username, avatarUrl);
+                    notice.username(), notice.avatarUrl());
             kind.sendRich(dependencies.chatGateway(), config, rich);
         } else {
-            kind.sendPlain(dependencies.chatGateway(), config, username);
+            kind.sendPlain(dependencies.chatGateway(), config, notice.username());
         }
-        dependencies.sessionEventLogger().log(kind.logEvent(username));
-        return new SyntheticAuthorNotice(username, avatarUrl);
+        dependencies.sessionEventLogger().log(kind.logEvent(notice.username()));
+    }
+
+    private static SyntheticAuthorNotice syntheticAuthorNotice(User user) {
+        return new SyntheticAuthorNotice(
+                TikTokUserNames.sanitizeUserName(TikTokUserNames.resolveUserName(user)),
+                TikTokMediaResolver.resolveUserAvatarUrl(user));
     }
 
     private record SyntheticAuthorNotice(String username, String avatarUrl) {

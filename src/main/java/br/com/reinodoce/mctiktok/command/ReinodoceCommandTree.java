@@ -9,7 +9,6 @@ import br.com.reinodoce.mctiktok.command.handlers.DiagnosticsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.DisconnectCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.LoggingCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.ReloadCommandHandler;
-import br.com.reinodoce.mctiktok.command.handlers.RuleCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.SettingsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.StatsCommandHandler;
 import br.com.reinodoce.mctiktok.command.handlers.StatusCommandHandler;
@@ -38,7 +37,6 @@ public final class ReinodoceCommandTree {
     private static final String ARG_FORMAT = "format";
     private static final String ARG_TEMPLATE = "template";
     private static final String ARG_VALUE = "value";
-    private static final String ARG_USERNAME = "username";
     private static final String ARG_SECONDS = "seconds";
     private static final String ARG_MODE = "mode";
     private static final String ARG_POSITION = "position";
@@ -69,7 +67,7 @@ public final class ReinodoceCommandTree {
                 .then(statsBranch(commandService))
                 .then(diagnosticsBranch(commandService))
                 .then(settingsBranch(commandService))
-                .then(ruleBranch(commandService))
+                .then(ReinodoceRuleCommandTree.branch(commandService))
                 .then(syntheticBranch(commandService))
                 .then(alertBranch(commandService))
                 .then(loggingBranch(commandService))
@@ -209,7 +207,7 @@ public final class ReinodoceCommandTree {
 
     private static LiteralArgumentBuilder<CommandSourceStack> pinnedOverlayBranch(ReinodoceCommandService service) {
         return Commands.literal("pinned-overlay")
-                .then(Commands.literal("enabled")
+                .then(Commands.literal(ARG_ENABLED)
                         .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
                                 .executes(ctx -> SettingsCommandHandler.pinnedOverlay(
                                         service,
@@ -237,64 +235,6 @@ public final class ReinodoceCommandTree {
                                         service,
                                         ctx.getSource(),
                                         IntegerArgumentType.getInteger(ctx, ARG_MESSAGES)))));
-    }
-
-    private static LiteralArgumentBuilder<CommandSourceStack> ruleBranch(ReinodoceCommandService service) {
-        return Commands.literal("rule")
-                .then(Commands.literal("follower")
-                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
-                                .executes(ctx -> RuleCommandHandler.follower(
-                                        service,
-                                        ctx.getSource(),
-                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
-                .then(Commands.literal("min-member-level")
-                        .then(Commands.argument("level", IntegerArgumentType.integer(0))
-                                .executes(ctx -> RuleCommandHandler.minMemberLevel(
-                                        service,
-                                        ctx.getSource(),
-                                        IntegerArgumentType.getInteger(ctx, "level")))))
-                .then(Commands.literal("block-word")
-                        .then(Commands.literal("add")
-                                .then(Commands.argument(ARG_VALUE, StringArgumentType.greedyString())
-                                        .executes(ctx -> RuleCommandHandler.addBlockedWord(
-                                                service,
-                                                ctx.getSource(),
-                                                StringArgumentType.getString(ctx, ARG_VALUE)))))
-                        .then(Commands.literal("remove")
-                                .then(Commands.argument(ARG_VALUE, StringArgumentType.greedyString())
-                                        .executes(ctx -> RuleCommandHandler.removeBlockedWord(
-                                                service,
-                                                ctx.getSource(),
-                                                StringArgumentType.getString(ctx, ARG_VALUE)))))
-                        .then(Commands.literal("list")
-                                .executes(ctx -> RuleCommandHandler.listBlockedWords(service, ctx.getSource()))))
-                .then(Commands.literal("block-user")
-                        .then(Commands.literal("add")
-                                .then(Commands.argument(ARG_USERNAME, StringArgumentType.word())
-                                        .executes(ctx -> RuleCommandHandler.addBlockedUser(
-                                                service,
-                                                ctx.getSource(),
-                                                StringArgumentType.getString(ctx, ARG_USERNAME)))))
-                        .then(Commands.literal("remove")
-                                .then(Commands.argument(ARG_USERNAME, StringArgumentType.word())
-                                        .executes(ctx -> RuleCommandHandler.removeBlockedUser(
-                                                service,
-                                                ctx.getSource(),
-                                                StringArgumentType.getString(ctx, ARG_USERNAME)))))
-                        .then(Commands.literal("list")
-                                .executes(ctx -> RuleCommandHandler.listBlockedUsers(service, ctx.getSource()))))
-                .then(Commands.literal("max-length")
-                        .then(Commands.argument("length", IntegerArgumentType.integer(0))
-                                .executes(ctx -> RuleCommandHandler.maxLength(
-                                        service,
-                                        ctx.getSource(),
-                                        IntegerArgumentType.getInteger(ctx, "length")))))
-                .then(Commands.literal("duplicate-cooldown")
-                        .then(Commands.argument(ARG_SECONDS, IntegerArgumentType.integer(0))
-                                .executes(ctx -> RuleCommandHandler.duplicateCooldown(
-                                        service,
-                                        ctx.getSource(),
-                                        IntegerArgumentType.getInteger(ctx, ARG_SECONDS)))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> syntheticBranch(ReinodoceCommandService service) {
@@ -386,7 +326,7 @@ public final class ReinodoceCommandTree {
 
     private static LiteralArgumentBuilder<CommandSourceStack> loggingBranch(ReinodoceCommandService service) {
         return Commands.literal("logging")
-                .then(Commands.literal("enabled")
+                .then(Commands.literal(ARG_ENABLED)
                         .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
                                 .executes(ctx -> LoggingCommandHandler.enabled(
                                         service,

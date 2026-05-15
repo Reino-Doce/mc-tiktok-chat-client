@@ -26,6 +26,9 @@ from a TikTok LIVE inside the local Minecraft chat.
 - TikTok pinned-message events can render in a separate client-only
   pinned overlay, with optional mirroring into the normal output mode;
   configure it with `/reinodoce settings pinned-overlay ...`.
+- Moderation rules can hide blocked words/users, links, emote-only
+  comments, repeated users, and optionally require an allowed-user list;
+  configure them with `/reinodoce rule ...`.
 - Language defaults to the Minecraft client language, with an optional
   override through `/reinodoce settings language <locale|auto>`.
 - `/reinodoce settings gui` opens a compact settings index with

@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MessageRuleEngineTest {
     private static final String ALICE = "alice";
+    private static final String BOB = "bob";
+    private static final String HELLO = "hello";
 
     private final MessageRuleEngine engine = new MessageRuleEngine();
 
@@ -23,7 +25,7 @@ class MessageRuleEngineTest {
         User follower = new User(10L, ALICE);
         follower.addAttribute(UserAttribute.Follower);
 
-        User nonFollower = new User(11L, "bob");
+        User nonFollower = new User(11L, BOB);
 
         assertTrue(engine.shouldDisplayComment(config, follower, 3));
         assertFalse(engine.shouldDisplayComment(config, follower, 1));
@@ -41,10 +43,47 @@ class MessageRuleEngineTest {
         User user = new User(10L, ALICE);
         User blockedUser = new User(11L, "bad_user");
 
-        assertTrue(engine.shouldDisplayComment(config, user, 0, ALICE, "hello"));
+        assertTrue(engine.shouldDisplayComment(config, user, 0, ALICE, HELLO));
         assertFalse(engine.shouldDisplayComment(config, user, 0, ALICE, "buy spam now"));
-        assertFalse(engine.shouldDisplayComment(config, blockedUser, 0, "Display Name", "hello"));
+        assertFalse(engine.shouldDisplayComment(config, blockedUser, 0, "Display Name", HELLO));
         assertFalse(engine.shouldDisplayComment(config, user, 0, ALICE, "this message is too long"));
+    }
+
+    @Test
+    void newCommentFiltersAreDisabledByDefault() {
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        User user = new User(10L, ALICE);
+
+        assertTrue(engine.shouldDisplayComment(config, user, 0, ALICE, "https://example.com"));
+        assertTrue(engine.shouldDisplayComment(config, user, 0, ALICE, "", true));
+        assertTrue(engine.shouldDisplayComment(config, user, 0, ALICE, "first"));
+        assertTrue(engine.shouldDisplayComment(config, user, 0, ALICE, "second"));
+    }
+
+    @Test
+    void commentRulesApplyLinkAndEmoteOnlyFilters() {
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.setRuleLinkFilterEnabled(true);
+        config.setRuleEmoteOnlyFilterEnabled(true);
+        User user = new User(10L, ALICE);
+
+        assertTrue(engine.shouldDisplayComment(config, user, 0, ALICE, "hello world"));
+        assertFalse(engine.shouldDisplayComment(config, user, 0, ALICE, "visit https://example.com"));
+        assertFalse(engine.shouldDisplayComment(config, user, 0, ALICE, "www.example.com"));
+        assertFalse(engine.shouldDisplayComment(config, user, 0, ALICE, "", true));
+        assertFalse(engine.shouldDisplayComment(config, user, 0, ALICE, "\uD83D\uDE02\uD83D\uDE02"));
+    }
+
+    @Test
+    void allowlistModeRequiresAllowedUser() {
+        ReinodoceConfig config = ReinodoceConfig.defaults();
+        config.setRuleAllowlistMode(true);
+        config.addRuleAllowedUser(ALICE);
+
+        assertTrue(engine.shouldDisplayComment(config, new User(10L, ALICE), 0, ALICE, HELLO));
+        assertFalse(engine.shouldDisplayComment(config, new User(11L, BOB), 0, BOB, HELLO));
+        assertTrue(engine.shouldRouteSyntheticUser(config, null, ALICE));
+        assertFalse(engine.shouldRouteSyntheticUser(config, null, BOB));
     }
 
     @Test

@@ -5,7 +5,7 @@ import br.com.reinodoce.mctiktok.command.CommandResult;
 /**
  * Delegates privacy and logging command actions for the client command service.
  */
-abstract class ReinodoceClientPrivacyCommandBridge extends ReinodoceClientCommandBridge {
+abstract class ReinodoceClientPrivacyCommandBridge extends ReinodoceClientEventCommandBridge {
     @Override
     public CommandResult setChatEmotesEnabled(boolean enabled) {
         return coreService().setChatEmotesEnabled(enabled);

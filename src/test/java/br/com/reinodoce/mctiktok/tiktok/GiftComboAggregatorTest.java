@@ -24,17 +24,20 @@ class GiftComboAggregatorTest {
 
             List<GiftComboAggregator.GiftEmission> first = aggregator.handleCombo(
                     GiftComboMode.IGNORE,
-                    new GiftComboAggregator.GiftSnapshot(key, "alice", "avatar://alice", "Rose", "gift://rose", 1, 1, 100L),
+                    new GiftComboAggregator.GiftSnapshot(
+                            key, "alice", "alice", "avatar://alice", "Rose", "gift://rose", 1, 1, 100L),
                     false
             );
             List<GiftComboAggregator.GiftEmission> second = aggregator.handleCombo(
                     GiftComboMode.IGNORE,
-                    new GiftComboAggregator.GiftSnapshot(key, "alice", "avatar://alice", "Rose", "gift://rose", 1, 3, 101L),
+                    new GiftComboAggregator.GiftSnapshot(
+                            key, "alice", "alice", "avatar://alice", "Rose", "gift://rose", 1, 3, 101L),
                     false
             );
             List<GiftComboAggregator.GiftEmission> duplicate = aggregator.handleCombo(
                     GiftComboMode.IGNORE,
-                    new GiftComboAggregator.GiftSnapshot(key, "alice", "avatar://alice", "Rose", "gift://rose", 1, 3, 102L),
+                    new GiftComboAggregator.GiftSnapshot(
+                            key, "alice", "alice", "avatar://alice", "Rose", "gift://rose", 1, 3, 102L),
                     false
             );
 
@@ -60,17 +63,20 @@ class GiftComboAggregatorTest {
 
             List<GiftComboAggregator.GiftEmission> first = aggregator.handleCombo(
                     GiftComboMode.SINGLE,
-                    new GiftComboAggregator.GiftSnapshot(key, "alice", "avatar://alice", "Rose", "gift://rose", 1, 1, 200L),
+                    new GiftComboAggregator.GiftSnapshot(
+                            key, "alice", "alice", "avatar://alice", "Rose", "gift://rose", 1, 1, 200L),
                     false
             );
             List<GiftComboAggregator.GiftEmission> duplicate = aggregator.handleCombo(
                     GiftComboMode.SINGLE,
-                    new GiftComboAggregator.GiftSnapshot(key, "alice", "avatar://alice", "Rose", "gift://rose", 1, 1, 201L),
+                    new GiftComboAggregator.GiftSnapshot(
+                            key, "alice", "alice", "avatar://alice", "Rose", "gift://rose", 1, 1, 201L),
                     false
             );
             List<GiftComboAggregator.GiftEmission> next = aggregator.handleCombo(
                     GiftComboMode.SINGLE,
-                    new GiftComboAggregator.GiftSnapshot(key, "alice", "avatar://alice", "Rose", "gift://rose", 1, 2, 202L),
+                    new GiftComboAggregator.GiftSnapshot(
+                            key, "alice", "alice", "avatar://alice", "Rose", "gift://rose", 1, 2, 202L),
                     false
             );
 
@@ -94,12 +100,14 @@ class GiftComboAggregatorTest {
 
             List<GiftComboAggregator.GiftEmission> start = aggregator.handleCombo(
                     GiftComboMode.BULK,
-                    new GiftComboAggregator.GiftSnapshot(key, "bob", "avatar://bob", "Galaxy", "gift://galaxy", 10, 2, 300L),
+                    new GiftComboAggregator.GiftSnapshot(
+                            key, "bob", "bob", "avatar://bob", "Galaxy", "gift://galaxy", 10, 2, 300L),
                     false
             );
             List<GiftComboAggregator.GiftEmission> finished = aggregator.handleCombo(
                     GiftComboMode.BULK,
-                    new GiftComboAggregator.GiftSnapshot(key, "bob", "avatar://bob", "Galaxy", "gift://galaxy", 10, 5, 301L),
+                    new GiftComboAggregator.GiftSnapshot(
+                            key, "bob", "bob", "avatar://bob", "Galaxy", "gift://galaxy", 10, 5, 301L),
                     true
             );
 

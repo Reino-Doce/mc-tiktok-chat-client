@@ -1,11 +1,11 @@
 package br.com.reinodoce.mctiktok.command;
 
-import br.com.reinodoce.mctiktok.alert.AlertEventType;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.tree.CommandNode;
 import net.minecraft.commands.CommandSourceStack;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Proxy;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,6 +26,9 @@ class ReinodoceCommandTreeTest {
     private static final String FOLLOW_LITERAL = "follow";
     private static final String JOIN_LITERAL = "join";
     private static final String MEMBER_LEVEL_LITERAL = "member-level";
+    private static final String BLOCK_WORD_LITERAL = "block-word";
+    private static final String BLOCK_USER_LITERAL = "block-user";
+    private static final String ALLOWLIST_LITERAL = "allowlist";
     private static final String MODE_ARGUMENT = "mode";
     private static final String POSITION_ARGUMENT = "position";
     private static final String LINES_ARGUMENT = "lines";
@@ -50,17 +53,7 @@ class ReinodoceCommandTreeTest {
 
         assertSettingsSurface(root.getChild("settings"));
 
-        CommandNode<CommandSourceStack> rule = root.getChild("rule");
-        assertNotNull(rule.getChild("follower").getChild(ENABLED_ARGUMENT));
-        assertNotNull(rule.getChild("min-member-level").getChild("level"));
-        assertNotNull(rule.getChild("block-word").getChild("add").getChild(VALUE_ARGUMENT));
-        assertNotNull(rule.getChild("block-word").getChild("remove").getChild(VALUE_ARGUMENT));
-        assertNotNull(rule.getChild("block-word").getChild("list"));
-        assertNotNull(rule.getChild("block-user").getChild("add").getChild(USERNAME_ARGUMENT));
-        assertNotNull(rule.getChild("block-user").getChild("remove").getChild(USERNAME_ARGUMENT));
-        assertNotNull(rule.getChild("block-user").getChild("list"));
-        assertNotNull(rule.getChild("max-length").getChild("length"));
-        assertNotNull(rule.getChild("duplicate-cooldown").getChild(SECONDS_ARGUMENT));
+        assertRuleSurface(root.getChild("rule"));
 
         CommandNode<CommandSourceStack> synthetic = root.getChild("synthetic");
         assertNotNull(synthetic.getChild(GIFT_LITERAL).getChild(VALUE_ARGUMENT));
@@ -112,7 +105,24 @@ class ReinodoceCommandTreeTest {
 
     private static CommandNode<CommandSourceStack> root() {
         CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
-        return dispatcher.register(ReinodoceCommandTree.build(new StubCommandService()));
+        return dispatcher.register(ReinodoceCommandTree.build(stubService()));
+    }
+
+    private static ReinodoceCommandService stubService() {
+        return (ReinodoceCommandService) Proxy.newProxyInstance(
+                ReinodoceCommandService.class.getClassLoader(),
+                new Class<?>[] {ReinodoceCommandService.class},
+                (proxy, method, args) -> defaultReturn(method.getReturnType()));
+    }
+
+    private static Object defaultReturn(Class<?> returnType) {
+        if (returnType == List.class) {
+            return List.of();
+        }
+        if (returnType == CommandResult.class) {
+            return CommandResult.error("unused");
+        }
+        throw new UnsupportedOperationException("Unsupported command service return type: " + returnType);
     }
 
     private static void assertSettingsSurface(CommandNode<CommandSourceStack> settings) {
@@ -137,276 +147,27 @@ class ReinodoceCommandTreeTest {
         assertNotNull(settings.getChild("format").getChild("template"));
     }
 
-    // Stub mirrors the command service surface so the tree can be registered without behavior.
-    @SuppressWarnings("PMD.ExcessivePublicCount")
-    private static final class StubCommandService implements ReinodoceCommandService {
-        @Override
-        public CommandResult connect(String username) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult connectLast() {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult disconnect() {
-            return unsupported();
-        }
-
-        @Override
-        public List<String> statusLines() {
-            return List.of();
-        }
-
-        @Override
-        public List<String> statsLines() {
-            return List.of();
-        }
-
-        @Override
-        public CommandResult resetStats() {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult exportDiagnostics() {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setReconnectSeconds(int seconds) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setAutoConnectOnStart(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setOutputMode(String mode) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setHudPosition(String position) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setHudLines(int lines) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setPinnedOverlayEnabled(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setPinnedOverlayPosition(String position) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setPinnedMessagesInOutput(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setPinnedOverlayMessages(int messages) {
-            return unsupported();
-        }
-
-        @Override
-        public List<String> languageLines() {
-            return List.of();
-        }
-
-        @Override
-        public CommandResult setLanguage(String language) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult openSettingsGui() {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setFollowerRule(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setMinMemberLevelRule(int level) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult addBlockedWord(String word) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult removeBlockedWord(String word) {
-            return unsupported();
-        }
-
-        @Override
-        public List<String> blockedWordLines() {
-            return List.of();
-        }
-
-        @Override
-        public CommandResult addBlockedUser(String username) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult removeBlockedUser(String username) {
-            return unsupported();
-        }
-
-        @Override
-        public List<String> blockedUserLines() {
-            return List.of();
-        }
-
-        @Override
-        public CommandResult setMaxMessageLengthRule(int length) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setDuplicateCooldownRule(int seconds) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSyntheticGift(int value) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSyntheticGiftComboMode(String mode) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSyntheticFollow(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSyntheticJoin(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSyntheticMemberLevel(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setAlertSound(AlertEventType eventType, boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setAlertSoundId(AlertEventType eventType, String soundId) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setAlertToast(AlertEventType eventType, boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setAlertToastTemplate(AlertEventType eventType, String template) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setAlertMediaMode(AlertEventType eventType, String mediaMode) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setAlertCustomImage(AlertEventType eventType, String customImage) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setAlertGiftMinValue(int value) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setChatEmotesEnabled(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setChatLogEnabled(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setMaskUsernamesInOutput(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setChatPrefix(String prefix) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setChatFormat(String format) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSessionLoggingEnabled(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSessionLoggingFormat(String format) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSessionLoggingRetentionDays(int days) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSessionLoggingRetentionFiles(int files) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSessionLoggingAnonymized(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult setSessionLoggingMetadataOnly(boolean enabled) {
-            return unsupported();
-        }
-
-        @Override
-        public CommandResult reload() {
-            return unsupported();
-        }
-
-        private CommandResult unsupported() {
-            throw new UnsupportedOperationException("Command execution is outside this structure test.");
-        }
+    private static void assertRuleSurface(CommandNode<CommandSourceStack> rule) {
+        assertNotNull(rule.getChild("follower").getChild(ENABLED_ARGUMENT));
+        assertNotNull(rule.getChild("min-member-level").getChild("level"));
+        assertNotNull(rule.getChild(BLOCK_WORD_LITERAL).getChild("add").getChild(VALUE_ARGUMENT));
+        assertNotNull(rule.getChild(BLOCK_WORD_LITERAL).getChild("remove").getChild(VALUE_ARGUMENT));
+        assertNotNull(rule.getChild(BLOCK_WORD_LITERAL).getChild("import").getChild(VALUE_ARGUMENT));
+        assertNotNull(rule.getChild(BLOCK_WORD_LITERAL).getChild("export"));
+        assertNotNull(rule.getChild(BLOCK_WORD_LITERAL).getChild("list"));
+        assertNotNull(rule.getChild(BLOCK_USER_LITERAL).getChild("add").getChild(USERNAME_ARGUMENT));
+        assertNotNull(rule.getChild(BLOCK_USER_LITERAL).getChild("remove").getChild(USERNAME_ARGUMENT));
+        assertNotNull(rule.getChild(BLOCK_USER_LITERAL).getChild("import").getChild(VALUE_ARGUMENT));
+        assertNotNull(rule.getChild(BLOCK_USER_LITERAL).getChild("export"));
+        assertNotNull(rule.getChild(BLOCK_USER_LITERAL).getChild("list"));
+        assertNotNull(rule.getChild("emote-only").getChild(ENABLED_ARGUMENT));
+        assertNotNull(rule.getChild("links").getChild(ENABLED_ARGUMENT));
+        assertNotNull(rule.getChild("user-cooldown").getChild(SECONDS_ARGUMENT));
+        assertNotNull(rule.getChild(ALLOWLIST_LITERAL).getChild(ENABLED_ARGUMENT).getChild(ENABLED_ARGUMENT));
+        assertNotNull(rule.getChild(ALLOWLIST_LITERAL).getChild("add").getChild(USERNAME_ARGUMENT));
+        assertNotNull(rule.getChild(ALLOWLIST_LITERAL).getChild("remove").getChild(USERNAME_ARGUMENT));
+        assertNotNull(rule.getChild(ALLOWLIST_LITERAL).getChild("list"));
+        assertNotNull(rule.getChild("max-length").getChild("length"));
+        assertNotNull(rule.getChild("duplicate-cooldown").getChild(SECONDS_ARGUMENT));
     }
 }

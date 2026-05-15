@@ -93,7 +93,7 @@ record TikTokFacadeWiring(
                     configSupplier, runtimeServices.chatGateway(), ruleEngine, memberLevelResolver,
                     emitters.renderedTracker(), emitters.messageFactory(),
                     emitters.giftEmitter(), emitters.giftComboAggregator(),
-                    emitters.statsTracker(), emitters.moderationDuplicateTracker(),
+                    emitters.statsTracker(), emitters.moderationDuplicateTracker(), emitters.userCooldownTracker(),
                     runtimeServices.sessionEventLogger(), runtimeServices.alertService());
             TikTokEventDispatcher dispatcher = new TikTokEventDispatcher(deps, binding::isTokenCurrentLazy);
             return new TikTokFacadeWiring(
@@ -104,6 +104,7 @@ record TikTokFacadeWiring(
             RenderedCommentTracker renderedTracker = new RenderedCommentTracker();
             SessionStatsTracker statsTracker = new SessionStatsTracker();
             ModerationDuplicateTracker moderationDuplicateTracker = new ModerationDuplicateTracker();
+            UserCooldownTracker userCooldownTracker = new UserCooldownTracker();
             RichLiveMessageFactory messageFactory = new RichLiveMessageFactory(
                     new UnicodeEmojiParser(),
                     runtimeServices.languageSupplier(),
@@ -111,10 +112,10 @@ record TikTokFacadeWiring(
             LiveCommentEmitter.Dependencies liveCommentDependencies = new LiveCommentEmitter.Dependencies(
                     configSupplier, runtimeServices.chatGateway(), ruleEngine, commentDeduplicator,
                     renderedTracker, messageFactory, statsTracker,
-                    moderationDuplicateTracker, runtimeServices.sessionEventLogger());
+                    moderationDuplicateTracker, userCooldownTracker, runtimeServices.sessionEventLogger());
             LiveCommentEmitter liveCommentEmitter = new LiveCommentEmitter(liveCommentDependencies);
             MemberLevelEmitter memberLevelEmitter = new MemberLevelEmitter(
-                    configSupplier, runtimeServices, messageFactory, statsTracker);
+                    configSupplier, runtimeServices, ruleEngine, messageFactory, statsTracker);
             TikTokGiftEmitter giftEmitter = new TikTokGiftEmitter(
                     configSupplier, runtimeServices, ruleEngine, giftDeduplicator,
                     messageFactory, statsTracker);
@@ -125,7 +126,7 @@ record TikTokFacadeWiring(
             GiftComboAggregator giftComboAggregator = new GiftComboAggregator(
                     executors.scheduler(), giftEmitter::emitFromAsyncFlush);
             return new Emitters(
-                    renderedTracker, statsTracker, moderationDuplicateTracker,
+                    renderedTracker, statsTracker, moderationDuplicateTracker, userCooldownTracker,
                     messageFactory, liveCommentEmitter, memberLevelEmitter,
                     giftEmitter, parser, pinnedMessageEmitter, giftComboAggregator);
         }
@@ -163,6 +164,7 @@ record TikTokFacadeWiring(
             memberLevelResolver.clear();
             emitters.renderedTracker().clear();
             emitters.moderationDuplicateTracker().clear();
+            emitters.userCooldownTracker().clear();
             runtimeServices.pinnedMessageSink().clearPinnedMessages();
         }
     }
@@ -179,6 +181,7 @@ record TikTokFacadeWiring(
             RenderedCommentTracker renderedTracker,
             SessionStatsTracker statsTracker,
             ModerationDuplicateTracker moderationDuplicateTracker,
+            UserCooldownTracker userCooldownTracker,
             RichLiveMessageFactory messageFactory,
             LiveCommentEmitter liveCommentEmitter,
             MemberLevelEmitter memberLevelEmitter,
