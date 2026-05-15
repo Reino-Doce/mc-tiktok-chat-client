@@ -33,6 +33,7 @@ class ReinodoceCommandTreeTest {
     private static final String POSITION_ARGUMENT = "position";
     private static final String LINES_ARGUMENT = "lines";
     private static final String MESSAGES_ARGUMENT = "messages";
+    private static final String COUNT_ARGUMENT = "count";
     private static final String DAYS_ARGUMENT = "days";
     private static final String FILES_ARGUMENT = "files";
     private static final String LOCALE_ARGUMENT = "locale";
@@ -63,7 +64,7 @@ class ReinodoceCommandTreeTest {
         assertNotNull(synthetic.getChild(MEMBER_LEVEL_LITERAL).getChild(ENABLED_ARGUMENT));
 
         CommandNode<CommandSourceStack> logging = root.getChild("logging");
-        assertNotNull(logging.getChild("enabled").getChild(ENABLED_ARGUMENT));
+        assertNotNull(logging.getChild(ENABLED_ARGUMENT).getChild(ENABLED_ARGUMENT));
         assertNotNull(logging.getChild("format").getChild("format"));
         assertNotNull(logging.getChild("retention-days").getChild(DAYS_ARGUMENT));
         assertNotNull(logging.getChild("retention-files").getChild(FILES_ARGUMENT));
@@ -135,10 +136,14 @@ class ReinodoceCommandTreeTest {
         assertNotNull(settings.getChild("hud-position").getChild(POSITION_ARGUMENT));
         assertNotNull(settings.getChild("hud-lines").getChild(LINES_ARGUMENT));
         CommandNode<CommandSourceStack> pinnedOverlay = settings.getChild("pinned-overlay");
-        assertNotNull(pinnedOverlay.getChild("enabled").getChild(ENABLED_ARGUMENT));
+        assertNotNull(pinnedOverlay.getChild(ENABLED_ARGUMENT).getChild(ENABLED_ARGUMENT));
         assertNotNull(pinnedOverlay.getChild("position").getChild(POSITION_ARGUMENT));
         assertNotNull(pinnedOverlay.getChild("mirror-output").getChild(ENABLED_ARGUMENT));
         assertNotNull(pinnedOverlay.getChild("messages").getChild(MESSAGES_ARGUMENT));
+        CommandNode<CommandSourceStack> burst = settings.getChild("burst");
+        assertNotNull(burst.getChild(ENABLED_ARGUMENT).getChild(ENABLED_ARGUMENT));
+        assertNotNull(burst.getChild("comments-per-second").getChild(COUNT_ARGUMENT));
+        assertNotNull(burst.getChild("synthetic-window").getChild(SECONDS_ARGUMENT));
         assertNotNull(settings.getChild("gui").getCommand());
         assertNotNull(settings.getChild("chat-emotes").getChild(ENABLED_ARGUMENT));
         assertNotNull(settings.getChild("chat-log").getChild(ENABLED_ARGUMENT));

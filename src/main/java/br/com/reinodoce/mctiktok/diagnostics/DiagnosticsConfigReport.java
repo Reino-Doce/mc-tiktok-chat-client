@@ -67,6 +67,9 @@ final class DiagnosticsConfigReport {
         output.put("hudPosition", config.getHudPosition());
         output.put("hudLines", config.getHudLines());
         output.put("maskUsernamesInOutput", config.isMaskUsernamesInOutput());
+        output.put("burstControlEnabled", config.isBurstControlEnabled());
+        output.put("burstCommentsPerSecond", config.getBurstCommentsPerSecond());
+        output.put("burstSyntheticAggregationSeconds", config.getBurstSyntheticAggregationSeconds());
         output.put("pinnedOverlayEnabled", config.isPinnedOverlayEnabled());
         output.put("pinnedOverlayPosition", config.getPinnedOverlayPosition());
         output.put("pinnedOverlayMessages", config.getPinnedOverlayMessages());

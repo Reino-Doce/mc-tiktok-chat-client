@@ -133,6 +133,30 @@ public interface ReinodoceCommandService {
     CommandResult setPinnedOverlayMessages(int messages);
 
     /**
+     * Updates burst-control state.
+     *
+     * @param enabled whether burst controls are enabled
+     * @return command result
+     */
+    CommandResult setBurstControlEnabled(boolean enabled);
+
+    /**
+     * Updates visible comment throughput for burst control.
+     *
+     * @param commentsPerSecond visible comments per second, or zero for unlimited
+     * @return command result
+     */
+    CommandResult setBurstCommentsPerSecond(int commentsPerSecond);
+
+    /**
+     * Updates join/follow aggregation window for burst control.
+     *
+     * @param seconds aggregation window seconds, or zero to disable aggregation
+     * @return command result
+     */
+    CommandResult setBurstSyntheticAggregationSeconds(int seconds);
+
+    /**
      * Returns language setting status lines.
      *
      * @return language status lines

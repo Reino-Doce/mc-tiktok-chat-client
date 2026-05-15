@@ -90,6 +90,7 @@ public class TikTokClientFacade {
      */
     public void resetStats() {
         eventDispatcher.clearPendingGifts();
+        eventDispatcher.clearPendingBurstOutput();
         statsTracker.reset();
     }
 
@@ -106,6 +107,7 @@ public class TikTokClientFacade {
      * Applies runtime configuration changes to the lifecycle manager.
      */
     public void onConfigUpdated() {
+        eventDispatcher.clearPendingBurstOutput();
         lifecycle.onConfigUpdated();
     }
 

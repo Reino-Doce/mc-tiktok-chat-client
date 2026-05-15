@@ -23,6 +23,9 @@ from a TikTok LIVE inside the local Minecraft chat.
 - Mirrored output can be sent to chat, actionbar, a bounded local HUD, or
   suppressed while keeping the connection active with
   `/reinodoce settings output ...`.
+- Burst controls can rate-limit visible comments and aggregate rapid
+  joins/follows while accepted events still count in stats and session
+  logs; configure them with `/reinodoce settings burst ...`.
 - TikTok pinned-message events can render in a separate client-only
   pinned overlay, with optional mirroring into the normal output mode;
   configure it with `/reinodoce settings pinned-overlay ...`.

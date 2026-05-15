@@ -8,6 +8,8 @@
   <suppress checks="MultipleStringLiterals" files=".*[\\/]src[\\/]test[\\/].*"/>
   <!-- Test sources favor readability over wrapping for fixture literals and protobuf builders. -->
   <suppress checks="LineLength" files=".*[\\/]src[\\/]test[\\/].*"/>
+  <!-- LiveCommentEmitterTest wires the comment emission boundary to cover cross-callback dedupe behavior. -->
+  <suppress checks="ClassDataAbstractionCoupling" files=".*[\\/]LiveCommentEmitterTest\.java"/>
 
   <!-- Persisted config mirrors public JSON fields; alert settings push the data carrier beyond size caps. -->
   <suppress checks="FileLength" files=".*[\\/]ReinodoceConfig\.java"/>

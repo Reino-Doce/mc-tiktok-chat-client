@@ -49,6 +49,10 @@ public class ReinodoceConfig {
     public static final String DEFAULT_LANGUAGE = LanguageSetting.AUTO;
     /** Default alert toast template, meaning built-in localized toast text. */
     public static final String DEFAULT_ALERT_TOAST_TEMPLATE = AlertToastTemplate.DEFAULT;
+    /** Maximum supported visible comment throughput while burst controls are enabled. */
+    public static final int MAX_BURST_COMMENTS_PER_SECOND = 60;
+    /** Maximum supported join/follow aggregation window. */
+    public static final int MAX_BURST_SYNTHETIC_AGGREGATION_SECONDS = 60;
     private static final int DEFAULT_RECONNECT_SECONDS = 5;
     private static final int DEFAULT_SYNTHETIC_GIFT_MIN_VALUE = 1;
     private static final int DEFAULT_ALERT_GIFT_MIN_VALUE = 1;
@@ -107,6 +111,9 @@ public class ReinodoceConfig {
     private String pinnedOverlayPosition = DEFAULT_PINNED_OVERLAY_POSITION;
     private boolean pinnedMessagesInOutput = false;
     private int pinnedOverlayMessages = DEFAULT_PINNED_OVERLAY_MESSAGES;
+    private boolean burstControlEnabled = false;
+    private int burstCommentsPerSecond = 0;
+    private int burstSyntheticAggregationSeconds = 0;
     private String chatPrefix = DEFAULT_CHAT_PREFIX;
     private String chatFormat = DEFAULT_CHAT_FORMAT;
     private boolean chatEmotesEnabled = true;
@@ -206,6 +213,9 @@ public class ReinodoceConfig {
         copy.setPinnedOverlayPosition(pinnedOverlayPosition);
         copy.setPinnedMessagesInOutput(pinnedMessagesInOutput);
         copy.setPinnedOverlayMessages(pinnedOverlayMessages);
+        copy.setBurstControlEnabled(burstControlEnabled);
+        copy.setBurstCommentsPerSecond(burstCommentsPerSecond);
+        copy.setBurstSyntheticAggregationSeconds(burstSyntheticAggregationSeconds);
     }
 
     private void copyChatSettingsTo(ReinodoceConfig copy) {
@@ -939,6 +949,62 @@ public class ReinodoceConfig {
      */
     public void setPinnedOverlayMessages(int pinnedOverlayMessages) {
         this.pinnedOverlayMessages = Math.max(1, Math.min(MAX_PINNED_OVERLAY_MESSAGES, pinnedOverlayMessages));
+    }
+
+    /**
+     * Returns whether burst controls are enabled.
+     *
+     * @return true when burst controls can suppress visible output
+     */
+    public boolean isBurstControlEnabled() {
+        return burstControlEnabled;
+    }
+
+    /**
+     * Sets whether burst controls are enabled.
+     *
+     * @param burstControlEnabled burst control state
+     */
+    public void setBurstControlEnabled(boolean burstControlEnabled) {
+        this.burstControlEnabled = burstControlEnabled;
+    }
+
+    /**
+     * Returns the visible comment throughput limit.
+     *
+     * @return comments per second, or zero when unlimited
+     */
+    public int getBurstCommentsPerSecond() {
+        return burstCommentsPerSecond;
+    }
+
+    /**
+     * Sets the visible comment throughput limit.
+     *
+     * @param burstCommentsPerSecond comments per second, clamped to supported bounds
+     */
+    public void setBurstCommentsPerSecond(int burstCommentsPerSecond) {
+        this.burstCommentsPerSecond = Math.max(0,
+                Math.min(MAX_BURST_COMMENTS_PER_SECOND, burstCommentsPerSecond));
+    }
+
+    /**
+     * Returns the join/follow aggregation window.
+     *
+     * @return aggregation window in seconds, or zero when disabled
+     */
+    public int getBurstSyntheticAggregationSeconds() {
+        return burstSyntheticAggregationSeconds;
+    }
+
+    /**
+     * Sets the join/follow aggregation window.
+     *
+     * @param burstSyntheticAggregationSeconds aggregation window in seconds
+     */
+    public void setBurstSyntheticAggregationSeconds(int burstSyntheticAggregationSeconds) {
+        this.burstSyntheticAggregationSeconds = Math.max(0,
+                Math.min(MAX_BURST_SYNTHETIC_AGGREGATION_SECONDS, burstSyntheticAggregationSeconds));
     }
 
     /**

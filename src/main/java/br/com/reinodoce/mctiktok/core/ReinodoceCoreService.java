@@ -380,6 +380,7 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setOutputMode(parsed.id());
         persist(config);
+        tikTokClientFacade.onConfigUpdated();
         return CommandResult.ok(Translations.tr("reinodoce.command.set.output_mode", parsed.id()));
     }
 
@@ -439,6 +440,40 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         return CommandResult.ok(Translations.tr(
                 "reinodoce.command.set.pinned_overlay_messages",
                 config.getPinnedOverlayMessages()));
+    }
+
+    @Override
+    public CommandResult setBurstControlEnabled(boolean enabled) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setBurstControlEnabled(enabled);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr("reinodoce.command.set.burst_enabled", enabled));
+    }
+
+    @Override
+    public CommandResult setBurstCommentsPerSecond(int commentsPerSecond) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setBurstCommentsPerSecond(commentsPerSecond);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.burst_comments_per_second",
+                config.getBurstCommentsPerSecond()));
+    }
+
+    @Override
+    public CommandResult setBurstSyntheticAggregationSeconds(int seconds) {
+        ensureInitialized();
+        ReinodoceConfig config = settingsState.getSnapshot();
+        config.setBurstSyntheticAggregationSeconds(seconds);
+        persist(config);
+        tikTokClientFacade.onConfigUpdated();
+        return CommandResult.ok(Translations.tr(
+                "reinodoce.command.set.burst_synthetic_window",
+                config.getBurstSyntheticAggregationSeconds()));
     }
 
     @Override
@@ -705,6 +740,9 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSyntheticFollowEnabled(enabled);
         persist(config);
+        if (!enabled) {
+            tikTokClientFacade.onConfigUpdated();
+        }
         return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_follow", enabled));
     }
 
@@ -714,6 +752,9 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
         ReinodoceConfig config = settingsState.getSnapshot();
         config.setSyntheticJoinEnabled(enabled);
         persist(config);
+        if (!enabled) {
+            tikTokClientFacade.onConfigUpdated();
+        }
         return CommandResult.ok(Translations.tr("reinodoce.command.set.synthetic_join", enabled));
     }
 
@@ -1068,6 +1109,11 @@ public class ReinodoceCoreService implements ReinodoceCommandService {
                 config.getPinnedOverlayPosition(),
                 config.getPinnedOverlayMessages(),
                 config.isPinnedMessagesInOutput()));
+        lines.add(Translations.tr(
+                "reinodoce.status.burst",
+                config.isBurstControlEnabled(),
+                config.getBurstCommentsPerSecond(),
+                config.getBurstSyntheticAggregationSeconds()));
     }
 
     private static void addAlertStatusLines(List<String> lines, ReinodoceConfig config) {

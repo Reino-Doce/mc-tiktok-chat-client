@@ -42,6 +42,7 @@ public final class ReinodoceCommandTree {
     private static final String ARG_POSITION = "position";
     private static final String ARG_LINES = "lines";
     private static final String ARG_MESSAGES = "messages";
+    private static final String ARG_COUNT = "count";
     private static final String ARG_DAYS = "days";
     private static final String ARG_FILES = "files";
     private static final String ARG_LOCALE = "locale";
@@ -128,6 +129,7 @@ public final class ReinodoceCommandTree {
                 .then(hudPositionBranch(service))
                 .then(hudLinesBranch(service))
                 .then(pinnedOverlayBranch(service))
+                .then(burstBranch(service))
                 .then(Commands.literal("gui")
                         .executes(ctx -> SettingsCommandHandler.gui(service, ctx.getSource())))
                 .then(Commands.literal("chat-emotes")
@@ -235,6 +237,33 @@ public final class ReinodoceCommandTree {
                                         service,
                                         ctx.getSource(),
                                         IntegerArgumentType.getInteger(ctx, ARG_MESSAGES)))));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> burstBranch(ReinodoceCommandService service) {
+        return Commands.literal("burst")
+                .then(Commands.literal(ARG_ENABLED)
+                        .then(Commands.argument(ARG_ENABLED, BoolArgumentType.bool())
+                                .executes(ctx -> SettingsCommandHandler.burstEnabled(
+                                        service,
+                                        ctx.getSource(),
+                                        BoolArgumentType.getBool(ctx, ARG_ENABLED)))))
+                .then(Commands.literal("comments-per-second")
+                        .then(Commands.argument(
+                                        ARG_COUNT,
+                                        IntegerArgumentType.integer(0, ReinodoceConfig.MAX_BURST_COMMENTS_PER_SECOND))
+                                .executes(ctx -> SettingsCommandHandler.burstCommentsPerSecond(
+                                        service,
+                                        ctx.getSource(),
+                                        IntegerArgumentType.getInteger(ctx, ARG_COUNT)))))
+                .then(Commands.literal("synthetic-window")
+                        .then(Commands.argument(
+                                        ARG_SECONDS,
+                                        IntegerArgumentType.integer(
+                                                0, ReinodoceConfig.MAX_BURST_SYNTHETIC_AGGREGATION_SECONDS))
+                                .executes(ctx -> SettingsCommandHandler.burstSyntheticWindow(
+                                        service,
+                                        ctx.getSource(),
+                                        IntegerArgumentType.getInteger(ctx, ARG_SECONDS)))));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> syntheticBranch(ReinodoceCommandService service) {

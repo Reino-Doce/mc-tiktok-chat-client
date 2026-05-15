@@ -39,7 +39,7 @@ Settings change runtime behavior and are persisted to the client config.
 | Command | Argument | Default | Effect |
 | ------- | -------- | ------- | ------ |
 | `/reinodoce settings reconnect <seconds>` | integer ≥ 0 | `5` | Delay between reconnect attempts when the LIVE drops or is offline. `0` disables reconnect. |
-| `/reinodoce settings gui` | — | — | Opens the client settings index with domain submenus for connection, output/HUD and pinned overlay, chat formatting, rules, synthetic events, alerts, session logging, and language. Save on the top-level screen writes through the same config file and runtime update path as commands; Cancel or closing any screen leaves settings unchanged. |
+| `/reinodoce settings gui` | — | — | Opens the client settings index with domain submenus for connection, output/HUD and pinned overlay, burst controls, chat formatting, rules, synthetic events, alerts, session logging, and language. Save on the top-level screen writes through the same config file and runtime update path as commands; Cancel or closing any screen leaves settings unchanged. |
 | `/reinodoce settings auto-connect <true\|false>` | boolean | `false` | When `true`, the client attempts one startup connection to the saved `lastUsername`. Blank or invalid saved usernames are ignored safely. |
 | `/reinodoce settings language` | — | `auto` | Shows whether language selection is automatic or overridden, plus the effective locale currently used by the mod. |
 | `/reinodoce settings language <locale\|auto>` | locale such as `en_us` or `pt_br`, or `auto` | `auto` | Overrides the language used for TikTok metadata requests and fixed synthetic phrases, or returns to Minecraft client language detection with `auto`. Invalid locale values are rejected. Active TikTok sessions reconnect when the effective language changes. |
@@ -50,6 +50,9 @@ Settings change runtime behavior and are persisted to the client config.
 | `/reinodoce settings pinned-overlay position <top-left\|top-right\|bottom-left\|bottom-right>` | enum | `top-right` | Selects the pinned-message overlay anchor. |
 | `/reinodoce settings pinned-overlay mirror-output <true\|false>` | boolean | `false` | When `true`, pinned-message events also render through the normal mirrored output mode selected by `output`. |
 | `/reinodoce settings pinned-overlay messages <messages>` | integer 1–6 | `3` | Maximum visible pinned-message overlay entries. Entries expire after TikTok's supplied display duration when available. |
+| `/reinodoce settings burst enabled <true\|false>` | boolean | `false` | Enables visible-output burst controls. When disabled, output behavior is unchanged. |
+| `/reinodoce settings burst comments-per-second <count>` | integer 0–60 | `0` | Maximum visible chat comments per second for each output route. `0` disables comment rate limiting. Accepted comments still update stats and session logs. |
+| `/reinodoce settings burst synthetic-window <seconds>` | integer 0–60 | `0` | Aggregation window for rapid follow and join lines. The first event is shown immediately; additional events during the window are grouped into one summary line. `0` disables aggregation. |
 | `/reinodoce settings chat-emotes <true\|false>` | boolean | `true` | When `true`, TikTok chat emotes are rendered inline in the Minecraft chat HUD. |
 | `/reinodoce settings chat-log <true\|false>` | boolean | `false` | When `true`, mirrored TikTok lines are written through Minecraft's chat logger. System/status/error lines remain logged either way. |
 | `/reinodoce settings mask-usernames <true\|false>` | boolean | `false` | Masks TikTok usernames in mirrored chat, actionbar, HUD, and pinned overlay output. Command/status/system feedback is unchanged. |

@@ -18,6 +18,7 @@ final class ReinodoceSettingsPages {
     private static final int ROOT_ROW_1 = 1;
     private static final int ROOT_ROW_2 = 2;
     private static final int ROOT_ROW_3 = 3;
+    private static final int ROOT_ROW_4 = 4;
     private static final int TEXT_MAX_LENGTH = 80;
     private static final int FORMAT_MAX_LENGTH = 160;
     private static final int CSV_MAX_LENGTH = 256;
@@ -46,6 +47,7 @@ final class ReinodoceSettingsPages {
         screen.addDomainButton(ROOT_RIGHT_COLUMN, ROOT_ROW_2, Page.ALERTS);
         screen.addDomainButton(ROOT_LEFT_COLUMN, ROOT_ROW_3, Page.LOGGING);
         screen.addDomainButton(ROOT_RIGHT_COLUMN, ROOT_ROW_3, Page.LANGUAGE);
+        screen.addDomainButton(ROOT_LEFT_COLUMN, ROOT_ROW_4, Page.BURST);
         screen.addRootButtons();
     }
 
@@ -80,6 +82,17 @@ final class ReinodoceSettingsPages {
                 screen.configDraft()::setPinnedMessagesInOutput);
         screen.addToggle(row, "Chat log", screen.configDraft()::isChatLogEnabled,
                 screen.configDraft()::setChatLogEnabled);
+        screen.addBackButton();
+    }
+
+    private static void initBurst(ReinodoceSettingsScreen screen) {
+        int row = 0;
+        screen.addToggle(row++, "Enabled", screen.configDraft()::isBurstControlEnabled,
+                screen.configDraft()::setBurstControlEnabled);
+        screen.addNumberField(row++, "Comment rate", screen.configDraft()::getBurstCommentsPerSecond,
+                screen.configDraft()::setBurstCommentsPerSecond);
+        screen.addNumberField(row, "Synthetic window", screen.configDraft()::getBurstSyntheticAggregationSeconds,
+                screen.configDraft()::setBurstSyntheticAggregationSeconds);
         screen.addBackButton();
     }
 
@@ -226,6 +239,8 @@ final class ReinodoceSettingsPages {
                 ReinodoceSettingsPages::initConnection),
         OUTPUT("Output / HUD", "Visible output destination, overlays, HUD placement, and chat logging.", "Output / HUD",
                 ReinodoceSettingsPages::initOutput),
+        BURST("Burst control", "Limit high-volume visible output while keeping accepted event stats.",
+                "Burst control", ReinodoceSettingsPages::initBurst),
         CHAT("Chat formatting", "LIVE prefix, rendered chat template, and inline emotes.", "Chat formatting",
                 ReinodoceSettingsPages::initChat),
         RULES("Rules / moderation", "Choose moderation filters, content lists, or allowlist mode.",
